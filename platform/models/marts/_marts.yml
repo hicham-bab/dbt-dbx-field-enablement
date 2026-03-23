@@ -19,9 +19,9 @@ models:
       Contract enforced — column changes are a breaking change for all consumers.
       Column descriptions are persisted to Unity Catalog via dbt-databricks adapter,
       making them available to Genie without manual copy-paste.
-    group: platform_core
-    access: public
     config:
+      group: platform_core
+      access: public
       contract:
         enforced: true
     columns:
@@ -91,9 +91,9 @@ models:
       PUBLIC model. Product catalog dimension.
       Consumed by: finance (revenue by product/category).
       Contract enforced.
-    group: platform_core
-    access: public
     config:
+      group: platform_core
+      access: public
       contract:
         enforced: true
     columns:
@@ -130,9 +130,9 @@ models:
       PUBLIC model. Order fact table enriched with item counts and payment totals.
       Consumed by: finance (revenue), marketing (customer activity).
       Contract enforced — this is the canonical order grain for all downstream consumers.
-    group: platform_core
-    access: public
     config:
+      group: platform_core
+      access: public
       contract:
         enforced: true
     columns:

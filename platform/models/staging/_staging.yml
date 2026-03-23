@@ -3,7 +3,8 @@ version: 2
 models:
   - name: stg_customers
     description: "Cleaned and standardized customer records. Email lowercased, country uppercased."
-    access: protected
+    config:
+      access: protected
     columns:
       - name: customer_id
         description: "Unique customer identifier."
@@ -23,7 +24,8 @@ models:
 
   - name: stg_orders
     description: "Cleaned and standardized order records. Status and payment_method lowercased."
-    access: protected
+    config:
+      access: protected
     columns:
       - name: order_id
         description: "Unique order identifier."
@@ -51,7 +53,8 @@ models:
 
   - name: stg_order_items
     description: "Cleaned order line items with computed line totals."
-    access: protected
+    config:
+      access: protected
     columns:
       - name: order_item_id
         description: "Unique order item identifier."
@@ -71,7 +74,8 @@ models:
 
   - name: stg_products
     description: "Cleaned product catalog. Category lowercased."
-    access: protected
+    config:
+      access: protected
     columns:
       - name: product_id
         description: "Unique product identifier."
@@ -85,7 +89,8 @@ models:
 
   - name: stg_payments
     description: "Cleaned payment transaction records. Status and method lowercased."
-    access: protected
+    config:
+      access: protected
     columns:
       - name: payment_id
         description: "Unique payment identifier."
