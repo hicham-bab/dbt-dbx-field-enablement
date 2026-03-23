@@ -1,0 +1,117 @@
+version: 2
+
+sources:
+  - name: ecommerce_raw
+    catalog: enablement
+    schema: ecommerce
+    description: "Raw e-commerce source tables loaded into Unity Catalog via setup notebook."
+    tables:
+      - name: raw_customers
+        description: "Raw customer records from the source system. Updated continuously by the data generator."
+        loaded_at_field: _loaded_at
+        freshness:
+          warn_after:  {count: 1, period: hour}
+          error_after: {count: 6, period: hour}
+        columns:
+          - name: customer_id
+            description: "Unique customer identifier."
+          - name: first_name
+            description: "Customer first name."
+          - name: last_name
+            description: "Customer last name."
+          - name: email
+            description: "Customer email address."
+          - name: created_at
+            description: "Timestamp when the customer account was created."
+          - name: country
+            description: "Two-letter country code."
+          - name: _loaded_at
+            description: "Timestamp when this row was loaded into the raw table. Used by dbt source freshness."
+
+      - name: raw_orders
+        description: "Raw order records. Updated continuously by the data generator."
+        loaded_at_field: _loaded_at
+        freshness:
+          warn_after:  {count: 1, period: hour}
+          error_after: {count: 6, period: hour}
+        columns:
+          - name: order_id
+            description: "Unique order identifier."
+          - name: customer_id
+            description: "Foreign key to raw_customers."
+          - name: order_date
+            description: "Date the order was placed."
+          - name: status
+            description: "Order status: placed, shipped, completed, returned."
+          - name: amount
+            description: "Total order amount in USD."
+          - name: payment_method
+            description: "Payment method used."
+          - name: _loaded_at
+            description: "Timestamp when this row was loaded into the raw table. Used by dbt source freshness."
+
+      - name: raw_order_items
+        description: "Individual line items within each order. Updated continuously by the data generator."
+        loaded_at_field: _loaded_at
+        freshness:
+          warn_after:  {count: 1, period: hour}
+          error_after: {count: 6, period: hour}
+        columns:
+          - name: order_item_id
+            description: "Unique order item identifier."
+          - name: order_id
+            description: "Foreign key to raw_orders."
+          - name: product_id
+            description: "Foreign key to raw_products."
+          - name: quantity
+            description: "Number of units ordered."
+          - name: unit_price
+            description: "Price per unit at time of order."
+          - name: _loaded_at
+            description: "Timestamp when this row was loaded into the raw table. Used by dbt source freshness."
+
+      - name: raw_products
+        description: "Product catalog. Updated infrequently — changes expected at most once per week."
+        loaded_at_field: _loaded_at
+        freshness:
+          warn_after:  {count: 3, period: day}
+          error_after: {count: 7, period: day}
+        columns:
+          - name: product_id
+            description: "Unique product identifier."
+          - name: product_name
+            description: "Human-readable product name."
+          - name: category
+            description: "Product category."
+          - name: unit_price
+            description: "Current list price."
+          - name: is_active
+            description: "Whether the product is currently available."
+          - name: _loaded_at
+            description: "Timestamp when this row was loaded into the raw table. Used by dbt source freshness."
+
+      - name: raw_payments
+        description: >
+          Payment transaction records. Fed by the payment processor integration.
+          NOTE: This source is NOT updated by the data generator — it represents a
+          third-party payment feed. If the payment processor stops sending data,
+          this source goes stale within 2 days. Run dbt source freshness to detect this.
+        loaded_at_field: _loaded_at
+        freshness:
+          warn_after:  {count: 1,  period: day}
+          error_after: {count: 2,  period: day}
+        columns:
+          - name: payment_id
+            description: "Unique payment identifier."
+          - name: order_id
+            description: "Foreign key to raw_orders."
+          - name: payment_method
+            description: "Payment method used."
+          - name: amount
+            description: "Payment amount in USD."
+          - name: status
+            description: "Payment status: success, failed, pending."
+          - name: payment_date
+            description: "Date the payment was processed."
+          - name: _loaded_at
+            description: "Timestamp when this row was loaded into the raw table. Used by dbt source freshness."

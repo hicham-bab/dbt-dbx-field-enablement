@@ -1,0 +1,201 @@
+# FAQ — dbt + Databricks Field Enablement
+
+Common questions from customers, champions, and Databricks SAs.
+Each answer is designed to be honest, concise, and demo-backed.
+
+---
+
+## General Positioning
+
+**Q: If we have Databricks, why do we need dbt?**
+
+Databricks handles infrastructure: compute, storage, orchestration, and the lakehouse
+platform. dbt handles the business transformation governance layer: version-controlled
+SQL, tested metrics, documented columns, and the semantic layer that Genie reads.
+
+They solve different problems. The customers who have both get: Databricks for data
+movement and Lakeflow for ingestion; dbt for the business logic layer that non-engineers
+can review and audit.
+
+**Demo anchor:** Act 1 vs Act 4 — show what Genie answers look like before and after dbt.
+
+---
+
+**Q: Is dbt competing with Databricks Lakeflow?**
+
+No. Lakeflow (DLT) is a pipeline orchestration tool for bronze/silver layers —
+ingestion, streaming, auto-lineage, Python-native transforms. dbt operates on the
+gold/marts layer — SQL-based business logic, documentation, testing, and the semantic
+layer. They are complementary by design.
+
+The reference architecture: Lakeflow Bronze/Silver → dbt Gold/Marts → Semantic Layer → Genie.
+
+**Demo anchor:** Act 2 — architecture slide showing both in the same stack.
+
+---
+
+**Q: Does dbt work natively with Databricks?**
+
+Yes. The `dbt-databricks` adapter is maintained by Databricks. dbt Fusion (the Rust
+compiler in dbt 1.9+) was co-developed with Databricks for native performance.
+Key integrations:
+- `persist_docs` pushes column descriptions to Unity Catalog column metadata
+- dbt models run as Databricks SQL queries
+- dbt Cloud orchestrates on Databricks Workflows
+- The Semantic Layer connects to Genie via the MetricFlow API
+
+---
+
+## Technical Questions
+
+**Q: What is dbt Fusion and how is it different from dbt Core?**
+
+dbt Fusion is a rewrite of the dbt compiler in Rust, introduced in dbt 1.9.
+It is faster (10x+ for large projects), eliminates the Python runtime bottleneck,
+and enforces stricter SQL syntax (no `::` casting, `arguments:` key on generic tests).
+
+The models and YAML in this repo are Fusion-conformant — the Fusion compiler
+runs inside dbt Cloud on every job execution. See `docs/fusion_cheat_sheet.md`
+for the syntax rules that make this code Fusion-compatible.
+
+---
+
+**Q: What is dbt Mesh and why does it matter for Databricks customers?**
+
+dbt Mesh is a multi-project architecture where a "platform" project exposes
+public models (with contracts) that downstream "consumer" projects reference.
+Breaking changes in the platform project cause consumer builds to fail — governance
+enforced by the build system, not by process.
+
+For Databricks customers: this replaces or complements cross-catalog data sharing
+with a governance layer. Unity Catalog handles access control; dbt Mesh handles
+breaking change detection and ownership declarations.
+
+**Demo anchor:** Show `finance/models/fct_revenue.sql` using
+`{{ ref('platform', 'fct_orders') }}` and the contract in `_marts.yml`.
+
+---
+
+**Q: What is the dbt Semantic Layer and how does it improve Genie?**
+
+The dbt Semantic Layer (MetricFlow) lets you define named metrics in YAML:
+```yaml
+- name: total_recognised_revenue
+  description: >
+    Revenue from completed orders only. Canonical definition.
+  type: simple
+  type_params:
+    measure:
+      name: total_revenue
+      filter: "{{ Dimension('order__status') }} = 'completed'"
+```
+
+Genie reads these definitions via Unity Catalog column metadata (pushed by `persist_docs`)
+and via the Genie Space instructions (generated from `schema.yml`). The result:
+Genie generates SQL that matches the business definition, not its best guess.
+
+---
+
+**Q: How does `persist_docs` work with Unity Catalog?**
+
+When `persist_docs: relation: true, columns: true` is set in `dbt_project.yml`,
+the `dbt-databricks` adapter pushes:
+- Table-level descriptions → Unity Catalog table comments
+- Column-level descriptions → Unity Catalog column comments
+
+After `dbt run`, you can verify:
+```sql
+DESCRIBE TABLE enablement.ecommerce.dim_customers;
+-- The "comment" column shows dbt descriptions from schema.yml
+```
+
+Genie reads these column comments natively. No manual copy-paste into Genie
+Space instructions required for column-level context.
+
+---
+
+**Q: What is a dbt contract and why does it matter?**
+
+A dbt contract (`contract: enforced: true`) in a model's YAML specifies the
+expected schema: column names, data types, and constraints. When a downstream
+project references this model with `{{ ref('platform', 'fct_orders') }}`,
+dbt validates that the actual schema matches the declared contract at build time.
+
+If the platform team removes a column or changes a data type, the consumer
+project's `dbt build` fails — before the change reaches production.
+This is the mechanism that makes dbt Mesh's governance real.
+
+---
+
+**Q: How does this demo run — dbt Cloud or local CLI?**
+
+This demo runs on **dbt Cloud**. Three separate dbt Cloud projects (`platform`,
+`marketing`, `finance`) are connected to the Databricks workspace. Each has its
+own deploy job. The Fusion compiler (Rust-based, dbt 1.9+) runs inside dbt Cloud
+on every job execution — you do not need a local dbt installation.
+
+dbt Cloud adds on top of the Fusion compiler:
+- Orchestration and scheduled jobs
+- CI/CD environments (dev → staging → prod with slim CI)
+- Project dependencies for Mesh cross-project refs
+- The Semantic Layer API (queryable by Tableau, Looker, Genie, etc.)
+- Auto-generated docs site from `schema.yml`
+
+The `profiles.yml` files in each project subdirectory are kept for optional
+local development but are not used by dbt Cloud jobs.
+
+---
+
+## Competitive Questions
+
+**Q: Databricks now has Metric Views — is the dbt Semantic Layer still relevant?**
+
+Yes. See `METRIC_VIEWS_COMPARISON.md` for the full analysis. Short version:
+
+Metric Views are sufficient for simple, stable metrics in Databricks-only environments.
+The dbt Semantic Layer adds: PR-reviewed definitions, derived/ratio metric types,
+multi-tool compatibility, data quality tests on underlying data, and a git audit trail.
+
+The key question: "When a stakeholder asks 'who approved this revenue definition?',
+what do you point to?" With Metric Views: the view DDL. With dbt: the PR history.
+
+---
+
+**Q: Can we use dbt with Databricks without dbt Cloud?**
+
+Yes. The dbt Fusion CLI is free and open source. The `profiles.yml` files in each
+project subdirectory support local execution — set `DBX_HOST`, `DBX_HTTP_PATH`,
+and `DBX_TOKEN` as environment variables and run `dbt build --profiles-dir .`
+from the project directory.
+
+However, **dbt Mesh cross-project refs require dbt Cloud** (Team or Enterprise plan).
+Without dbt Cloud, the `{{ ref('platform', 'fct_orders') }}` calls in the consumer
+projects will fail because there is no shared metadata service to resolve them.
+For demos where Mesh is the central story, dbt Cloud is required.
+
+---
+
+**Q: What does the setup actually look like? How long does it take?**
+
+See `SETUP.md` for the full walkthrough. Short version:
+
+1. Run `00_setup_raw_data.py` in Databricks — 5 raw Delta tables (5 min)
+2. Run `01_lakeflow_pipeline.py` as a DLT pipeline — 13 tables (10 min)
+3. Connect dbt Cloud to Databricks, create 3 projects, run jobs (20 min)
+4. Create 3 Genie Spaces (10 min)
+5. Run the 5-act demo (25 min)
+
+Total: ~55 minutes from zero to live demo.
+
+---
+
+**Q: Our customer is Databricks-native — they've never used dbt. Is this demo relevant?**
+
+Yes — this is the most relevant demo for that customer. Show them:
+- Act 1: what their current Genie experience probably looks like on raw/Lakeflow tables
+- Act 4: what it looks like with dbt metadata
+- The governance moment: `git log _semantic_models.yml`
+
+The ask is not "replace Databricks with dbt" — it's "add the governance layer
+that makes Databricks more valuable." Databricks-native customers have the most
+to gain because they're building from scratch.

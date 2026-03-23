@@ -1,0 +1,20 @@
+name: marketing
+version: '1.0.0'
+
+# dbt Fusion (Rust compiler) — no config-version key
+require-dbt-version: [">=1.9.0"]
+
+profile: marketing
+
+model-paths:    ["models"]
+test-paths:     ["tests"]
+
+target-path:  "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  marketing:
+    +materialized: table
+    +persist_docs:
+      relation: true
+      columns: true

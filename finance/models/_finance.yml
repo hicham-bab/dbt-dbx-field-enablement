@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: fct_revenue
+    description: >
+      Finance revenue fact table. One row per order, enriched with recognised_revenue
+      and returned_amount. Cross-project ref from platform.fct_orders.
+      Revenue is recognised only for completed orders — this definition is
+      version-controlled and PR-reviewed.
+    group: finance_analytics
+    columns:
+      - name: order_id
+        description: "Unique order identifier (from platform.fct_orders)."
+        tests:
+          - not_null
+          - unique
+      - name: recognised_revenue
+        description: "amount_paid if status = 'completed', else 0. Canonical revenue definition."
+        tests:
+          - not_null
+      - name: returned_amount
+        description: "amount_paid if status = 'returned', else 0."
+      - name: order_month
+        description: "First day of the month of the order date (for monthly roll-ups)."
+      - name: order_year
+        description: "First day of the year of the order date (for annual roll-ups)."
+
+  - name: fct_revenue_by_product
+    description: >
+      Product-level revenue aggregation. Joins platform.fct_orders + platform.dim_products
+      to show revenue, order count, and return rate by product and category.
+      Demonstrates multi-table cross-project refs in dbt Mesh.
+    group: finance_analytics
+    columns:
+      - name: product_id
+        description: "Unique product identifier (from platform.dim_products)."
+        tests:
+          - not_null
+          - unique
+      - name: product_name
+        description: "Human-readable product name."
+      - name: category
+        description: "Lowercased product category."
+      - name: total_orders
+        description: "Count of distinct orders containing this product."
+      - name: recognised_revenue
+        description: "Sum of amount_paid for completed orders containing this product (USD)."
+      - name: return_count
+        description: "Count of orders containing this product that were returned."

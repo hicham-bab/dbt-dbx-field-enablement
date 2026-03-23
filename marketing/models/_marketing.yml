@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: mart_customer_segments
+    description: >
+      Marketing segmentation model. Enriches platform dim_customers with recency-based
+      marketing segments (champion, loyal, at_risk, lapsed, never_purchased).
+      Cross-project refs to platform.dim_customers and platform.fct_orders.
+    group: marketing_analytics
+    columns:
+      - name: customer_id
+        description: "Unique customer identifier (from platform.dim_customers)."
+        tests:
+          - not_null
+          - unique
+      - name: marketing_segment
+        description: >
+          Recency + value segment. Values: champion, loyal, at_risk, lapsed,
+          never_purchased, other.
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['champion', 'loyal', 'at_risk', 'lapsed', 'never_purchased', 'other']
+      - name: days_since_last_order
+        description: "Days elapsed since the customer's most recent order."
+      - name: completed_orders
+        description: "Count of orders with status = 'completed' for this customer."
+
+  - name: mart_country_performance
+    description: >
+      Country-level performance roll-up. Aggregates revenue, customers, and LTV
+      by country using cross-project refs to platform.dim_customers and platform.fct_orders.
+    group: marketing_analytics
+    columns:
+      - name: country
+        description: "Two-letter ISO country code."
+        tests:
+          - not_null
+          - unique
+      - name: recognised_revenue
+        description: "Sum of amount_paid for completed orders from customers in this country (USD)."
+      - name: total_customers
+        description: "Distinct count of customers in this country."
+      - name: high_value_customers
+        description: "Distinct count of high_value segment customers in this country."

@@ -1,0 +1,39 @@
+name: platform
+version: '1.0.0'
+
+# dbt Fusion (Rust compiler) — no config-version key
+require-dbt-version: [">=1.9.0"]
+
+profile: platform
+
+model-paths:    ["models"]
+seed-paths:     ["seeds"]
+test-paths:     ["tests"]
+macro-paths:    ["macros"]
+
+target-path:  "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  platform:
+    staging:
+      +materialized: view
+      +access: protected
+      +persist_docs:
+        relation: true
+        columns: true
+
+    intermediate:
+      +materialized: ephemeral
+      +access: protected
+
+    marts:
+      +materialized: table
+      +access: public
+      +persist_docs:
+        relation: true
+        columns: true
+
+    semantic:
+      +materialized: view
+      +access: protected

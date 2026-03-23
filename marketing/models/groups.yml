@@ -1,0 +1,7 @@
+version: 2
+
+groups:
+  - name: marketing_analytics
+    owner:
+      name: Marketing Analytics Team
+      email: marketing-analytics@company.com

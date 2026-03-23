@@ -1,0 +1,7 @@
+version: 2
+
+groups:
+  - name: finance_analytics
+    owner:
+      name: Finance Analytics Team
+      email: finance-analytics@company.com

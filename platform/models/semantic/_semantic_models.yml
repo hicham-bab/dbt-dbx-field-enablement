@@ -1,0 +1,269 @@
+version: 2
+
+# ──────────────────────────────────────────────────────────────────────────────
+# dbt MetricFlow Semantic Layer — Platform Project
+#
+# These definitions expose a governed, version-controlled semantic layer that:
+#   1. Feeds the dbt Semantic Layer API (queryable from BI tools and Genie)
+#   2. Defines what "revenue", "customer", and "order" MEAN — not just how to
+#      compute them, but with descriptions that flow into Unity Catalog column
+#      metadata, which Genie reads natively.
+#   3. Provides an auditable, PR-reviewed source of truth for every metric.
+#
+# Compare this to Lakeflow / Metric Views:
+#   - A Lakeflow gold table has "total_revenue" as a column — but nothing that
+#     defines what counts as revenue, what the grain is, or what filters apply.
+#   - Genie querying the Lakeflow table will guess. Genie querying the semantic
+#     layer here will use the exact definition, every time, reproducibly.
+# ──────────────────────────────────────────────────────────────────────────────
+
+semantic_models:
+
+  # ── Customers ─────────────────────────────────────────────────────────────
+  - name: customers
+    description: >
+      Semantic model built on dim_customers. One row per customer.
+      Defines the customer grain, segmentation dimensions, and value measures.
+      This is the authoritative definition of a "customer" for all BI and Genie queries.
+    model: ref('dim_customers')
+
+    entities:
+      - name: customer
+        type: primary
+        expr: customer_id
+        description: "Unique customer identifier — primary key of the customer grain."
+
+    dimensions:
+      - name: customer_segment
+        type: categorical
+        expr: customer_segment
+        description: >
+          Derived value tier based on total_lifetime_value.
+          high_value: >= $500 | mid_value: $100–$499 | low_value: < $100.
+          Used by Genie for segment-level analysis.
+
+      - name: country
+        type: categorical
+        expr: country
+        description: "Two-letter ISO country code (uppercased)."
+
+      - name: created_date
+        type: time
+        type_params:
+          time_granularity: day
+        expr: created_date
+        description: "Date the customer account was created. Used for cohort analysis."
+
+    measures:
+      - name: customer_count
+        agg: count_distinct
+        expr: customer_id
+        description: "Distinct count of customers. Use for headcount and cohort sizing."
+
+      - name: total_lifetime_value
+        agg: sum
+        expr: total_lifetime_value
+        description: >
+          Sum of all successful payment amounts across all orders for each customer.
+          Denominated in USD. Revenue = successful payments only (status = 'success').
+
+      - name: avg_lifetime_value
+        agg: average
+        expr: total_lifetime_value
+        description: "Average lifetime value per customer within the selected dimension group."
+
+      - name: total_orders_per_customer
+        agg: sum
+        expr: number_of_orders
+        description: "Total number of orders placed across all customers in scope."
+
+  # ── Orders ────────────────────────────────────────────────────────────────
+  - name: orders
+    description: >
+      Semantic model built on fct_orders. One row per order.
+      Defines order-level revenue, count, and status dimensions.
+      Revenue here = amount_paid for orders with status = 'completed'.
+      This definition is version-controlled — any change goes through a PR.
+    model: ref('fct_orders')
+
+    entities:
+      - name: order
+        type: primary
+        expr: order_id
+        description: "Unique order identifier."
+
+      - name: customer
+        type: foreign
+        expr: customer_id
+        description: "Foreign key linking to the customer semantic model."
+
+    dimensions:
+      - name: status
+        type: categorical
+        expr: status
+        description: >
+          Order lifecycle status. Valid values: placed, shipped, completed, returned.
+          Revenue is counted ONLY for completed orders.
+
+      - name: payment_method
+        type: categorical
+        expr: payment_method
+        description: "Payment method used: credit_card, paypal, bank_transfer."
+
+      - name: order_date
+        type: time
+        type_params:
+          time_granularity: day
+        expr: order_date
+        description: "Date the order was placed. Use for time-series and trend analysis."
+
+    measures:
+      - name: order_count
+        agg: count_distinct
+        expr: order_id
+        description: "Number of distinct orders. Includes all statuses unless filtered."
+
+      - name: completed_order_count
+        agg: count_distinct
+        expr: "case when status = 'completed' then order_id end"
+        description: "Number of completed orders only. Use for revenue-aligned order counts."
+
+      - name: total_revenue
+        agg: sum
+        expr: amount_paid
+        description: >
+          Sum of amount_paid for all orders in scope. To get recognised revenue,
+          filter by status = 'completed' or use the total_recognised_revenue metric.
+          Denominated in USD.
+
+      - name: avg_order_value
+        agg: average
+        expr: amount_paid
+        description: "Average amount paid per order across all orders in scope."
+
+      - name: total_items
+        agg: sum
+        expr: number_of_items
+        description: "Total number of line items across all orders in scope."
+
+      - name: return_flag
+        agg: sum
+        expr: "case when status = 'returned' then 1 else 0 end"
+        description: "Count of returned orders. Use for return rate calculation."
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Metrics — the named, governed calculations exposed to Genie and BI tools
+#
+# Each metric has an explicit definition, a human-readable label, and a
+# description that Genie uses to understand what the user is asking for.
+# This is the key advantage over Lakeflow / Metric Views: Genie doesn't guess
+# what "revenue" means — it reads the definition below and uses it exactly.
+# ──────────────────────────────────────────────────────────────────────────────
+
+metrics:
+
+  # ── Revenue metrics ───────────────────────────────────────────────────────
+  - name: total_revenue
+    label: "Total Revenue (USD)"
+    description: >
+      Sum of amount_paid across all orders. For recognised revenue, use
+      total_recognised_revenue (completed orders only). This metric includes
+      all order statuses — use the status dimension to filter.
+    type: simple
+    type_params:
+      measure:
+        name: total_revenue
+        filter: "{{ Dimension('order__status') }} = 'completed'"
+
+  - name: total_recognised_revenue
+    label: "Total Recognised Revenue (USD)"
+    description: >
+      Revenue from completed orders only. This is the canonical definition
+      of recognised revenue for this business. Genie uses this when a user
+      asks about "revenue" without further qualification.
+    type: simple
+    type_params:
+      measure:
+        name: total_revenue
+        filter: "{{ Dimension('order__status') }} = 'completed'"
+
+  - name: avg_order_value
+    label: "Average Order Value (USD)"
+    description: >
+      Average amount_paid per order across completed orders.
+      Denominator: count of completed orders. Numerator: sum of amount_paid.
+    type: simple
+    type_params:
+      measure: avg_order_value
+
+  - name: return_rate
+    label: "Order Return Rate (%)"
+    description: >
+      Percentage of orders that were returned. Computed as:
+      returned_orders / total_orders * 100.
+      This is a derived metric — auditable because both inputs are defined above.
+    type: ratio
+    type_params:
+      numerator:
+        name: order_count
+        filter: "{{ Dimension('order__status') }} = 'returned'"
+      denominator:
+        name: order_count
+
+  # ── Customer metrics ──────────────────────────────────────────────────────
+  - name: total_customers
+    label: "Total Customers"
+    description: "Distinct count of all customers in the system regardless of order activity."
+    type: simple
+    type_params:
+      measure: customer_count
+
+  - name: avg_customer_lifetime_value
+    label: "Average Customer Lifetime Value (USD)"
+    description: >
+      Average total_lifetime_value across all customers.
+      Lifetime value = sum of all successful payments, regardless of order status.
+    type: simple
+    type_params:
+      measure: avg_lifetime_value
+
+  - name: revenue_per_customer
+    label: "Revenue per Customer (USD)"
+    description: >
+      Derived metric: total_recognised_revenue divided by total_customers.
+      Useful for tracking monetisation efficiency over time.
+    type: derived
+    type_params:
+      expr: "total_recognised_revenue / total_customers"
+      metrics:
+        - name: total_recognised_revenue
+        - name: total_customers
+
+  # ── Order metrics ─────────────────────────────────────────────────────────
+  - name: total_orders
+    label: "Total Orders"
+    description: "Count of all orders regardless of status."
+    type: simple
+    type_params:
+      measure: order_count
+
+  - name: completed_orders
+    label: "Completed Orders"
+    description: "Count of orders with status = 'completed'."
+    type: simple
+    type_params:
+      measure: completed_order_count
+
+  - name: total_items_sold
+    label: "Total Items Sold"
+    description: "Sum of line items across all orders in scope."
+    type: simple
+    type_params:
+      measure: total_items
+
+  - name: avg_lifetime_value
+    label: "Average Customer LTV (USD)"
+    description: "Average lifetime value per customer."
+    type: simple
+    type_params:
+      measure: avg_lifetime_value

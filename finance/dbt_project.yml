@@ -1,0 +1,20 @@
+name: finance
+version: '1.0.0'
+
+# dbt Fusion (Rust compiler) — no config-version key
+require-dbt-version: [">=1.9.0"]
+
+profile: finance
+
+model-paths:    ["models"]
+test-paths:     ["tests"]
+
+target-path:  "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  finance:
+    +materialized: table
+    +persist_docs:
+      relation: true
+      columns: true

@@ -1,0 +1,21 @@
+## Databricks App manifest
+# Deploy with: databricks apps deploy dbt-dbx-enablement --source-code-path ./databricks/app
+
+command: ["python", "-m", "streamlit", "run", "app.py", "--server.port", "8080"]
+
+env:
+  # Injected automatically by Databricks Apps — do not set manually
+  - name: DATABRICKS_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: databricks.host
+  # Set this to your SQL Warehouse HTTP path (found in SQL Warehouses → Connection details)
+  - name: DATABRICKS_WAREHOUSE_ID
+    value: "/sql/1.0/warehouses/YOUR_WAREHOUSE_ID"
+
+resources:
+  - name: dbt-dbx-enablement-warehouse
+    description: "SQL Warehouse used by the dbt + Databricks enablement dashboard"
+    resource_type: sql_warehouse
+    sql_warehouse:
+      id: YOUR_WAREHOUSE_ID   # replace with your SQL Warehouse ID

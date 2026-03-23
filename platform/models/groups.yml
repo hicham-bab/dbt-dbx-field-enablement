@@ -1,0 +1,12 @@
+version: 2
+
+groups:
+  - name: platform_core
+    owner:
+      name: Data Platform Team
+      email: data-platform@company.com
+
+  - name: platform_staging
+    owner:
+      name: Data Platform Team
+      email: data-platform@company.com

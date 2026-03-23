@@ -1,0 +1,104 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Cleaned and standardized customer records. Email lowercased, country uppercased."
+    access: protected
+    columns:
+      - name: customer_id
+        description: "Unique customer identifier."
+        tests:
+          - not_null
+          - unique
+      - name: email
+        description: "Lowercased customer email address."
+        tests:
+          - not_null
+      - name: created_date
+        description: "Date the customer account was created."
+        tests:
+          - not_null
+      - name: country
+        description: "Uppercased two-letter country code."
+
+  - name: stg_orders
+    description: "Cleaned and standardized order records. Status and payment_method lowercased."
+    access: protected
+    columns:
+      - name: order_id
+        description: "Unique order identifier."
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Foreign key to stg_customers."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: status
+        description: "Lowercased order status."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['placed', 'shipped', 'completed', 'returned']
+      - name: amount
+        description: "Total order amount in USD."
+        tests:
+          - not_null
+
+  - name: stg_order_items
+    description: "Cleaned order line items with computed line totals."
+    access: protected
+    columns:
+      - name: order_item_id
+        description: "Unique order item identifier."
+        tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: "Foreign key to stg_orders."
+        tests:
+          - not_null
+      - name: quantity
+        description: "Number of units ordered."
+        tests:
+          - not_null
+      - name: line_total
+        description: "quantity * unit_price — pre-computed line revenue."
+
+  - name: stg_products
+    description: "Cleaned product catalog. Category lowercased."
+    access: protected
+    columns:
+      - name: product_id
+        description: "Unique product identifier."
+        tests:
+          - not_null
+          - unique
+      - name: unit_price
+        description: "Current list price in USD."
+        tests:
+          - not_null
+
+  - name: stg_payments
+    description: "Cleaned payment transaction records. Status and method lowercased."
+    access: protected
+    columns:
+      - name: payment_id
+        description: "Unique payment identifier."
+        tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: "Foreign key to stg_orders."
+        tests:
+          - not_null
+      - name: payment_status
+        description: "Lowercased payment status."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['success', 'failed', 'pending']
