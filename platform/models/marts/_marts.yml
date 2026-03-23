@@ -61,11 +61,11 @@ models:
 
       - name: number_of_orders
         description: "Total number of orders placed by this customer, regardless of status."
-        data_type: integer
+        data_type: bigint
 
       - name: total_lifetime_value
         description: "Sum of all successful payment amounts for this customer (USD)."
-        data_type: decimal
+        data_type: decimal(18,2)
 
       - name: first_order_date
         description: "Date of the customer's first order."
@@ -119,7 +119,7 @@ models:
 
       - name: unit_price
         description: "Current list price in USD."
-        data_type: decimal
+        data_type: decimal(18,2)
 
       - name: is_active
         description: "True if the product is currently available for purchase."
@@ -180,17 +180,17 @@ models:
 
       - name: number_of_items
         description: "Number of distinct line items in the order."
-        data_type: integer
+        data_type: bigint
 
       - name: items_total
         description: "Sum of (quantity * unit_price) for all line items in the order (USD)."
-        data_type: decimal
+        data_type: decimal(18,2)
 
       - name: amount_paid
         description: >
           Total amount successfully paid for this order (USD).
           Counts only payments with status = 'success'.
           This is NOT the same as order amount — returns and failed payments are excluded.
-        data_type: decimal
+        data_type: decimal(18,2)
         tests:
           - not_null
