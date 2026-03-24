@@ -6,7 +6,8 @@ models:
       Marketing segmentation model. Enriches platform dim_customers with recency-based
       marketing segments (champion, loyal, at_risk, lapsed, never_purchased).
       Cross-project refs to platform.dim_customers and platform.fct_orders.
-    group: marketing_analytics
+    config:
+      group: marketing_analytics
     columns:
       - name: customer_id
         description: "Unique customer identifier (from platform.dim_customers)."
@@ -30,7 +31,8 @@ models:
     description: >
       Country-level performance roll-up. Aggregates revenue, customers, and LTV
       by country using cross-project refs to platform.dim_customers and platform.fct_orders.
-    group: marketing_analytics
+    config:
+      group: marketing_analytics
     columns:
       - name: country
         description: "Two-letter ISO country code."

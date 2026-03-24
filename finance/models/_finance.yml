@@ -7,7 +7,8 @@ models:
       and returned_amount. Cross-project ref from platform.fct_orders.
       Revenue is recognised only for completed orders — this definition is
       version-controlled and PR-reviewed.
-    group: finance_analytics
+    config:
+      group: finance_analytics
     columns:
       - name: order_id
         description: "Unique order identifier (from platform.fct_orders)."
@@ -30,7 +31,8 @@ models:
       Product-level revenue aggregation. Joins platform.fct_orders + platform.dim_products
       to show revenue, order count, and return rate by product and category.
       Demonstrates multi-table cross-project refs in dbt Mesh.
-    group: finance_analytics
+    config:
+      group: finance_analytics
     columns:
       - name: product_id
         description: "Unique product identifier (from platform.dim_products)."
