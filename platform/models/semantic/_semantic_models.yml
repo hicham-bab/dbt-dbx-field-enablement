@@ -151,6 +151,44 @@ semantic_models:
         expr: "case when status = 'returned' then 1 else 0 end"
         description: "Count of returned orders. Use for return rate calculation."
 
+  # ── Products ──────────────────────────────────────────────────────────────
+  - name: products
+    description: >
+      Semantic model built on dim_products. One row per product.
+      Defines the product grain, category dimension, and pricing measures.
+      This is the authoritative definition of a "product" for all BI and Genie queries.
+    model: ref('dim_products')
+
+    entities:
+      - name: product
+        type: primary
+        expr: product_id
+        description: "Unique product identifier — primary key of the product grain."
+
+    dimensions:
+      - name: category
+        type: categorical
+        expr: category
+        description: >
+          Lowercased product category.
+          Valid values: apparel, electronics, fitness, footwear, nutrition.
+
+      - name: is_active
+        type: categorical
+        expr: cast(is_active as string)
+        description: "Whether the product is currently available for purchase (true/false)."
+
+    measures:
+      - name: product_count
+        agg: count_distinct
+        expr: product_id
+        description: "Distinct count of products in scope."
+
+      - name: avg_unit_price
+        agg: average
+        expr: unit_price
+        description: "Average list price across products in scope (USD)."
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Metrics — the named, governed calculations exposed to Genie and BI tools
 #
@@ -166,14 +204,12 @@ metrics:
   - name: total_revenue
     label: "Total Revenue (USD)"
     description: >
-      Sum of amount_paid across all orders. For recognised revenue, use
-      total_recognised_revenue (completed orders only). This metric includes
-      all order statuses — use the status dimension to filter.
+      Sum of amount_paid across ALL orders regardless of status. Includes placed,
+      shipped, completed, and returned. Use total_recognised_revenue for the
+      business-recognised figure. Use the status dimension to filter if needed.
     type: simple
     type_params:
-      measure:
-        name: total_revenue
-        filter: "{{ Dimension('order__status') }} = 'completed'"
+      measure: total_revenue
 
   - name: total_recognised_revenue
     label: "Total Recognised Revenue (USD)"
@@ -261,9 +297,17 @@ metrics:
     type_params:
       measure: total_items
 
-  - name: avg_lifetime_value
-    label: "Average Customer LTV (USD)"
-    description: "Average lifetime value per customer."
+  # ── Product metrics ────────────────────────────────────────────────────────
+  - name: total_products
+    label: "Total Products"
+    description: "Distinct count of all products in the catalog."
     type: simple
     type_params:
-      measure: avg_lifetime_value
+      measure: product_count
+
+  - name: avg_product_price
+    label: "Average Product Price (USD)"
+    description: "Average list price across all products in the catalog."
+    type: simple
+    type_params:
+      measure: avg_unit_price

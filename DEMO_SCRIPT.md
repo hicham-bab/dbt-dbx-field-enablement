@@ -14,6 +14,7 @@
 | 2 | The Architecture | 5 min | How Raw → dbt Fusion → Semantic Layer → Genie works |
 | 3 | Lakeflow Gold: Better But Not Enough | 5 min | Genie on Lakeflow gold — closer but still manual |
 | 4 | dbt + Semantic Layer: The Solution | 8 min | Genie on dbt marts — accuracy, consistency, governance |
+| 4e | Fusion LSP + State-Aware Orchestration *(optional — technical audiences)* | +5 min | Live IDE intelligence + selective rebuilds vs Lakeflow |
 | 5 | Business Close | 3 min | The "AND not OR" message + next steps |
 
 ---
@@ -235,6 +236,110 @@ Show the semantic layer in `_semantic_models.yml`:
 **Say:** "Derived metrics. Ratio metrics. Time-grain-aware metrics. These aren't
 just SQL views — they're named calculations with descriptions that Genie reads.
 The same definition powers Tableau, PowerBI, Genie, and this dashboard."
+
+---
+
+## Act 4e: Fusion LSP + State-Aware Orchestration *(optional — technical audiences, +5 min)*
+
+**Goal:** Show two developer-experience advantages that have no equivalent in Databricks:
+the Fusion compiler giving instant feedback in the IDE, and dbt only rebuilding what changed.
+
+**When to use this act:** SA-to-SA conversations, data engineering teams, or when the
+audience asks "what does Fusion actually give us beyond faster parsing?"
+
+---
+
+### Part 4e-1: Fusion LSP — Errors at Typing Time, Not Runtime (2 min)
+
+**The setup line:**
+> "In Databricks notebooks, you find out a table doesn't exist when the pipeline fails.
+> With Fusion running in dbt Cloud Studio, you find out while you're typing."
+
+**Live demo — introduce a typo:**
+
+1. Open `finance/models/fct_revenue.sql` in dbt Cloud Studio
+2. Change `{{ ref('platform', 'fct_orders') }}` to `{{ ref('platform', 'fct_orderss') }}`
+3. **Point to the red underline that appears immediately — before saving, before running**
+4. **Say:** "That's the Fusion compiler running in real time as a Language Server.
+   It knows the full DAG of all three projects and validated that `fct_orderss`
+   does not exist in the platform project. Zero latency. No job run needed."
+5. Revert the typo
+
+**Live demo — contract violation:**
+
+1. Open `platform/models/marts/_marts.yml`
+2. Change `data_type: bigint` on `number_of_orders` to `data_type: varchar`
+3. **Immediate warning in the Problems panel**
+4. **Say:** "The contract says this column must be a bigint. I changed it to varchar.
+   Fusion flagged it before I could even save the file. In a Databricks DLT notebook,
+   this would only fail when a downstream consumer runs and finds the wrong type.
+   By then it may be in production."
+5. Revert
+
+**If someone says "Databricks notebooks check errors too" — use this:**
+
+> "Databricks checks if the *table exists in Unity Catalog*.
+> Fusion checks if the *reference is valid in your dbt project* —
+> including whether the model is `access: public`, whether the contract columns
+> still match, and whether the downstream DAG is still consistent.
+> Those are different questions. Databricks answers 'does this object exist?'
+> Fusion answers 'is this dependency correct, safe, and contract-compliant?'"
+
+**The contrast table — say this out loud:**
+
+| Scenario | dbt + Fusion LSP | Databricks Notebook |
+|---|---|---|
+| Typo in table name | Red underline instantly — DAG-aware | Red underline — UC object lookup only |
+| Contract violation | Flagged before save | No contract concept — silent |
+| Cross-project ref to a protected model | Compile error: model is not public | No access tier enforcement |
+| Wrong column type vs contract | Immediate warning | Only fails at consumer runtime |
+| Autocomplete for `ref()` | Full model list with access tiers | Table browser — no dbt DAG awareness |
+
+---
+
+### Part 4e-2: State-Aware Orchestration — Only Rebuild What Changed (3 min)
+
+**The setup line:**
+> "When your pipeline has 200 models and an analyst changes one staging model,
+> how much do you rerun? In Lakeflow, everything. In dbt, only what actually changed."
+
+**Show the concept with this project:**
+
+Open the dbt Cloud Studio terminal and run:
+
+```bash
+dbt build --select state:modified+
+```
+
+**Say:** "This command compares the current code against the last production run's
+`manifest.json`. It finds every model that changed, then traverses the DAG forward
+to find every downstream dependent. It runs exactly those models — nothing else."
+
+**Make it concrete — walk through a scenario:**
+
+> "Say an analyst changes the segmentation threshold in `stg_customers.sql` —
+> moving 'high_value' from $500 to $600. With `state:modified+`, dbt runs:
+> `stg_customers → int_customer_orders → dim_customers → mart_customer_segments`.
+> That's 4 models out of 10. The finance models don't run. The product dimension
+> doesn't run. Only the affected path."
+
+**Show what Lakeflow does instead:**
+
+Open `databricks/notebooks/04a_lakeflow_marketing.sql` and point to line 77:
+
+```sql
+FROM enablement.ecommerce_lakeflow.gold_dim_customers c
+```
+
+**Say:** "There is no equivalent here. This pipeline has no awareness of what changed
+in the platform pipeline. It reruns fully every time — or you manually maintain a list
+of which tables to refresh. At 10 tables that's manageable. At 200 it becomes a
+scheduling and cost problem."
+
+**The closing line for Act 4e:**
+> "State-aware orchestration is not a feature you notice when your project has 10 models.
+> It's the feature that saves you 40 minutes of compute time per CI run when you have 300.
+> And it's built into `dbt build` — no configuration required."
 
 ---
 

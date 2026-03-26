@@ -1,0 +1,100 @@
+# Databricks Metric View — E-Commerce Customers
+#
+# HOW TO CREATE THIS IN DATABRICKS:
+# 1. Go to Catalog → [your catalog] → [schema] → Create → Metric view
+#    OR: New → Metric view (from the sidebar)
+# 2. Paste this YAML into the definition editor
+# 3. Save as: enablement.ecommerce_metric_views.customer_metrics
+#
+# Requires: Databricks Runtime 17.2+, spec version 1.1
+#
+# This mirrors the following dbt Semantic Layer metrics from _semantic_models.yml:
+#   total_customers, avg_customer_lifetime_value
+#
+# Source: enablement.ecommerce.dim_customers (built by dbt platform project)
+
+version: 1.1
+source: enablement.ecommerce.dim_customers
+comment: >
+  E-commerce customer metrics for the enablement demo.
+  Mirror of dbt Semantic Layer metrics defined in platform/models/semantic/_semantic_models.yml.
+  Source: enablement.ecommerce.dim_customers (built by dbt platform project).
+
+dimensions:
+  - name: country
+    expr: country
+    display_name: Country
+    synonyms:
+      - region
+      - location
+      - market
+
+  - name: customer_segment
+    expr: customer_segment
+    display_name: Customer Segment
+    comment: "high_value: >= $500 LTV | mid_value: $100-$499 | low_value: < $100. Defined and tested in dbt _marts.yml."
+    synonyms:
+      - segment
+      - tier
+      - value tier
+      - customer tier
+
+  - name: created_date
+    expr: created_date
+    display_name: Customer Since
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - signup date
+      - acquisition date
+      - join date
+
+measures:
+  - name: customer_count
+    expr: COUNT(DISTINCT customer_id)
+    display_name: Total Customers
+    comment: Count of distinct customers.
+    format:
+      type: number
+      decimal_places:
+        type: all
+      hide_group_separator: false
+    synonyms:
+      - customers
+      - number of customers
+      - unique customers
+      - user count
+
+  - name: avg_lifetime_value
+    expr: AVG(total_lifetime_value)
+    display_name: Average Lifetime Value
+    comment: >
+      Average total_lifetime_value across all customers.
+      total_lifetime_value = sum of successful payments. Defined in dbt dim_customers model.
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      hide_group_separator: false
+    synonyms:
+      - avg ltv
+      - average clv
+      - customer value
+      - lifetime value
+
+  - name: high_value_customers
+    expr: COUNT(DISTINCT CASE WHEN customer_segment = 'high_value' THEN customer_id END)
+    display_name: High Value Customers
+    comment: Count of customers with total_lifetime_value >= $500.
+    format:
+      type: number
+      decimal_places:
+        type: all
+    synonyms:
+      - vip customers
+      - top customers
+      - premium customers

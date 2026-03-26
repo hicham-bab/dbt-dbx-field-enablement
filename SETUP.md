@@ -124,7 +124,7 @@ DBX_TOKEN     = dapixxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ## Part B: Load Raw Data
 
 This step creates the `enablement.ecommerce` catalog/schema and seeds it with
-5 raw Delta tables (10 customers, 15 orders, 20 order items, 10 products, 15 payments).
+6 raw Delta tables covering October 2024 → March 2026 (20 customers, 71 orders, 76 order items, 15 products, 71 payments, 35 reviews).
 
 ---
 
@@ -164,11 +164,12 @@ After the notebook finishes (< 1 minute), the last cell runs a verification quer
 
 | tbl | rows |
 |---|---|
-| raw_customers | 10 |
-| raw_orders | 15 |
-| raw_order_items | 20 |
-| raw_products | 10 |
-| raw_payments | 15 |
+| raw_customers | 20 |
+| raw_orders | 71 |
+| raw_order_items | 76 |
+| raw_products | 15 |
+| raw_payments | 71 |
+| raw_reviews | 35 |
 
 You can also verify in the SQL Editor:
 ```sql
@@ -179,7 +180,7 @@ WHERE table_catalog = 'enablement'
 ORDER BY table_name;
 ```
 
-Expected: 5 rows — `raw_customers`, `raw_order_items`, `raw_orders`, `raw_payments`, `raw_products`.
+Expected: 6 rows — `raw_customers`, `raw_order_items`, `raw_orders`, `raw_payments`, `raw_products`, `raw_reviews`.
 
 If you see an error like `PERMISSION_DENIED: User does not have CREATE SCHEMA privilege`,
 ask your workspace admin to grant you `CREATE SCHEMA ON CATALOG enablement` — or

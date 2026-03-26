@@ -58,8 +58,12 @@ Expected: `dim_customers`, `dim_products`, `fct_orders` in `enablement.ecommerce
 
 ### Step 4: Create Metric Views
 
-Run `databricks/notebooks/02_metric_views.sql` in the SQL Editor.
-Creates 6 metric views in `enablement.ecommerce_metric_views`.
+Metric Views are YAML definitions, not SQL DDL. Create them in the Databricks UI:
+
+1. **New → Metric view** (or Catalog → Create → Metric view)
+2. Paste `databricks/notebooks/02a_metric_view_orders.yml` → save as `enablement.ecommerce_metric_views.orders_metrics`
+3. Paste `databricks/notebooks/02b_metric_view_customers.yml` → save as `enablement.ecommerce_metric_views.customer_metrics`
+4. Run `databricks/notebooks/02_metric_views.sql` in the SQL Editor to verify the underlying data.
 
 ### Step 5: Create Genie Spaces
 

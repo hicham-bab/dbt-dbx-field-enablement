@@ -1,0 +1,125 @@
+# Databricks Metric View — E-Commerce Orders
+#
+# HOW TO CREATE THIS IN DATABRICKS:
+# 1. Go to Catalog → [your catalog] → [schema] → Create → Metric view
+#    OR: New → Metric view (from the sidebar)
+# 2. Paste this YAML into the definition editor
+# 3. Save as: enablement.ecommerce_metric_views.orders_metrics
+#
+# Requires: Databricks Runtime 17.2+, spec version 1.1
+#
+# This mirrors the following dbt Semantic Layer metrics from _semantic_models.yml:
+#   total_recognised_revenue, avg_order_value, total_orders, return_rate
+#
+# The comparison point for the demo:
+#   - dbt: metric definition lives in YAML → Git → PR-reviewed → tested
+#   - Databricks Metric View: metric definition lives in YAML → saved to catalog
+#   - Key difference: dbt definitions are version-controlled + tied to tested models.
+#     Metric Views have no equivalent of dbt contracts, tests, or git history.
+
+version: 1.1
+source: enablement.ecommerce.fct_orders
+comment: >
+  E-commerce order metrics for the enablement demo.
+  Mirror of dbt Semantic Layer metrics defined in platform/models/semantic/_semantic_models.yml.
+  Source: enablement.ecommerce.fct_orders (built by dbt platform project).
+
+dimensions:
+  - name: order_date
+    expr: order_date
+    display_name: Order Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - date
+      - when ordered
+      - order day
+
+  - name: status
+    expr: status
+    display_name: Order Status
+    comment: "Valid values: placed, shipped, completed, returned"
+    synonyms:
+      - order status
+      - fulfillment status
+      - state
+
+  - name: payment_method
+    expr: payment_method
+    display_name: Payment Method
+    synonyms:
+      - how paid
+      - payment type
+      - tender
+
+measures:
+  - name: total_revenue
+    expr: SUM(CASE WHEN status = 'completed' THEN amount_paid ELSE 0 END)
+    display_name: Total Revenue
+    comment: >
+      Sum of amount_paid for completed orders only.
+      NOTE: No equivalent of dbt contract enforcement — if the upstream table changes
+      its schema, this metric silently breaks at query time.
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      hide_group_separator: false
+      abbreviation: compact
+    synonyms:
+      - revenue
+      - total sales
+      - recognised revenue
+      - sales
+
+  - name: avg_order_value
+    expr: AVG(CASE WHEN status = 'completed' THEN amount_paid END)
+    display_name: Average Order Value
+    comment: Average payment amount for completed orders only.
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      hide_group_separator: false
+    synonyms:
+      - aov
+      - average revenue per order
+      - average basket
+
+  - name: total_orders
+    expr: COUNT(DISTINCT order_id)
+    display_name: Total Orders
+    comment: Count of all orders regardless of status.
+    format:
+      type: number
+      decimal_places:
+        type: all
+      hide_group_separator: false
+    synonyms:
+      - order count
+      - number of orders
+      - orders
+
+  - name: return_rate
+    expr: >
+      COUNT(DISTINCT CASE WHEN status = 'returned' THEN order_id END)
+      / CAST(COUNT(DISTINCT order_id) AS DOUBLE) * 100
+    display_name: Return Rate (%)
+    comment: Percentage of orders that were returned.
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+      hide_group_separator: true
+    synonyms:
+      - returns
+      - refund rate
+      - percentage returned
+      - churn

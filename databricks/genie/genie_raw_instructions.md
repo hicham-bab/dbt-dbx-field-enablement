@@ -20,13 +20,14 @@ When creating this Genie Space in Databricks:
    - `enablement.ecommerce.raw_order_items`
    - `enablement.ecommerce.raw_products`
    - `enablement.ecommerce.raw_payments`
+   - `enablement.ecommerce.raw_reviews`
 
 ---
 
 ## Instructions (paste into Genie Space Instructions field)
 
 ```
-This is raw e-commerce data.
+This is raw e-commerce data. Orders span October 2024 to March 2026.
 
 Tables:
 - raw_customers: customer records
@@ -34,6 +35,7 @@ Tables:
 - raw_order_items: order line items
 - raw_products: product catalog
 - raw_payments: payment records
+- raw_reviews: customer product ratings (1–5 scale)
 
 Revenue is in the amount column of raw_orders or the amount column of raw_payments.
 ```
