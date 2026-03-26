@@ -69,7 +69,11 @@ FIRST_NAMES  = ["Lena", "Omar", "Priya", "Lucas", "Mei", "Tariq", "Sofia", "Aide
 LAST_NAMES   = ["Kovac", "Adeyemi", "Sharma", "Becker", "Zhang", "Hassan", "Reyes",
                 "Novak", "Tanaka", "Mendez", "Okonkwo", "Walsh", "Diallo", "Park"]
 COUNTRIES    = ["US", "CA", "GB", "DE", "FR", "IT", "ES", "NL", "AU", "JP", "KR", "BR", "IN", "MX"]
-STATUSES     = ["placed", "placed", "shipped", "completed", "completed", "completed", "returned"]
+# Only 'placed' and 'shipped' — the order management system cannot mark orders 'completed'
+# or 'returned' without a corresponding payment record. 'completed' is set by the payment
+# processor (raw_payments), which is intentionally excluded from this generator to simulate
+# a stale feed. Generating 'completed' without a payment causes assert_positive_revenue to fail.
+STATUSES     = ["placed", "placed", "placed", "shipped", "shipped"]
 PAY_METHODS  = ["credit_card", "credit_card", "credit_card", "paypal", "bank_transfer"]
 
 # ── Step 1: Occasionally add a new customer (roughly 1 per hour) ──────────────
