@@ -23,7 +23,7 @@ the column descriptions come from — code or manual entry?"
 
 ---
 
-## Part 2: The 12 Competitive Concerns
+## Part 2: The 9 Competitive Concerns
 
 ---
 
@@ -75,16 +75,24 @@ so much that notebooks are now production-ready. The argument is outdated."
 
 **What is true:** DLT pipelines running in notebooks are production-ready for
 ingestion and ETL. The auto-lineage, retry logic, and expectation framework are
-genuinely good.
+genuinely good. Notebooks CAN also add column descriptions to Unity Catalog via
+`ALTER TABLE ... CHANGE COLUMN ... COMMENT '...'` or inline `CREATE TABLE` DDL —
+this is a real capability, not a gap.
 
-**Our response:** The scalability argument was always about the governance layer,
-not just runtime reliability. The question isn't whether notebooks can run reliably
-in production — it's whether stakeholders can review, test, and audit the business
-logic that lives in them. A PySpark notebook with the revenue definition is not
-reviewable by a business analyst. A SQL file with a YAML description is.
+**Our response:** The scalability argument was never about runtime reliability or
+even whether columns can be documented. It's about the governance workflow around
+that documentation. A column comment added in a notebook cell is not version-controlled
+alongside the transformation that produces the column, not tested for accuracy,
+not PR-reviewed by the team that consumes the data, and not enforced by a schema
+contract. It can drift silently the moment someone changes the model. dbt's
+`persist_docs` pushes descriptions from the same YAML that defines the model's
+contract and tests — they are co-located, co-reviewed, and co-deployed. The
+difference is not capability, it's governance discipline at scale.
 
-**Demo proof point:** Show `databricks/notebooks/01_lakeflow_pipeline.py` alongside
-`platform/models/marts/fct_orders.sql`. Ask: "Which one can your CFO review in a PR?"
+**Demo proof point:** Show `platform/models/marts/_marts.yml` — the column description
+for `amount_paid` sits next to the `not_null` test and the `relationships` test
+for the same column. They live, change, and ship together. Ask: "In your notebook
+approach, how do you ensure the comment stays accurate when the transformation changes?"
 
 ---
 
@@ -147,46 +155,7 @@ That gap is real, regardless of what Databricks SAs say about it.
 
 ---
 
-#### 7. Team lacks deep Databricks knowledge internally
-
-**What they say:** "Your SAs don't know Databricks well enough to demo it credibly
-alongside dbt."
-
-**What is true:** This is a real gap for some dbt field teams. dbt SAs historically
-focus on dbt, not on the Databricks platform.
-
-**Our response:** This repo exists to close that gap. The Lakeflow pipeline in
-`01_lakeflow_pipeline.py` is fully commented for dbt SAs to understand. The
-`docs/architecture.md` explains the medallion architecture from a dbt-first perspective.
-The honest answer is: we know dbt better than we know Databricks — which is exactly
-why we can show where dbt adds value that Databricks's own tooling doesn't cover.
-
-**Demo proof point:** Run the full 5-act demo. The credibility comes from knowing
-BOTH systems well enough to compare them honestly.
-
----
-
-#### 8. Enablement materials outdated
-
-**What they say:** "The dbt + Databricks materials I've seen are outdated —
-they reference old Databricks features or old dbt versions."
-
-**What is true:** This was a real problem before this repo existed. Some older
-enablement materials do reference dbt Core 1.5 patterns, old Unity Catalog behavior,
-or pre-Genie workflows.
-
-**Our response:** This repo is built for dbt Fusion (1.9+) and the current
-Databricks platform (Unity Catalog, Genie, Lakeflow/DLT, Databricks Apps).
-Every code file has been tested against current versions. The semantic layer
-patterns use MetricFlow syntax. The Genie demo is against the current Genie API.
-
-**Demo proof point:** Show the dbt Cloud job run for `platform/` — it uses the Fusion
-compiler (Rust-based, dbt 1.9+), enforces `cast()` syntax, `arguments:` on all tests,
-and no `config-version`. This is not demo scaffolding — it's a production-ready project.
-
----
-
-#### 9. Governance: dbt beats DBX but hard for DBX sellers to accept
+#### 7. Governance: dbt beats DBX but hard for DBX sellers to accept
 
 **What they say:** (Internal) "DBX SAs know dbt wins on governance but they
 don't want to admit it in front of customers."
@@ -207,7 +176,7 @@ makes it a conversation.
 
 ---
 
-#### 10. Technical complexity: DBX remains highly technical despite marketing
+#### 8. Technical complexity: DBX remains highly technical despite marketing
 
 **What they say:** "Databricks markets itself as accessible to less technical users,
 but in practice it's still a complex platform. Your customers struggle with it."
@@ -226,25 +195,7 @@ PySpark. Ask: "Which one can a new team member review on day one?"
 
 ---
 
-#### 11. DBX SAs in France lack dbt knowledge
-
-**What they say:** (Regional) "DBX SAs in France don't know dbt and actively
-talk customers out of it."
-
-**What is true:** Regional variation in competitive posture is real. Some local
-Databricks teams have positioned against dbt without deep product knowledge.
-
-**Our response:** Education is the answer, not confrontation. Offer to co-present
-with Databricks SAs. Run this demo with them present. The 5-act structure shows
-Lakeflow honestly — Databricks SAs will recognize and respect the fair treatment
-of their product. The comparison only works because we're not dismissing Lakeflow.
-
-**Demo proof point:** Act 3 specifically validates Lakeflow as "better than raw."
-Databricks SAs will appreciate the honest acknowledgment of what Lakeflow does well.
-
----
-
-#### 12. Migration effort vs greenfield opportunities
+#### 9. Migration effort vs greenfield opportunities
 
 **What they say:** "Our customers are greenfield on Databricks. They're not
 migrating from dbt — they're building from scratch. Why should they add dbt?"
@@ -342,7 +293,7 @@ depending on the pattern — and for AI use cases, only one pattern ever gets th
 | First data quality test | Month 1+ (custom) | Week 1 | **Day 5** |
 | First documented column (human-readable) | Month 2+ (manual) | Week 2 | **Day 5** |
 | First CI/CD pipeline (dev → prod) | Never (manual deploy) | Month 1–2 | **Week 1** |
-| Column descriptions in Unity Catalog | Never (manual) | Week 3 (scripted) | **Day 5** (`persist_docs`) |
+| Column descriptions in Unity Catalog | Yes (manual DDL, no version control) | Week 3 (scripted) | **Day 5** (`persist_docs`, co-located with tests) |
 | Cross-team data contracts enforced | Never | Month 2–3 | **Week 2** (dbt Mesh) |
 | Semantic metric queryable by name | **Never** | **Never** | **Week 2** |
 | Genie giving governed, auditable answers | **Never** | **Never** | **Month 1** |
