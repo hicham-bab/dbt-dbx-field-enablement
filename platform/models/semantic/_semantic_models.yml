@@ -209,7 +209,8 @@ metrics:
       business-recognised figure. Use the status dimension to filter if needed.
     type: simple
     type_params:
-      measure: total_revenue
+      measure:
+        name: total_revenue
 
   - name: total_recognised_revenue
     label: "Total Recognised Revenue (USD)"
@@ -230,7 +231,8 @@ metrics:
       Denominator: count of completed orders. Numerator: sum of amount_paid.
     type: simple
     type_params:
-      measure: avg_order_value
+      measure:
+        name: avg_order_value
 
   - name: return_rate
     label: "Order Return Rate (%)"
@@ -252,7 +254,8 @@ metrics:
     description: "Distinct count of all customers in the system regardless of order activity."
     type: simple
     type_params:
-      measure: customer_count
+      measure:
+        name: customer_count
 
   - name: avg_customer_lifetime_value
     label: "Average Customer Lifetime Value (USD)"
@@ -261,7 +264,8 @@ metrics:
       Lifetime value = sum of all successful payments, regardless of order status.
     type: simple
     type_params:
-      measure: avg_lifetime_value
+      measure:
+        name: avg_lifetime_value
 
   - name: revenue_per_customer
     label: "Revenue per Customer (USD)"
@@ -281,21 +285,24 @@ metrics:
     description: "Count of all orders regardless of status."
     type: simple
     type_params:
-      measure: order_count
+      measure:
+        name: order_count
 
   - name: completed_orders
     label: "Completed Orders"
     description: "Count of orders with status = 'completed'."
     type: simple
     type_params:
-      measure: completed_order_count
+      measure:
+        name: completed_order_count
 
   - name: total_items_sold
     label: "Total Items Sold"
     description: "Sum of line items across all orders in scope."
     type: simple
     type_params:
-      measure: total_items
+      measure:
+        name: total_items
 
   # ── Product metrics ────────────────────────────────────────────────────────
   - name: total_products
@@ -303,11 +310,13 @@ metrics:
     description: "Distinct count of all products in the catalog."
     type: simple
     type_params:
-      measure: product_count
+      measure:
+        name: product_count
 
   - name: avg_product_price
     label: "Average Product Price (USD)"
     description: "Average list price across all products in the catalog."
     type: simple
     type_params:
-      measure: avg_unit_price
+      measure:
+        name: avg_unit_price

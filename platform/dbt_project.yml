@@ -34,6 +34,3 @@ models:
         relation: true
         columns: true
 
-    semantic:
-      +materialized: view
-      +access: protected
