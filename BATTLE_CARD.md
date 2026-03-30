@@ -473,3 +473,156 @@ performance, support, and the AI roadmap. For a company that plans to use Genie
 and build AI infrastructure on Databricks, the ROI calculation is straightforward:
 the time saved on self-managed infrastructure + the cost of wrong Genie answers
 from ungoverned metadata far exceeds the license cost in the first year.
+
+---
+
+## Part 6: The MVP Decision — Why the Native Databricks dbt Task Is a False Start
+
+This is the section to use when a customer says: "We'll start with the native dbt
+task in Databricks Jobs — it's free, it's built-in, and we just need something
+working for the MVP. We'll evaluate dbt Cloud later."
+
+The argument is not that the native task is broken. It works. The argument is that
+it optimises for the wrong thing — it minimises week-one cost while maximising
+month-three cost. By the time the customer realises what they're missing, they're
+in the middle of a live project and the migration is disruptive.
+
+---
+
+### What the Native dbt Task Actually Is
+
+Before the argument, be precise. The native Databricks dbt task ("Configure and run
+dbt projects on Databricks") is **dbt Core running on Databricks compute**,
+orchestrated by Databricks Jobs. It is not a reduced version of dbt Cloud. It is
+a completely different product with a different ceiling:
+
+| | Native dbt Task | dbt Platform (Cloud) |
+|---|---|---|
+| Executes dbt commands | Yes | Yes |
+| Managed IDE with lineage | No | Yes (Cloud IDE) |
+| CI/CD dev → staging → prod | Manual (job parameters) | Yes (managed environments) |
+| `dbt docs` browseable as UI | No (raw JSON artifacts) | Yes (Explorer) |
+| Column-level lineage | No | Yes |
+| Data health tiles (test status per model) | No | Yes |
+| Semantic Layer JDBC endpoint | **No** | **Yes** |
+| Genie queries governed metrics by name | **No** | **Yes** |
+| dbt Fusion (Rust compiler) | No | Yes |
+| Support SLA | No | Yes |
+| AI roadmap (Copilot, MCP server) | No | Yes |
+
+The native task gives you the bottom row of that table — execution — and nothing above it.
+
+---
+
+### The MVP Timeline Where It Breaks
+
+A typical Databricks MVP runs 6–8 weeks. Here is where the native dbt task fails, and
+when, in the context of a real customer engagement:
+
+**Week 1–2: Setup**
+The native task looks fine. You connect a Git repo, point it at a SQL Warehouse,
+write a `profiles.yml`, and run `dbt build`. It works. No visible difference yet.
+
+Hidden cost already accumulating:
+- No managed dev environment — each developer points at the same schema unless
+  you manually set up per-user overrides in `profiles.yml` and pass `--target dev`
+  in every run. One developer's test run overwrites another's.
+- No CI/CD — every PR merge deploys to prod immediately unless someone builds
+  a custom job-per-branch setup. This takes days to get right.
+- The dbt Cloud IDE setup takes 2 hours. The native task equivalent (Git sync,
+  custom compute, per-developer profiles, CI job) takes 2–3 days.
+
+**Week 3–4: Building models**
+Still fine. `dbt run`, `dbt test`, `dbt build` all work. `persist_docs` pushes
+column descriptions to Unity Catalog. The team feels productive.
+
+Hidden cost still accumulating:
+- No Explorer means no one can browse the model graph, see what depends on what,
+  or check which tests are failing across the project without reading raw JSON.
+- Column-level lineage doesn't exist. When someone asks "where does `amount_paid`
+  come from?", the answer is "read the SQL."
+- Every `dbt docs generate` produces artifacts archived in the job run — not
+  browseable, not shareable, not discoverable by the business.
+
+**Week 5–6: Connecting Genie — the moment it breaks**
+
+This is the demo week. The customer invites business users and leadership to see
+Genie answer questions from the new mart tables. This is the MVP milestone that
+justifies the project.
+
+What happens:
+1. The team adds `fct_orders`, `dim_customers`, `dim_products` to the Genie Space.
+2. `persist_docs` has populated some UC column descriptions. Genie reads them.
+3. A business user asks: **"What was total revenue last month?"**
+4. Genie generates SQL. Without a Semantic Layer, it guesses. It might pick
+   `SUM(amount)` from raw orders. Or `SUM(amount_paid)` including returned orders.
+   Or it might get lucky and pick the right column this time and the wrong one next time.
+5. The Finance lead asks: "Is this the same number as in our dashboard?"
+6. It isn't. The dashboard excludes returned orders. Genie didn't know to.
+7. Someone asks: "How do we make sure Genie always uses the right definition?"
+8. The answer, with the native dbt task, is: **you can't.** There is no Semantic
+   Layer. There is no named metric. There is no JDBC endpoint. Genie will always
+   generate raw SQL from column descriptions, and it will always be inconsistent.
+
+This is not a week-6 problem that can be fixed in week 7. It is an architectural
+decision made in week 1 that cannot be resolved without migrating to dbt Cloud.
+
+**The migration cost at week 6:**
+
+If the customer decides to add dbt Cloud at this point, they are not doing a
+"lift and shift." They are doing a rebuild:
+- Reconnect the dbt Cloud project to the same Git repo (straightforward)
+- Re-configure dev/staging/prod environments in dbt Cloud (1–2 days)
+- Re-create all Databricks Jobs to point at dbt Cloud instead of the native task
+- Add `_semantic_models.yml` with semantic models and metrics (1 sprint)
+- Enable the Semantic Layer in dbt Cloud project settings
+- Create service tokens and reconnect Genie to the JDBC endpoint
+- Re-test all Genie queries against the new metric definitions
+- Retrain business users on the new, consistent Genie answers
+
+Estimated cost: **2–3 weeks of a data engineer + SA time**, in the middle of an
+MVP that was supposed to demonstrate value to the business. Instead of celebrating
+the MVP, the team is explaining why they need more time and budget.
+
+---
+
+### The Correct Framing for the Customer
+
+Do not frame this as "the native task is bad." Frame it as a timing argument:
+
+> "The native dbt task is a legitimate tool for teams that have no BI or AI
+> ambitions — they just want transformations to run. But you're on Databricks,
+> you're deploying Genie, and you're planning to use AI. The Semantic Layer is
+> not an advanced feature you add later. It's the foundation that makes Genie
+> trustworthy. Setting it up takes one afternoon in dbt Cloud. Migrating to it
+> after the MVP takes two weeks. The question is when you want to pay that cost."
+
+The conversation then becomes: **what does the Semantic Layer setup cost on day one?**
+
+- Create a dbt Cloud project: 30 minutes
+- Connect to Databricks via OAuth: 30 minutes
+- Enable the Semantic Layer in project settings: 5 minutes
+- Add `_semantic_models.yml` with 3 semantic models and 10 metrics: half a day
+- Connect Genie via JDBC: 30 minutes
+
+Total: **1 day.** The same day the team would have spent configuring the native
+task's `profiles.yml`, CI job, and per-developer environment overrides — and still
+not have the Semantic Layer at the end of it.
+
+---
+
+### The One Slide Version
+
+If you need to put this in a deck, the message is three numbers:
+
+| | Native dbt Task MVP | dbt Platform MVP |
+|---|---|---|
+| **Week-1 setup cost** | ~3 days (manual CI, profiles, environments) | ~1 day (managed) |
+| **Week-6 Genie demo** | Inconsistent answers, no governed metrics | Governed metrics, auditable answers |
+| **Migration cost if you switch at week 6** | 2–3 weeks rebuild | — |
+
+Starting with the native task saves approximately **2 days** in week 1.
+It costs approximately **2–3 weeks** in week 6 if you need the Semantic Layer —
+which you do, the moment you connect Genie to your dbt models.
+
+The MVP is not cheaper with the native task. It is deferred payment with interest.
