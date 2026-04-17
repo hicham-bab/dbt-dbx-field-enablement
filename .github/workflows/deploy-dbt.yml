@@ -40,9 +40,28 @@ env:
   DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
 
 jobs:
+  # Step 0: Check if Databricks secrets are configured
+  check-secrets:
+    name: Check Databricks Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      has_secrets: ${{ steps.check.outputs.has_secrets }}
+    steps:
+      - name: Check for Databricks secrets
+        id: check
+        run: |
+          if [ -n "${{ secrets.DATABRICKS_HOST }}" ] && [ -n "${{ secrets.DATABRICKS_CLIENT_ID }}" ] && [ -n "${{ secrets.DATABRICKS_CLIENT_SECRET }}" ]; then
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Databricks deployment — repository secrets (DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET) are not configured. See SETUP.md for instructions."
+          fi
+
   # Step 1: Validate the bundle configuration
   validate:
     name: Validate Bundle
+    needs: check-secrets
+    if: needs.check-secrets.outputs.has_secrets == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
