@@ -1,0 +1,95 @@
+# CI/CD pipeline for deploying dbt to Databricks via Asset Bundles
+# See docs/dabs_cicd_guide.md for the full guide
+#
+# Prerequisites:
+#   1. Create a Databricks service principal (sp-dbt-production)
+#   2. Add these GitHub repository secrets:
+#      - DATABRICKS_HOST: your-workspace.cloud.databricks.com
+#      - DATABRICKS_CLIENT_ID: service principal client ID
+#      - DATABRICKS_CLIENT_SECRET: service principal client secret
+#   3. Create GitHub environments: "development" and "production"
+#      (production should require manual approval)
+
+name: Deploy dbt to Databricks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'platform/**'
+      - 'marketing/**'
+      - 'finance/**'
+      - 'data_science/**'
+      - 'databricks.yml'
+      - 'resources/**'
+      - 'dbt_profiles/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'platform/**'
+      - 'marketing/**'
+      - 'finance/**'
+      - 'data_science/**'
+      - 'databricks.yml'
+      - 'resources/**'
+      - 'dbt_profiles/**'
+
+env:
+  DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+  DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+  DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+
+jobs:
+  # Step 1: Validate the bundle configuration
+  validate:
+    name: Validate Bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Validate bundle configuration
+        run: databricks bundle validate -t dev
+
+  # Step 2a: Deploy to dev on pull requests
+  deploy-dev:
+    name: Deploy to Dev
+    needs: validate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy bundle to dev
+        run: databricks bundle deploy -t dev
+
+      - name: Run dbt build (dev)
+        run: databricks bundle run -t dev platform_dbt_job
+
+  # Step 2b: Deploy to production on merge to main
+  deploy-prod:
+    name: Deploy to Production
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Deploy bundle to production
+        run: databricks bundle deploy -t prod
+
+      - name: Trigger production dbt job
+        run: databricks bundle run -t prod platform_dbt_job

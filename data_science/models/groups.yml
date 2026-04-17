@@ -1,0 +1,5 @@
+groups:
+  - name: data_science_team
+    owner:
+      name: "Data Science Team"
+      email: "ds-team@company.com"

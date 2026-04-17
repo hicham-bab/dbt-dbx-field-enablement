@@ -1,0 +1,75 @@
+# Declarative Asset Bundle configuration for dbt + Databricks
+# See docs/dabs_cicd_guide.md for the full guide
+#
+# Usage:
+#   databricks bundle validate -t dev
+#   databricks bundle deploy -t dev
+#   databricks bundle deploy -t prod
+#   databricks bundle run -t dev platform_dbt_job
+
+bundle:
+  name: dbt_dbx_field_enablement
+
+# Include all resource definitions from the resources/ directory
+include:
+  - resources/*.yml
+
+# Workspace configuration
+# Replace with your Databricks workspace URL
+workspace:
+  host: https://your-workspace.cloud.databricks.com
+
+# Variables for environment-specific configuration
+# These are referenced in resources/*.yml as ${var.warehouse_id}, etc.
+variables:
+  warehouse_id:
+    description: SQL Warehouse ID for dbt execution
+  catalog:
+    description: Unity Catalog catalog name
+  schema:
+    description: Default schema name for dbt models
+
+# Environment-specific targets
+targets:
+  # Development target -- used for local development and PR builds
+  dev:
+    mode: development
+    default: true
+    workspace:
+      root_path: ~/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      # Replace with your dev SQL Warehouse ID
+      # Find it: SQL Warehouses > your warehouse > Connection details > HTTP path
+      # The warehouse ID is the hex string at the end of the HTTP path
+      warehouse_id: REPLACE_WITH_DEV_WAREHOUSE_ID
+      catalog: enablement
+      schema: ecommerce_dev_${workspace.current_user.short_name}
+
+  # Production target -- used for scheduled production runs
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/.bundles/${bundle.name}/${bundle.target}
+    # Service principal for production -- never personal credentials
+    # Create via: Databricks > Settings > Identity and access > Service principals
+    run_as:
+      service_principal_name: sp-dbt-production
+    variables:
+      # Replace with your prod SQL Warehouse ID
+      warehouse_id: REPLACE_WITH_PROD_WAREHOUSE_ID
+      catalog: enablement
+      schema: ecommerce
+
+# Exclude unnecessary files from deployment to keep bundle size small
+sync:
+  exclude:
+    - "*.csv"
+    - "*.parquet"
+    - "target/"
+    - ".venv/"
+    - "node_modules/"
+    - ".git/"
+    - "**/__pycache__"
+    - "docs/"
+    - "databricks/app/"
+    - ".github/"

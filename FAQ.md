@@ -146,6 +146,42 @@ local development but are not used by dbt Cloud jobs.
 
 ---
 
+## Deployment Questions
+
+**Q: Can we deploy dbt to Databricks using Asset Bundles instead of dbt Cloud?**
+
+Yes. This repo includes a full Declarative Asset Bundle configuration
+(`databricks.yml` + `resources/dbt_job.yml`) and a GitHub Actions CI/CD
+pipeline (`.github/workflows/deploy-dbt.yml`). See `docs/dabs_cicd_guide.md`
+for the complete guide.
+
+Asset Bundles handle the deployment/execution layer: defining dbt jobs as
+infrastructure-as-code, deploying to dev/prod targets, and triggering builds
+from CI/CD. However, they deploy dbt Core on Databricks compute -- **not**
+dbt Cloud. This means the Semantic Layer, Explorer, Mesh cross-project refs,
+and Fusion compiler are not available.
+
+For customers who need both IaC deployment and governance, the hybrid pattern
+works: Asset Bundles manage the infrastructure, dbt Cloud manages the
+governance layer. See `docs/dabs_cicd_guide.md` Part 8.
+
+---
+
+**Q: What are Declarative Asset Bundles? Are they different from Databricks Asset Bundles?**
+
+Declarative Asset Bundles are the current evolution of Databricks Asset Bundles
+(DABs). Same CLI (`databricks bundle`), same manifest format (`databricks.yml`),
+but with enhanced capabilities: stateful deployments, drift detection,
+incremental sync, and richer variable expressions.
+
+The key improvement for dbt deployments: incremental sync means only changed
+model files are uploaded on each `bundle deploy`, and `bundle validate` can
+detect when workspace resources have drifted from your declared state.
+
+See `docs/dabs_cicd_guide.md` Part 7 for the full comparison.
+
+---
+
 ## Competitive Questions
 
 **Q: Databricks now has Metric Views — is the dbt Semantic Layer still relevant?**

@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: product_affinity_pairs
+    description: >
+      Payment method co-usage affinity analysis.
+      Identifies which payment methods are frequently used by the same customers,
+      with average spend per method. Python model on Databricks via PySpark.
+      Demonstrates a use case that is inherently Python-native (combinatorial
+      pair generation) while still participating in the governed dbt DAG.
+    config:
+      group: data_science_team
+    columns:
+      - name: method_a
+        description: "First payment method in the pair (alphabetically)."
+        tests:
+          - not_null
+      - name: method_b
+        description: "Second payment method in the pair (alphabetically)."
+        tests:
+          - not_null
+      - name: shared_customers
+        description: "Number of customers who have used both payment methods."
