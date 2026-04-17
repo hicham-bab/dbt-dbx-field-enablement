@@ -34,11 +34,27 @@
 
 # COMMAND ----------
 
-# -- Configure your namespace here to avoid collisions with other users --
+# -- Auto-derive per-user namespace to avoid collisions in classroom settings --
+# Each user gets their own schema: ecommerce_<username> (e.g. ecommerce_alice_martin)
+# Override via widgets if you need a custom name.
+_user_email = spark.sql("SELECT current_user()").first()[0]
+_user_suffix = _user_email.split("@")[0].replace(".", "_").replace("-", "_").lower()
+
 dbutils.widgets.text("catalog", "enablement", "Catalog Name")
-dbutils.widgets.text("schema", "ecommerce", "Schema Name")
+dbutils.widgets.text("schema", f"ecommerce_{_user_suffix}", "Schema Name")
 CATALOG = dbutils.widgets.get("catalog")
 SCHEMA = dbutils.widgets.get("schema")
+
+print(f"=== Your namespace: {CATALOG}.{SCHEMA} ===")
+print(f"=== User: {_user_email} ===")
+print(f"")
+print(f"For dbt, set in your .env:")
+print(f"  DBT_CATALOG={CATALOG}")
+print(f"  DBT_SCHEMA={SCHEMA}")
+print(f"")
+print(f"For DLT pipelines, add to pipeline configuration:")
+print(f"  source_catalog = {CATALOG}")
+print(f"  source_schema  = {SCHEMA}")
 
 # COMMAND ----------
 
