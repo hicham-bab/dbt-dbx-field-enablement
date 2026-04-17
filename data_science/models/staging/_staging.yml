@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: stg_customer_order_history
+    description: >
+      Staging view joining platform dim_customers and fct_orders via dbt Mesh.
+      Provides a customer-order grain for downstream Python feature models.
+      Uses cross-project refs — if platform changes a column contract,
+      this build fails before any incorrect features are computed.
+    config:
+      group: data_science_team

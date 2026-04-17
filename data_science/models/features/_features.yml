@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: rfm_customer_features
+    description: >
+      RFM (Recency, Frequency, Monetary) feature engineering.
+      Python model running on Databricks via PySpark.
+      Consumes platform marts through dbt Mesh cross-project refs.
+      Produces quintile scores (1-5) for each RFM dimension plus a composite score.
+    config:
+      group: data_science_team
+    columns:
+      - name: customer_id
+        description: "Foreign key to platform.dim_customers."
+        tests:
+          - not_null
+          - unique
+      - name: recency_days
+        description: "Days since the customer's last order."
+      - name: frequency
+        description: "Number of completed orders."
+      - name: monetary_value
+        description: "Total spend on completed orders (USD)."
+      - name: r_score
+        description: "Recency quintile score (1=worst, 5=most recent)."
+      - name: f_score
+        description: "Frequency quintile score (1=fewest, 5=most orders)."
+      - name: m_score
+        description: "Monetary quintile score (1=lowest spend, 5=highest)."
+      - name: rfm_score
+        description: "Composite R+F+M score (3=lowest value, 15=highest value)."
+
+  - name: customer_churn_features
+    description: >
+      Churn prediction feature vector. One row per customer with behavioral,
+      temporal, and spend features. The is_churned label uses a 90-day
+      inactivity threshold. Python model on Databricks via PySpark.
+      Consumes platform marts through dbt Mesh — same governed definitions
+      used by marketing and finance.
+    config:
+      group: data_science_team
+    columns:
+      - name: customer_id
+        description: "Foreign key to platform.dim_customers."
+        tests:
+          - not_null
+          - unique
+      - name: is_churned
+        description: "True if the customer has not ordered in the last 90 days."
+      - name: days_since_last_order
+        description: "Days since last order. Core recency signal."
+      - name: avg_days_between_orders
+        description: "Average inter-order gap. Regularity signal."
+      - name: return_rate
+        description: "Fraction of orders returned (0-1). Satisfaction signal."
+      - name: total_spend
+        description: "Total amount paid across all orders (USD)."

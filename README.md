@@ -18,10 +18,15 @@ dbt Mesh governance, and an honest Databricks Metric Views comparison.
 | `platform/` | Producer dbt project (Fusion-conformant, contracts, semantic layer) |
 | `marketing/` | Consumer dbt project — cross-project refs from platform |
 | `finance/` | Consumer dbt project — cross-project refs from platform |
+| `data_science/` | Consumer dbt project — Python models, DS features via Mesh |
 | `databricks/notebooks/` | Setup + Lakeflow pipeline + Metric Views SQL + data generator + Mesh equivalent demo |
 | `databricks/genie/` | Genie Space configs + demo queries for all 3 acts |
 | `databricks/app/` | Streamlit app (4 tabs) for the Databricks App deployment |
-| `docs/` | Architecture diagrams, Mesh explainer, Fusion cheat sheet |
+| `docs/` | Architecture diagrams, Mesh explainer, Fusion cheat sheet, DABs CI/CD guide |
+| `databricks.yml` | Declarative Asset Bundle configuration (IaC for Databricks Jobs) |
+| `resources/` | Bundle resource definitions (dbt job YAML) |
+| `dbt_profiles/` | dbt profiles for Asset Bundle deployments (OAuth M2M) |
+| `.github/workflows/` | CI/CD pipeline (GitHub Actions: validate -> deploy -> run) |
 
 ---
 
@@ -48,13 +53,14 @@ Expected: 13 tables created (5 bronze + 5 silver + 3 gold).
 
 In dbt Cloud:
 1. Create a Databricks connection (host, HTTP path, token)
-2. Create 3 projects: `platform`, `marketing`, `finance` — each pointing to the corresponding subdirectory (or separate repos)
-3. Set project dependencies: `marketing` and `finance` both depend on `platform`
+2. Create 4 projects: `platform`, `marketing`, `finance`, `data_science` — each pointing to the corresponding subdirectory (or separate repos)
+3. Set project dependencies: `marketing`, `finance`, and `data_science` all depend on `platform`
 4. Run the `platform - full build` job first, then consumer jobs
 
 Expected: `dim_customers`, `dim_products`, `fct_orders` in `enablement.ecommerce`;
 `mart_customer_segments`, `mart_country_performance` in `enablement.ecommerce_marketing`;
-`fct_revenue`, `fct_revenue_by_product` in `enablement.ecommerce_finance`.
+`fct_revenue`, `fct_revenue_by_product` in `enablement.ecommerce_finance`;
+`rfm_customer_features`, `customer_churn_features`, `product_affinity_pairs` in `enablement.ecommerce_data_science`.
 
 ### Step 4: Create Metric Views
 
@@ -84,10 +90,39 @@ Open `DEMO_SCRIPT.md` and follow the 5-act structure.
 Raw Delta Tables → dbt Cloud (Fusion compiler) → Tested Marts → Semantic Layer → Genie
                       ↓               ↓
                Lakeflow DLT    dbt Mesh Consumers
-               (Bronze/Silver)  (marketing, finance)
+               (Bronze/Silver)  (marketing, finance, data_science)
+                                        ↑
+                                  Python models (PySpark)
+                                  on Databricks compute
 ```
 
 See `docs/architecture.md` for the full ASCII + Mermaid diagrams.
+
+---
+
+## Deployment Options
+
+This repo supports two deployment paths:
+
+| Method | Best for | Guide |
+|---|---|---|
+| **dbt Cloud** (recommended) | Full governance: Semantic Layer, Explorer, Mesh, Fusion, CI/CD | `SETUP.md` Part D |
+| **Declarative Asset Bundles + CI/CD** | Self-managed IaC deployment on Databricks Workflows | `docs/dabs_cicd_guide.md` |
+
+The Asset Bundle path deploys dbt Core on Databricks compute via `databricks.yml`
+and a GitHub Actions pipeline. It handles execution but does **not** include
+the Semantic Layer, Explorer, or Mesh -- those require dbt Cloud.
+
+For the 5-act demo, use dbt Cloud. For customers who want IaC-managed
+deployment alongside dbt Cloud, use both (see the hybrid pattern in
+`docs/dabs_cicd_guide.md` Part 8).
+
+```bash
+# Quick start with Asset Bundles (after configuring databricks.yml)
+databricks bundle validate -t dev
+databricks bundle deploy -t dev
+databricks bundle run -t dev platform_dbt_job
+```
 
 ---
 
@@ -116,6 +151,14 @@ dbt-dbx-field-enablement/
 ├── BATTLE_CARD.md
 ├── METRIC_VIEWS_COMPARISON.md
 ├── FAQ.md
+├── databricks.yml               # Declarative Asset Bundle config
+├── resources/
+│   └── dbt_job.yml              # dbt job definition (IaC)
+├── dbt_profiles/
+│   └── profiles.yml             # Profiles for bundle deployment (OAuth)
+├── .github/
+│   └── workflows/
+│       └── deploy-dbt.yml       # CI/CD pipeline (GitHub Actions)
 ├── platform/                    # Producer dbt project
 │   ├── dbt_project.yml
 │   ├── packages.yml
@@ -142,6 +185,18 @@ dbt-dbx-field-enablement/
 │   └── models/
 │       ├── fct_revenue.sql
 │       └── fct_revenue_by_product.sql
+├── data_science/                # Consumer dbt project (Mesh + Python models)
+│   ├── dbt_project.yml
+│   ├── dependencies.yml
+│   ├── profiles.yml
+│   └── models/
+│       ├── staging/
+│       │   └── stg_customer_order_history.sql
+│       ├── features/
+│       │   ├── rfm_customer_features.py      (PySpark RFM scoring)
+│       │   └── customer_churn_features.py    (PySpark churn features)
+│       └── marts/
+│           └── product_affinity_pairs.py     (PySpark affinity analysis)
 ├── databricks/
 │   ├── notebooks/
 │   │   ├── 00_setup_raw_data.py
@@ -150,7 +205,8 @@ dbt-dbx-field-enablement/
 │   │   ├── 03_data_generator.py
 │   │   ├── 04_lakeflow_mesh_equivalent.py  (reference — combined Python view)
 │   │   ├── 04a_lakeflow_marketing.sql      (marketing team pipeline — SQL)
-│   │   └── 04b_lakeflow_finance.sql        (finance team pipeline — SQL)
+│   │   ├── 04b_lakeflow_finance.sql        (finance team pipeline — SQL)
+│   │   └── 05a_lakeflow_data_science.py   (DS team pipeline — duplication contrast)
 │   ├── genie/
 │   │   ├── genie_raw_instructions.md
 │   │   ├── genie_lakeflow_instructions.md
@@ -160,10 +216,12 @@ dbt-dbx-field-enablement/
 │       ├── app.py
 │       ├── app.yml
 │       └── requirements.txt
-└── docs/
-    ├── architecture.md
-    ├── mesh_explainer.md
-    └── fusion_cheat_sheet.md
+├── docs/
+│   ├── architecture.md
+│   ├── mesh_explainer.md
+│   ├── fusion_cheat_sheet.md
+│   └── dabs_cicd_guide.md          # DABs + CI/CD guide with Declarative comparison
+└── .gitignore
 ```
 
 ---
@@ -173,8 +231,10 @@ dbt-dbx-field-enablement/
 - [ ] dbt Cloud: `platform - full build` job → green, 10 models, all tests pass
 - [ ] dbt Cloud: `marketing - full build` job → green, 2 models in `enablement.ecommerce_marketing`
 - [ ] dbt Cloud: `finance - full build` job → green, 2 models in `enablement.ecommerce_finance`
+- [ ] dbt Cloud: `data_science - full build` job → green, 4 models in `enablement.ecommerce_data_science`
 - [ ] Lakeflow pipeline → 13 tables in `enablement.ecommerce_lakeflow`
 - [ ] Lakeflow marketing + finance pipelines → 4 tables across 2 schemas (contrast demo)
+- [ ] Lakeflow data science pipeline → 2 tables in `enablement.ecommerce_lakeflow_ds` (Act 4f contrast)
 - [ ] `02_metric_views.sql` → views created in `enablement.ecommerce_metric_views`
 - [ ] All 3 Genie Spaces created and returning answers to demo queries
 - [ ] Databricks App deployed, all 4 tabs rendering

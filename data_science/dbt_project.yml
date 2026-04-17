@@ -1,0 +1,24 @@
+name: data_science
+version: '1.0.0'
+require-dbt-version: [">=1.9.0"]
+
+profile: data_science
+model-paths: ["models"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  data_science:
+    staging:
+      +materialized: view
+    features:
+      +materialized: table
+      +persist_docs:
+        relation: true
+        columns: true
+    marts:
+      +materialized: table
+      +persist_docs:
+        relation: true
+        columns: true

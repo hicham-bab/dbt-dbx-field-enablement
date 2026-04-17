@@ -1,0 +1,93 @@
+# dbt Job definition for Databricks Asset Bundles
+# Deploys the platform dbt project as a Databricks Workflow
+# See docs/dabs_cicd_guide.md for the full guide
+
+resources:
+  jobs:
+    platform_dbt_job:
+      name: "dbt platform build - ${bundle.target}"
+      description: >
+        Runs the platform dbt project: deps -> seed -> run -> test.
+        Builds staging views, intermediate models, and mart tables
+        in enablement.${var.schema}.
+
+      # Prevent concurrent runs -- dbt models write to shared tables
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+
+      # Notify on failure -- replace with your team's distribution list
+      email_notifications:
+        on_failure:
+          - ${workspace.current_user.userName}
+
+      # Production schedule: daily at 2 AM UTC
+      # Pause in dev to avoid accidental runs
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: "UTC"
+        pause_status: UNPAUSED
+
+      # Task chain: deps -> seed -> run -> test
+      tasks:
+        - task_key: dbt_deps
+          description: "Install dbt packages (dbt_utils, dbt_expectations)"
+          environment_key: serverless_dbt_env
+          dbt_task:
+            project_directory: ./platform
+            profiles_directory: ./dbt_profiles
+            commands:
+              - "dbt deps"
+            warehouse_id: ${var.warehouse_id}
+            catalog: ${var.catalog}
+            schema: ${var.schema}
+
+        - task_key: dbt_seed
+          description: "Load seed data (if any)"
+          environment_key: serverless_dbt_env
+          depends_on:
+            - task_key: dbt_deps
+          dbt_task:
+            project_directory: ./platform
+            profiles_directory: ./dbt_profiles
+            commands:
+              - "dbt seed"
+            warehouse_id: ${var.warehouse_id}
+            catalog: ${var.catalog}
+            schema: ${var.schema}
+
+        - task_key: dbt_run
+          description: "Run all dbt models (staging -> intermediate -> marts)"
+          environment_key: serverless_dbt_env
+          depends_on:
+            - task_key: dbt_seed
+          dbt_task:
+            project_directory: ./platform
+            profiles_directory: ./dbt_profiles
+            commands:
+              - "dbt run"
+            warehouse_id: ${var.warehouse_id}
+            catalog: ${var.catalog}
+            schema: ${var.schema}
+
+        - task_key: dbt_test
+          description: "Run all dbt tests (schema tests + custom tests)"
+          environment_key: serverless_dbt_env
+          depends_on:
+            - task_key: dbt_run
+          dbt_task:
+            project_directory: ./platform
+            profiles_directory: ./dbt_profiles
+            commands:
+              - "dbt test"
+            warehouse_id: ${var.warehouse_id}
+            catalog: ${var.catalog}
+            schema: ${var.schema}
+
+      # Serverless compute environment with dbt dependencies
+      # dbt-core and dbt-databricks are installed automatically
+      environments:
+        - environment_key: serverless_dbt_env
+          spec:
+            dependencies:
+              - dbt-core==1.10.15
+              - dbt-databricks>=1.8.0,<2.0.0

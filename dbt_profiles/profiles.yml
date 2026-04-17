@@ -1,0 +1,40 @@
+# dbt profiles for Databricks Asset Bundle deployment
+# This file is used by the dbt task in the Databricks Job (not by dbt Cloud)
+#
+# The dbt_task in resources/dbt_job.yml sets warehouse_id, catalog, and schema
+# directly via task parameters. This profile provides the connection details
+# and authentication method.
+#
+# For dbt Cloud deployments, use the managed connection in dbt Cloud settings.
+# For local CLI development, use platform/profiles.yml instead.
+
+platform:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: databricks
+      catalog: "{{ env_var('DBT_CATALOG', 'enablement') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'ecommerce') }}"
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      # User-to-Machine OAuth for interactive development
+      auth_type: oauth
+      threads: 4
+      connect_retries: 3
+      connect_timeout: 10
+      retry_all: true
+
+    prod:
+      type: databricks
+      catalog: "{{ env_var('DBT_CATALOG', 'enablement') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'ecommerce') }}"
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      # Machine-to-Machine OAuth for CI/CD and scheduled runs
+      auth_type: oauth-m2m
+      client_id: "{{ env_var('DATABRICKS_CLIENT_ID') }}"
+      client_secret: "{{ env_var('DATABRICKS_CLIENT_SECRET') }}"
+      threads: 8
+      connect_retries: 3
+      connect_timeout: 10
+      retry_all: true
