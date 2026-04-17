@@ -8,9 +8,10 @@
 --
 -- Pipeline configuration:
 -- 1. Jobs & Pipelines → Create → ETL pipeline
--- 2. In the dialog: name = ecommerce-lakeflow-demo, catalog = enablement, schema = ecommerce_lakeflow → Create
--- 3. On the "Next step" screen → Add existing assets → select this file → Add
--- 4. Click Start — creates all 13 tables (5 bronze + 5 silver + 3 gold)
+-- 2. In the dialog: name = ecommerce-lakeflow-demo, catalog = <your_catalog>, schema = <your_schema>_lakeflow → Create
+-- 3. In pipeline settings → Configuration, add: source_catalog = <your_catalog>, source_schema = <your_schema>
+-- 4. On the "Next step" screen → Add existing assets → select this file → Add
+-- 5. Click Start — creates all 13 tables (5 bronze + 5 silver + 3 gold)
 
 
 -- =============================================================================
@@ -28,27 +29,27 @@
 CREATE OR REFRESH STREAMING TABLE bronze_customers
 COMMENT "Raw customer data ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_customers);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_customers);
 
 CREATE OR REFRESH STREAMING TABLE bronze_orders
 COMMENT "Raw order records ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_orders);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_orders);
 
 CREATE OR REFRESH STREAMING TABLE bronze_order_items
 COMMENT "Raw order line items ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_order_items);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_order_items);
 
 CREATE OR REFRESH STREAMING TABLE bronze_products
 COMMENT "Raw product catalog ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_products);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_products);
 
 CREATE OR REFRESH STREAMING TABLE bronze_payments
 COMMENT "Raw payment transactions ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_payments);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_payments);
 
 
 -- =============================================================================

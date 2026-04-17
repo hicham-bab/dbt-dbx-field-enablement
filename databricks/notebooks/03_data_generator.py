@@ -40,8 +40,10 @@ from decimal import Decimal
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-CATALOG = "enablement"
-SCHEMA  = "ecommerce"
+dbutils.widgets.text("catalog", "enablement", "Catalog Name")
+dbutils.widgets.text("schema", "ecommerce", "Schema Name")
+CATALOG = dbutils.widgets.get("catalog")
+SCHEMA  = dbutils.widgets.get("schema")
 
 # Number of new orders to insert per run (randomised for realism)
 NEW_ORDERS_PER_RUN = random.randint(2, 4)

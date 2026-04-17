@@ -42,6 +42,7 @@ targets:
       # Find it: SQL Warehouses > your warehouse > Connection details > HTTP path
       # The warehouse ID is the hex string at the end of the HTTP path
       warehouse_id: REPLACE_WITH_DEV_WAREHOUSE_ID
+      # Change 'enablement' to your catalog to avoid collisions
       catalog: enablement
       schema: ecommerce_dev_${workspace.current_user.short_name}
 
@@ -57,6 +58,7 @@ targets:
     variables:
       # Replace with your prod SQL Warehouse ID
       warehouse_id: REPLACE_WITH_PROD_WAREHOUSE_ID
+      # Change 'enablement' to your catalog to avoid collisions
       catalog: enablement
       schema: ecommerce
 

@@ -32,6 +32,11 @@ from pyspark.sql.functions import (
     max as _max
 )
 
+# Source catalog/schema for upstream gold tables — set via DLT pipeline configuration.
+# Each user should set: source_catalog, source_lakeflow_schema in pipeline settings.
+SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
+SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow")
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -66,8 +71,8 @@ from pyspark.sql.functions import (
 def marketing_customer_segments():
     # Hardcoded string — no compile-time validation, no access control.
     # dbt Mesh equivalent: {{ ref('platform', 'dim_customers') }}
-    customers = spark.read.table("enablement.ecommerce_lakeflow.gold_dim_customers")
-    orders    = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+    customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
+    orders    = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
     recency = (
         orders
@@ -127,8 +132,8 @@ def marketing_customer_segments():
 )
 def marketing_country_performance():
     # DUPLICATION: revenue recognition rule (status = 'completed') also in gold_fct_revenue
-    orders    = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
-    customers = spark.read.table("enablement.ecommerce_lakeflow.gold_dim_customers")
+    orders    = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
+    customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
 
     completed = orders.filter(col("status") == "completed")
 

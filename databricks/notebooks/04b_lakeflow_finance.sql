@@ -24,7 +24,7 @@
 -- Table 1: finance_fct_revenue
 --
 -- dbt Mesh equivalent: finance.fct_revenue (8 lines, validated ref)
--- Lakeflow reads from: enablement.ecommerce_lakeflow.gold_fct_orders (hardcoded)
+-- Lakeflow reads from: ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders (hardcoded)
 --
 -- DUPLICATION: The revenue recognition rule (status = 'completed') is also
 -- defined in gold_fct_revenue in the platform pipeline. Two independent
@@ -39,7 +39,7 @@ NOTE: Revenue recognition rule duplicated from platform pipeline's gold_fct_reve
 If the platform team adds a new status or changes the rule, finance must update
 this pipeline manually — no contract links them.
 dbt Mesh equivalent: finance.fct_revenue (8 lines, {{ ref('platform','fct_orders') }})
-Reads from: enablement.ecommerce_lakeflow.gold_fct_orders (hardcoded — no validation)"
+Reads from: ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders (hardcoded — no validation)"
 AS
 SELECT
   order_id,
@@ -56,7 +56,7 @@ SELECT
   ROUND(amount_paid - COALESCE(items_total, 0), 2) AS payment_vs_items_delta,
   -- Hardcoded table path. In dbt Mesh: {{ ref('platform', 'fct_orders') }}
   date_trunc('month', order_date)                AS revenue_month
-FROM enablement.ecommerce_lakeflow.gold_fct_orders;
+FROM ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders;
 
 
 -- =============================================================================
@@ -80,13 +80,13 @@ NOTE: Reads from silver_products directly because no product-level gold table ex
 In dbt Mesh, staging models are access: protected — consumer projects cannot reference them.
 In Lakeflow, there is no access tier enforcement across pipelines.
 dbt Mesh equivalent: finance.fct_revenue_by_product (public models only)
-Reads from: enablement.ecommerce_lakeflow.gold_fct_orders (hardcoded)
-            enablement.ecommerce_lakeflow.silver_products  (hardcoded — bypassing gold layer)"
+Reads from: ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders (hardcoded)
+            ${source_catalog}.${source_lakeflow_schema}.silver_products  (hardcoded — bypassing gold layer)"
 AS
 WITH completed AS (
   -- Hardcoded table path. In dbt Mesh: {{ ref('platform', 'fct_orders') }}
   SELECT order_id, customer_id, amount_paid
-  FROM enablement.ecommerce_lakeflow.gold_fct_orders
+  FROM ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders
   WHERE status = 'completed'
 ),
 products AS (
@@ -94,7 +94,7 @@ products AS (
   -- In dbt Mesh this is impossible: silver/staging is access: protected.
   -- Any attempt to ref() it from a consumer project fails at compile time.
   SELECT product_id, product_name, category
-  FROM enablement.ecommerce_lakeflow.silver_products
+  FROM ${source_catalog}.${source_lakeflow_schema}.silver_products
 )
 SELECT
   p.category,

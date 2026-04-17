@@ -34,6 +34,12 @@ from pyspark.sql.functions import (
     date_format, round as _round
 )
 
+# Source catalog/schema — set via pipeline configuration or override here.
+# To avoid collisions, each user should set these in the DLT pipeline settings:
+#   Configuration → Add: source_catalog = your_catalog, source_schema = your_schema
+SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
+SOURCE_SCHEMA = spark.conf.get("source_schema", "ecommerce")
+
 # COMMAND ----------
 
 @dlt.table(
@@ -42,7 +48,7 @@ from pyspark.sql.functions import (
     table_properties={"quality": "bronze"}
 )
 def bronze_customers():
-    return spark.read.table("enablement.ecommerce.raw_customers")
+    return spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_SCHEMA}.raw_customers")
 
 # COMMAND ----------
 
@@ -52,7 +58,7 @@ def bronze_customers():
     table_properties={"quality": "bronze"}
 )
 def bronze_orders():
-    return spark.read.table("enablement.ecommerce.raw_orders")
+    return spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_SCHEMA}.raw_orders")
 
 # COMMAND ----------
 
@@ -62,7 +68,7 @@ def bronze_orders():
     table_properties={"quality": "bronze"}
 )
 def bronze_order_items():
-    return spark.read.table("enablement.ecommerce.raw_order_items")
+    return spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_SCHEMA}.raw_order_items")
 
 # COMMAND ----------
 
@@ -72,7 +78,7 @@ def bronze_order_items():
     table_properties={"quality": "bronze"}
 )
 def bronze_products():
-    return spark.read.table("enablement.ecommerce.raw_products")
+    return spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_SCHEMA}.raw_products")
 
 # COMMAND ----------
 
@@ -82,7 +88,7 @@ def bronze_products():
     table_properties={"quality": "bronze"}
 )
 def bronze_payments():
-    return spark.read.table("enablement.ecommerce.raw_payments")
+    return spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_SCHEMA}.raw_payments")
 
 # COMMAND ----------
 

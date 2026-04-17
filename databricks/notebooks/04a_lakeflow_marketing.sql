@@ -22,7 +22,7 @@
 -- Table 1: marketing_customer_segments
 --
 -- dbt Mesh equivalent: marketing.mart_customer_segments (8 lines + ref())
--- Lakeflow reads from: enablement.ecommerce_lakeflow.gold_* (hardcoded strings)
+-- Lakeflow reads from: ${source_catalog}.${source_lakeflow_schema}.gold_* (hardcoded strings)
 --
 -- DUPLICATION: The customer segmentation thresholds below (>= 500, >= 100)
 -- are also defined in 01_lakeflow_pipeline.py → gold_dim_customers.
@@ -38,7 +38,7 @@ never_purchased, other.
 
 NOTE: Segment thresholds duplicated from gold_dim_customers in the platform pipeline.
 dbt Mesh equivalent: marketing.mart_customer_segments (validated ref, contract enforced)
-Reads from: enablement.ecommerce_lakeflow.gold_dim_customers (hardcoded — no validation)"
+Reads from: ${source_catalog}.${source_lakeflow_schema}.gold_dim_customers (hardcoded — no validation)"
 AS
 WITH order_recency AS (
   -- Hardcoded table path. In dbt Mesh: {{ ref('platform', 'fct_orders') }}
@@ -47,7 +47,7 @@ WITH order_recency AS (
     customer_id,
     MAX(order_date)  AS last_order_date,
     COUNT(order_id)  AS order_count
-  FROM enablement.ecommerce_lakeflow.gold_fct_orders
+  FROM ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders
   GROUP BY customer_id
 )
 SELECT
@@ -74,7 +74,7 @@ SELECT
     ELSE 'other'
   END AS marketing_segment
 -- Hardcoded table path. In dbt Mesh: {{ ref('platform', 'dim_customers') }}
-FROM enablement.ecommerce_lakeflow.gold_dim_customers c
+FROM ${source_catalog}.${source_lakeflow_schema}.gold_dim_customers c
 LEFT JOIN order_recency r ON c.customer_id = r.customer_id;
 
 
@@ -82,7 +82,7 @@ LEFT JOIN order_recency r ON c.customer_id = r.customer_id;
 -- Table 2: marketing_country_performance
 --
 -- dbt Mesh equivalent: marketing.mart_country_performance (validated ref)
--- Lakeflow reads from: enablement.ecommerce_lakeflow.gold_* (hardcoded strings)
+-- Lakeflow reads from: ${source_catalog}.${source_lakeflow_schema}.gold_* (hardcoded strings)
 --
 -- DUPLICATION: The 'completed orders only' revenue filter is also defined in
 -- gold_fct_revenue in the platform pipeline. If the platform team changes
@@ -95,7 +95,7 @@ Revenue = amount_paid on completed orders only.
 
 NOTE: Revenue recognition rule (status = 'completed') duplicated from platform pipeline.
 dbt Mesh equivalent: marketing.mart_country_performance (validated ref, contract enforced)
-Reads from: enablement.ecommerce_lakeflow.gold_fct_orders (hardcoded — no validation)"
+Reads from: ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders (hardcoded — no validation)"
 AS
 WITH completed_orders AS (
   -- DUPLICATION: 'completed' filter also in gold_fct_revenue (platform pipeline).
@@ -104,7 +104,7 @@ WITH completed_orders AS (
     o.order_id,
     o.customer_id,
     o.amount_paid
-  FROM enablement.ecommerce_lakeflow.gold_fct_orders o
+  FROM ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders o
   WHERE o.status = 'completed'
 )
 SELECT
@@ -118,6 +118,6 @@ SELECT
   2)                            AS revenue_per_customer
 -- Hardcoded table path. In dbt Mesh: {{ ref('platform', 'dim_customers') }}
 FROM completed_orders o
-JOIN enablement.ecommerce_lakeflow.gold_dim_customers c ON o.customer_id = c.customer_id
+JOIN ${source_catalog}.${source_lakeflow_schema}.gold_dim_customers c ON o.customer_id = c.customer_id
 GROUP BY c.country
 ORDER BY total_revenue DESC;

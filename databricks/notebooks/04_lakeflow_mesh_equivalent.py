@@ -28,7 +28,7 @@
 # MAGIC
 # MAGIC | | dbt Mesh | Lakeflow equivalent (this notebook) |
 # MAGIC |---|---|---|
-# MAGIC | How marketing reads platform data | `{{ ref('platform', 'fct_orders') }}` | `spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")` |
+# MAGIC | How marketing reads platform data | `{{ ref('platform', 'fct_orders') }}` | `spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")` |
 # MAGIC | Validation of that reference | Compile-time — job fails before SQL runs | Runtime — pipeline fails when it executes |
 # MAGIC | Who can consume platform models | Only teams that ref `public` models | Any team — no access tier enforcement |
 # MAGIC | Breaking change detection | Contract enforced at build — `ERROR: column removed` | Silent until next pipeline run |
@@ -78,6 +78,10 @@ from pyspark.sql.functions import (
     max as _max
 )
 
+# Source catalog/schema for upstream gold tables — set via DLT pipeline configuration.
+SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
+SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow")
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -119,8 +123,8 @@ from pyspark.sql.functions import (
 def marketing_customer_segments():
     # Read from the platform pipeline's gold output via hardcoded table path.
     # There is no ref() — no compile-time validation, no access control.
-    customers = spark.read.table("enablement.ecommerce_lakeflow.gold_dim_customers")
-    orders    = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+    customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
+    orders    = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
     # Latest order date per customer — needed for recency calculation
     recency = (
@@ -192,8 +196,8 @@ def marketing_customer_segments():
     table_properties={"quality": "gold", "team": "marketing"}
 )
 def marketing_country_performance():
-    orders    = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
-    customers = spark.read.table("enablement.ecommerce_lakeflow.gold_dim_customers")
+    orders    = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
+    customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
 
     completed = orders.filter(col("status") == "completed")
 
@@ -260,7 +264,7 @@ def marketing_country_performance():
 )
 def finance_fct_revenue():
     # Hardcoded ref — no validation, no access tier, no contract.
-    orders = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+    orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
     return (
         orders
@@ -303,12 +307,12 @@ def finance_fct_revenue():
     table_properties={"quality": "gold", "team": "finance"}
 )
 def finance_fct_revenue_by_product():
-    orders   = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+    orders   = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
     # No product-level gold table exists in the platform pipeline,
     # so finance must reach into silver — bypassing any gold-layer curation.
     # In dbt Mesh, staging models are access: protected and cannot be referenced
     # by consumer projects. In Lakeflow, there is no such restriction.
-    products = spark.read.table("enablement.ecommerce_lakeflow.silver_products")
+    products = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.silver_products")
 
     completed = orders.filter(col("status") == "completed")
 

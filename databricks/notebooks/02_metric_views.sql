@@ -18,7 +18,7 @@
 
 
 -- Verify the dbt source tables exist (required before metric views will resolve)
-SHOW TABLES IN enablement.ecommerce;
+SHOW TABLES IN ${catalog}.${schema};
 
 
 -- Spot-check: total revenue should match the dbt semantic layer metric
@@ -27,7 +27,7 @@ SELECT
   COUNT(DISTINCT order_id)                                         AS total_orders,
   COUNT(DISTINCT CASE WHEN status = 'returned' THEN order_id END)
     / CAST(COUNT(DISTINCT order_id) AS DOUBLE) * 100              AS return_rate_pct
-FROM enablement.ecommerce.fct_orders;
+FROM ${catalog}.${schema}.fct_orders;
 
 
 -- Spot-check: customer metrics
@@ -35,6 +35,6 @@ SELECT
   customer_segment,
   COUNT(DISTINCT customer_id)     AS customer_count,
   ROUND(AVG(total_lifetime_value), 2) AS avg_ltv
-FROM enablement.ecommerce.dim_customers
+FROM ${catalog}.${schema}.dim_customers
 GROUP BY customer_segment
 ORDER BY avg_ltv DESC;

@@ -4,7 +4,7 @@
 # 1. Go to Catalog → [your catalog] → [schema] → Create → Metric view
 #    OR: New → Metric view (from the sidebar)
 # 2. Paste this YAML into the definition editor
-# 3. Save as: enablement.ecommerce_metric_views.orders_metrics
+# 3. Save as: <your_catalog>.<your_schema>_metric_views.orders_metrics
 #
 # Requires: Databricks Runtime 17.2+, spec version 1.1
 #
@@ -18,6 +18,7 @@
 #     Metric Views have no equivalent of dbt contracts, tests, or git history.
 
 version: 1.1
+# IMPORTANT: Replace with your catalog and schema (e.g. my_catalog.my_schema.fct_orders)
 source: enablement.ecommerce.fct_orders
 comment: >
   E-commerce order metrics for the enablement demo.
