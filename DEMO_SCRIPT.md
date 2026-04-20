@@ -109,9 +109,9 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
 
 ---
 
-## Act 3: Lakeflow Gold — Better But Not Enough (5 min)
+## Act 3: Spark Declarative Pipelines Gold — Better But Not Enough (5 min)
 
-**Goal:** Show that Lakeflow alone improves Genie but doesn't solve the governance problem.
+**Goal:** Show that Spark Declarative Pipelines (SDP, formerly DLT/Lakeflow) alone improve Genie but don't solve the governance problem.
 
 **Open:** Genie Space `E-Commerce (Lakeflow Gold — Act 3)`
 
@@ -120,7 +120,7 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
 1. *"What was total revenue last month?"*
    - Better — Genie finds `daily_revenue` in `gold_fct_revenue`
    - **Say:** "Better. Lakeflow gold has cleaner structure. But the definition
-     of `daily_revenue` lives in a Python DLT notebook. The instruction I wrote
+     of `daily_revenue` lives in a Python SDP notebook. The instruction I wrote
      manually says 'completed orders only' — but I had to write that. If the
      pipeline changes, I have to remember to update these instructions too."
 
@@ -128,7 +128,7 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
    - Works — but only because you wrote the instructions manually
    - **Say:** "This works now. But notice why: I wrote the segment definition
      manually in the Genie Space instructions. This isn't connected to the code.
-     If a developer changes the segmentation logic in the DLT notebook,
+     If a developer changes the segmentation logic in the SDP notebook,
      these instructions don't update automatically."
 
 3. *"What is our return rate?"*
@@ -138,7 +138,7 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
 **The key moment — show the Genie Space instructions:**
 
 > "Here is the Genie instruction I wrote manually for Lakeflow. Notice it took me
-> 10 minutes to write. It has no connection to the DLT code. If the code changes,
+> 10 minutes to write. It has no connection to the SDP code. If the code changes,
 > I have to update this by hand. This is the problem dbt solves — let me show you Act 4."
 
 ---
@@ -549,7 +549,7 @@ audience asks "what does Fusion actually give us beyond faster parsing?"
 2. Change `data_type: bigint` on `number_of_orders` to `data_type: varchar`
 3. **Immediate warning in the Problems panel**
 4. **Say:** "The contract says this column must be a bigint. I changed it to varchar.
-   Fusion flagged it before I could even save the file. In a Databricks DLT notebook,
+   Fusion flagged it before I could even save the file. In a Databricks SDP notebook,
    this would only fail when a downstream consumer runs and finds the wrong type.
    By then it may be in production."
 5. Revert
@@ -835,7 +835,7 @@ manually chaining Databricks Jobs with task dependencies, hoping the timing is r
 
 **"This looks like more complexity."**
 > "It's more structure, not more complexity. The alternative is manually maintaining
-> Genie instructions, manually writing column descriptions, and hoping the DLT
+> Genie instructions, manually writing column descriptions, and hoping the SDP
 > notebook stays in sync with the documentation. dbt automates all of that."
 
 **"Our team is Python-native, not SQL."**
