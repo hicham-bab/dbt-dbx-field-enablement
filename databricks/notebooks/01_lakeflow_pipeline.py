@@ -1,12 +1,16 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Lakeflow (Delta Live Tables) — E-Commerce Pipeline
+# MAGIC # Spark Declarative Pipelines — E-Commerce Pipeline
+# MAGIC
+# MAGIC Formerly "Delta Live Tables" (DLT) / "Lakeflow Declarative Pipelines".
+# MAGIC Databricks rebranded to **Spark Declarative Pipelines (SDP)** in 2025.
+# MAGIC The Python API still uses `import dlt` — the code is unchanged.
 # MAGIC
 # MAGIC ## What this shows dbt field teams:
 # MAGIC - How Databricks solves the same medallion pattern problem natively
-# MAGIC - DLT declarative syntax vs dbt SQL models
-# MAGIC - What DLT has: auto-lineage, auto-retry, expectations (data quality)
-# MAGIC - What DLT doesn't have: ref(), version-controlled docs, test suite, CI/CD environments
+# MAGIC - SDP declarative syntax vs dbt SQL models
+# MAGIC - What SDP has: auto-lineage, auto-retry, expectations (data quality)
+# MAGIC - What SDP doesn't have: ref(), version-controlled docs, test suite, CI/CD environments, contracts, Semantic Layer
 # MAGIC
 # MAGIC ## Pipeline configuration:
 # MAGIC 1. **Jobs & Pipelines** → **Create** → **ETL pipeline**
@@ -35,7 +39,7 @@ from pyspark.sql.functions import (
 )
 
 # Source catalog/schema — set via pipeline configuration or override here.
-# To avoid collisions, each user should set these in the DLT pipeline settings:
+# To avoid collisions, each user should set these in the SDP pipeline settings:
 #   Configuration → Add: source_catalog = your_catalog, source_schema = your_schema
 SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
 SOURCE_SCHEMA = spark.conf.get("source_schema", "ecommerce")
@@ -95,10 +99,10 @@ def bronze_payments():
 # MAGIC %md
 # MAGIC ## Silver Layer — Cleaned and Standardized
 # MAGIC
-# MAGIC **dbt equivalent:** staging models. DLT Expectations are similar to dbt tests, **BUT**:
+# MAGIC **dbt equivalent:** staging models. SDP Expectations are similar to dbt tests, **BUT**:
 # MAGIC they live in Python code, not YAML. There is no auto-generated docs site. There are
 # MAGIC only 3 expectation types (`expect`, `expect_or_drop`, `expect_or_fail`) vs dbt's
-# MAGIC 4 built-in tests + unlimited custom SQL tests.
+# MAGIC 4 built-in tests + unlimited custom SQL tests + packages (dbt_expectations).
 
 # COMMAND ----------
 
@@ -214,9 +218,11 @@ def silver_payments():
 # MAGIC
 # MAGIC **dbt equivalent:** marts models. Key differences:
 # MAGIC - In dbt, a business analyst can read the SQL directly
-# MAGIC - In DLT, they need to understand PySpark
+# MAGIC - In SDP, they need to understand PySpark
 # MAGIC - dbt's `ref()` creates explicit, compile-time-validated lineage
-# MAGIC - DLT infers lineage from `dlt.read()` calls at runtime
+# MAGIC - SDP infers lineage from `dlt.read()` calls at runtime
+# MAGIC - **No contracts** — SDP has no mechanism to enforce a schema across pipelines
+# MAGIC - **No Semantic Layer** — SDP cannot serve named metrics via JDBC
 
 # COMMAND ----------
 
