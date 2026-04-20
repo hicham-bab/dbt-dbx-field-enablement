@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # E-Commerce Demo — Raw Data Setup
 # MAGIC
-# MAGIC Run this notebook once to create the `enablement.ecommerce` catalog/schema
+# MAGIC Run this notebook once to create the `<your_catalog>.<your_schema>` catalog/schema
 # MAGIC and load all raw Delta tables used by both the dbt platform project
 # MAGIC and the Lakeflow pipeline demo.
 # MAGIC
@@ -34,16 +34,40 @@
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE CATALOG IF NOT EXISTS enablement;
-# MAGIC USE CATALOG enablement;
-# MAGIC CREATE SCHEMA IF NOT EXISTS ecommerce;
-# MAGIC USE SCHEMA ecommerce;
+# -- Auto-derive per-user namespace to avoid collisions in classroom settings --
+# Each user gets their own schema: ecommerce_<username> (e.g. ecommerce_alice_martin)
+# Override via widgets if you need a custom name.
+_user_email = spark.sql("SELECT current_user()").first()[0]
+_user_suffix = _user_email.split("@")[0].replace(".", "_").replace("-", "_").lower()
+
+dbutils.widgets.text("catalog", "enablement", "Catalog Name")
+dbutils.widgets.text("schema", f"ecommerce_{_user_suffix}", "Schema Name")
+CATALOG = dbutils.widgets.get("catalog")
+SCHEMA = dbutils.widgets.get("schema")
+
+print(f"=== Your namespace: {CATALOG}.{SCHEMA} ===")
+print(f"=== User: {_user_email} ===")
+print(f"")
+print(f"For dbt, set in your .env:")
+print(f"  DBT_CATALOG={CATALOG}")
+print(f"  DBT_SCHEMA={SCHEMA}")
+print(f"")
+print(f"For DLT pipelines, add to pipeline configuration:")
+print(f"  source_catalog = {CATALOG}")
+print(f"  source_schema  = {SCHEMA}")
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE enablement.ecommerce.raw_customers (
+# MAGIC CREATE CATALOG IF NOT EXISTS ${catalog};
+# MAGIC USE CATALOG ${catalog};
+# MAGIC CREATE SCHEMA IF NOT EXISTS ${schema};
+# MAGIC USE SCHEMA ${schema};
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE OR REPLACE TABLE ${catalog}.${schema}.raw_customers (
 # MAGIC   customer_id   INT,
 # MAGIC   first_name    STRING,
 # MAGIC   last_name     STRING,
@@ -53,7 +77,7 @@
 # MAGIC   _loaded_at    TIMESTAMP
 # MAGIC ) USING DELTA;
 # MAGIC
-# MAGIC INSERT INTO enablement.ecommerce.raw_customers VALUES
+# MAGIC INSERT INTO ${catalog}.${schema}.raw_customers VALUES
 # MAGIC   -- Original cohort: joined 2023–2024
 # MAGIC   (1,  'Alice',  'Martin',  'alice.martin@example.com',  '2023-01-15', 'US', CURRENT_TIMESTAMP()),
 # MAGIC   (2,  'Bob',    'Chen',    'bob.chen@example.com',      '2023-02-20', 'CA', CURRENT_TIMESTAMP()),
@@ -80,7 +104,7 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE enablement.ecommerce.raw_products (
+# MAGIC CREATE OR REPLACE TABLE ${catalog}.${schema}.raw_products (
 # MAGIC   product_id   INT,
 # MAGIC   product_name STRING,
 # MAGIC   category     STRING,
@@ -89,7 +113,7 @@
 # MAGIC   _loaded_at   TIMESTAMP
 # MAGIC ) USING DELTA;
 # MAGIC
-# MAGIC INSERT INTO enablement.ecommerce.raw_products VALUES
+# MAGIC INSERT INTO ${catalog}.${schema}.raw_products VALUES
 # MAGIC   -- Original catalog
 # MAGIC   (101, 'Classic T-Shirt',            'apparel',     35.00,  true, CURRENT_TIMESTAMP()),
 # MAGIC   (102, 'Running Shoes',               'footwear',    45.00,  true, CURRENT_TIMESTAMP()),
@@ -111,7 +135,7 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE enablement.ecommerce.raw_orders (
+# MAGIC CREATE OR REPLACE TABLE ${catalog}.${schema}.raw_orders (
 # MAGIC   order_id       INT,
 # MAGIC   customer_id    INT,
 # MAGIC   order_date     DATE,
@@ -121,7 +145,7 @@
 # MAGIC   _loaded_at     TIMESTAMP
 # MAGIC ) USING DELTA;
 # MAGIC
-# MAGIC INSERT INTO enablement.ecommerce.raw_orders VALUES
+# MAGIC INSERT INTO ${catalog}.${schema}.raw_orders VALUES
 # MAGIC   -- Q4 2024 (Oct–Dec) — original seed data, dates shifted forward
 # MAGIC   (1001,  1,  '2024-10-01', 'completed',  120.50, 'credit_card',   CURRENT_TIMESTAMP()),
 # MAGIC   (1002,  2,  '2024-10-03', 'completed',   45.00, 'paypal',        CURRENT_TIMESTAMP()),
@@ -205,7 +229,7 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE enablement.ecommerce.raw_order_items (
+# MAGIC CREATE OR REPLACE TABLE ${catalog}.${schema}.raw_order_items (
 # MAGIC   order_item_id INT,
 # MAGIC   order_id      INT,
 # MAGIC   product_id    INT,
@@ -214,7 +238,7 @@
 # MAGIC   _loaded_at    TIMESTAMP
 # MAGIC ) USING DELTA;
 # MAGIC
-# MAGIC INSERT INTO enablement.ecommerce.raw_order_items VALUES
+# MAGIC INSERT INTO ${catalog}.${schema}.raw_order_items VALUES
 # MAGIC   -- Original items (orders 1001–1013)
 # MAGIC   (1,  1001, 101, 2,  35.00, CURRENT_TIMESTAMP()),
 # MAGIC   (2,  1001, 103, 1,  50.50, CURRENT_TIMESTAMP()),
@@ -303,7 +327,7 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE enablement.ecommerce.raw_payments (
+# MAGIC CREATE OR REPLACE TABLE ${catalog}.${schema}.raw_payments (
 # MAGIC   payment_id     INT,
 # MAGIC   order_id       INT,
 # MAGIC   payment_method STRING,
@@ -316,7 +340,7 @@
 # MAGIC -- raw_payments: seeded once, NOT updated by the data generator.
 # MAGIC -- Simulates a third-party payment processor feed that has gone silent.
 # MAGIC -- dbt source freshness will warn after 1 day and error after 2 days.
-# MAGIC INSERT INTO enablement.ecommerce.raw_payments VALUES
+# MAGIC INSERT INTO ${catalog}.${schema}.raw_payments VALUES
 # MAGIC   -- Q4 2024 payments (aligned with shifted order dates)
 # MAGIC   (2001, 1001, 'credit_card',   120.50, 'success', '2024-10-01', CURRENT_TIMESTAMP()),
 # MAGIC   (2002, 1002, 'paypal',          45.00, 'success', '2024-10-03', CURRENT_TIMESTAMP()),
@@ -403,7 +427,7 @@
 # MAGIC -- raw_reviews: customer product ratings, seeded once (static for demo).
 # MAGIC -- Enables Genie to answer satisfaction questions: "Which products have the best reviews?"
 # MAGIC -- rating scale: 1 (worst) to 5 (best)
-# MAGIC CREATE OR REPLACE TABLE enablement.ecommerce.raw_reviews (
+# MAGIC CREATE OR REPLACE TABLE ${catalog}.${schema}.raw_reviews (
 # MAGIC   review_id   INT,
 # MAGIC   order_id    INT,
 # MAGIC   product_id  INT,
@@ -413,7 +437,7 @@
 # MAGIC   _loaded_at  TIMESTAMP
 # MAGIC ) USING DELTA;
 # MAGIC
-# MAGIC INSERT INTO enablement.ecommerce.raw_reviews VALUES
+# MAGIC INSERT INTO ${catalog}.${schema}.raw_reviews VALUES
 # MAGIC   -- Q4 2024 reviews
 # MAGIC   (1,  1001, 101,  1, 4, '2024-10-05', CURRENT_TIMESTAMP()),
 # MAGIC   (2,  1002, 102,  2, 5, '2024-10-07', CURRENT_TIMESTAMP()),
@@ -461,17 +485,17 @@
 
 # MAGIC %sql
 # MAGIC -- Verify all tables loaded with _loaded_at populated
-# MAGIC SELECT 'raw_customers'  AS tbl, COUNT(*) AS rows, MAX(_loaded_at) AS last_loaded FROM enablement.ecommerce.raw_customers
+# MAGIC SELECT 'raw_customers'  AS tbl, COUNT(*) AS rows, MAX(_loaded_at) AS last_loaded FROM ${catalog}.${schema}.raw_customers
 # MAGIC UNION ALL
-# MAGIC SELECT 'raw_orders',          COUNT(*), MAX(_loaded_at) FROM enablement.ecommerce.raw_orders
+# MAGIC SELECT 'raw_orders',          COUNT(*), MAX(_loaded_at) FROM ${catalog}.${schema}.raw_orders
 # MAGIC UNION ALL
-# MAGIC SELECT 'raw_order_items',     COUNT(*), MAX(_loaded_at) FROM enablement.ecommerce.raw_order_items
+# MAGIC SELECT 'raw_order_items',     COUNT(*), MAX(_loaded_at) FROM ${catalog}.${schema}.raw_order_items
 # MAGIC UNION ALL
-# MAGIC SELECT 'raw_products',        COUNT(*), MAX(_loaded_at) FROM enablement.ecommerce.raw_products
+# MAGIC SELECT 'raw_products',        COUNT(*), MAX(_loaded_at) FROM ${catalog}.${schema}.raw_products
 # MAGIC UNION ALL
-# MAGIC SELECT 'raw_payments',        COUNT(*), MAX(_loaded_at) FROM enablement.ecommerce.raw_payments
+# MAGIC SELECT 'raw_payments',        COUNT(*), MAX(_loaded_at) FROM ${catalog}.${schema}.raw_payments
 # MAGIC UNION ALL
-# MAGIC SELECT 'raw_reviews',         COUNT(*), MAX(_loaded_at) FROM enablement.ecommerce.raw_reviews;
+# MAGIC SELECT 'raw_reviews',         COUNT(*), MAX(_loaded_at) FROM ${catalog}.${schema}.raw_reviews;
 
 # COMMAND ----------
 

@@ -40,8 +40,13 @@ from decimal import Decimal
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-CATALOG = "enablement"
-SCHEMA  = "ecommerce"
+# Auto-derive per-user schema (same logic as 00_setup_raw_data.py)
+_user_suffix = spark.sql("SELECT current_user()").first()[0].split("@")[0].replace(".", "_").replace("-", "_").lower()
+dbutils.widgets.text("catalog", "enablement", "Catalog Name")
+dbutils.widgets.text("schema", f"ecommerce_{_user_suffix}", "Schema Name")
+CATALOG = dbutils.widgets.get("catalog")
+SCHEMA  = dbutils.widgets.get("schema")
+print(f"Targeting: {CATALOG}.{SCHEMA}")
 
 # Number of new orders to insert per run (randomised for realism)
 NEW_ORDERS_PER_RUN = random.randint(2, 4)

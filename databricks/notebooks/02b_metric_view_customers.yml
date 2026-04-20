@@ -4,7 +4,7 @@
 # 1. Go to Catalog → [your catalog] → [schema] → Create → Metric view
 #    OR: New → Metric view (from the sidebar)
 # 2. Paste this YAML into the definition editor
-# 3. Save as: enablement.ecommerce_metric_views.customer_metrics
+# 3. Save as: <your_catalog>.<your_schema>_metric_views.customer_metrics
 #
 # Requires: Databricks Runtime 17.2+, spec version 1.1
 #
@@ -14,6 +14,7 @@
 # Source: enablement.ecommerce.dim_customers (built by dbt platform project)
 
 version: 1.1
+# IMPORTANT: Replace with your catalog and schema (e.g. my_catalog.my_schema.dim_customers)
 source: enablement.ecommerce.dim_customers
 comment: >
   E-commerce customer metrics for the enablement demo.

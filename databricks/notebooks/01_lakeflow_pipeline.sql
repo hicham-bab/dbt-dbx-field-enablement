@@ -1,16 +1,19 @@
--- Lakeflow (Delta Live Tables) — E-Commerce Platform Pipeline (SQL version)
+-- Spark Declarative Pipelines — E-Commerce Platform Pipeline (SQL version)
+-- Formerly "Delta Live Tables" (DLT) / "Lakeflow Declarative Pipelines".
+-- Rebranded to Spark Declarative Pipelines (SDP) in 2025. SQL syntax unchanged.
 --
 -- What this shows dbt field teams:
 -- - How Databricks solves the same medallion pattern problem natively, in SQL
--- - DLT declarative SQL syntax vs dbt SQL models — similar syntax, different governance
--- - What DLT has: auto-lineage, auto-retry, expectations (data quality)
--- - What DLT doesn't have: ref(), version-controlled docs, test suite, contracts, CI/CD
+-- - SDP declarative SQL syntax vs dbt SQL models — similar syntax, different governance
+-- - What SDP has: auto-lineage, auto-retry, expectations (data quality)
+-- - What SDP doesn't have: ref(), version-controlled docs, test suite, contracts, Semantic Layer, CI/CD
 --
 -- Pipeline configuration:
 -- 1. Jobs & Pipelines → Create → ETL pipeline
--- 2. In the dialog: name = ecommerce-lakeflow-demo, catalog = enablement, schema = ecommerce_lakeflow → Create
--- 3. On the "Next step" screen → Add existing assets → select this file → Add
--- 4. Click Start — creates all 13 tables (5 bronze + 5 silver + 3 gold)
+-- 2. In the dialog: name = ecommerce-lakeflow-demo, catalog = <your_catalog>, schema = <your_schema>_lakeflow → Create
+-- 3. In pipeline settings → Configuration, add: source_catalog = <your_catalog>, source_schema = <your_schema>
+-- 4. On the "Next step" screen → Add existing assets → select this file → Add
+-- 5. Click Start — creates all 13 tables (5 bronze + 5 silver + 3 gold)
 
 
 -- =============================================================================
@@ -28,27 +31,27 @@
 CREATE OR REFRESH STREAMING TABLE bronze_customers
 COMMENT "Raw customer data ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_customers);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_customers);
 
 CREATE OR REFRESH STREAMING TABLE bronze_orders
 COMMENT "Raw order records ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_orders);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_orders);
 
 CREATE OR REFRESH STREAMING TABLE bronze_order_items
 COMMENT "Raw order line items ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_order_items);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_order_items);
 
 CREATE OR REFRESH STREAMING TABLE bronze_products
 COMMENT "Raw product catalog ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_products);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_products);
 
 CREATE OR REFRESH STREAMING TABLE bronze_payments
 COMMENT "Raw payment transactions ingested from source system. No transformations applied."
 TBLPROPERTIES ("quality" = "bronze")
-AS SELECT * FROM STREAM(enablement.ecommerce.raw_payments);
+AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_payments);
 
 
 -- =============================================================================
@@ -57,10 +60,11 @@ AS SELECT * FROM STREAM(enablement.ecommerce.raw_payments);
 -- dbt equivalent: staging models with column-level transformations and tests.
 --
 -- Key differences from dbt:
--- - DLT CONSTRAINT = dbt test, but only 3 options: warn, drop row, or fail pipeline
+-- - SDP CONSTRAINT = dbt test, but only 3 options: warn, drop row, or fail pipeline
 -- - dbt has 4 built-in tests + unlimited custom SQL tests + dbt_expectations package
--- - DLT constraints are defined in Python or SQL inline — no separate YAML test file
+-- - SDP constraints are defined inline — no separate YAML test file, no PR review
 -- - No auto-generated docs from constraints (dbt generates a full docs site)
+-- - See PLATFORM_COMPARISON.md Section 1 for the full comparison
 -- =============================================================================
 
 CREATE OR REFRESH STREAMING TABLE silver_customers

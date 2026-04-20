@@ -9,7 +9,7 @@ resources:
       description: >
         Runs the platform dbt project: deps -> seed -> run -> test.
         Builds staging views, intermediate models, and mart tables
-        in enablement.${var.schema}.
+        in ${var.catalog}.${var.schema}.
 
       # Prevent concurrent runs -- dbt models write to shared tables
       max_concurrent_runs: 1

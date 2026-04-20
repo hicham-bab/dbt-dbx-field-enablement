@@ -35,6 +35,10 @@ from pyspark.sql.functions import (
     when, coalesce, lit
 )
 
+# Source catalog/schema for upstream gold tables — set via DLT pipeline configuration.
+SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
+SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow")
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -74,7 +78,7 @@ from pyspark.sql.functions import (
 def finance_fct_revenue():
     # Hardcoded string — no compile-time validation, no contract.
     # dbt Mesh equivalent: {{ ref('platform', 'fct_orders') }}
-    orders = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+    orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
     return (
         orders
@@ -113,10 +117,10 @@ def finance_fct_revenue():
     table_properties={"quality": "gold", "team": "finance"}
 )
 def finance_fct_revenue_by_product():
-    orders = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+    orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
     # Bypassing gold layer — reading silver directly because no product gold table exists.
     # In dbt Mesh this is impossible: staging is access: protected.
-    products = spark.read.table("enablement.ecommerce_lakeflow.silver_products")
+    products = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.silver_products")
 
     completed = orders.filter(col("status") == "completed")
 

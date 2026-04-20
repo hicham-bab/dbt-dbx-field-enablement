@@ -6,6 +6,6 @@ platform:
       host: "{{ env_var('DBX_HOST') }}"
       http_path: "{{ env_var('DBX_HTTP_PATH') }}"
       token: "{{ env_var('DBX_TOKEN') }}"
-      catalog: enablement
-      schema: ecommerce
+      catalog: "{{ env_var('DBT_CATALOG', 'enablement') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'ecommerce') }}"
       threads: 4

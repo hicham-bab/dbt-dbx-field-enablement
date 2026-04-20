@@ -16,8 +16,8 @@
 # MAGIC
 # MAGIC In Lakeflow, the DS team writes:
 # MAGIC ```python
-# MAGIC customers = spark.read.table("enablement.ecommerce_lakeflow.gold_dim_customers")
-# MAGIC orders = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+# MAGIC customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
+# MAGIC orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 # MAGIC ```
 # MAGIC
 # MAGIC Same data, but:
@@ -40,6 +40,10 @@
 import dlt
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
+
+# Source catalog/schema for upstream gold tables — set via DLT pipeline configuration.
+SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
+SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow")
 
 # COMMAND ----------
 
@@ -70,8 +74,8 @@ from pyspark.sql.window import Window
 def ds_rfm_customer_features():
     # Hardcoded — no compile-time validation, no contract enforcement
     # dbt Mesh equivalent: dbt.ref("platform", "dim_customers")
-    customers = spark.read.table("enablement.ecommerce_lakeflow.gold_dim_customers")
-    orders = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+    customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
+    orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
     # Recency
     recency = (
@@ -182,8 +186,8 @@ def ds_rfm_customer_features():
     table_properties={"quality": "gold", "team": "data_science"}
 )
 def ds_customer_churn_features():
-    customers = spark.read.table("enablement.ecommerce_lakeflow.gold_dim_customers")
-    orders = spark.read.table("enablement.ecommerce_lakeflow.gold_fct_orders")
+    customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
+    orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
     order_window = Window.partitionBy("customer_id").orderBy("order_date")
 

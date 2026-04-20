@@ -15,6 +15,12 @@ import pandas as pd
 import os
 from databricks import sql as dbsql
 
+# -- Namespace configuration --
+# Set these env vars to match your catalog/schema. Defaults to enablement/ecommerce.
+CATALOG = os.environ.get("DBT_CATALOG", "enablement")
+SCHEMA = os.environ.get("DBT_SCHEMA", "ecommerce")
+MV_SCHEMA = f"{SCHEMA}_metric_views"
+
 # ── Connection ─────────────────────────────────────────────────────────────────
 
 @st.cache_resource
@@ -38,6 +44,8 @@ def query(sql: str) -> pd.DataFrame:
         return cur.fetchall_arrow().to_pandas()
 
 def safe_query(sql: str, fallback: pd.DataFrame = None) -> pd.DataFrame:
+    # Auto-format catalog/schema variables so queries use the configured namespace
+    sql = sql.format(CATALOG=CATALOG, SCHEMA=SCHEMA, MV_SCHEMA=MV_SCHEMA)
     try:
         return query(sql)
     except Exception as e:
@@ -53,8 +61,8 @@ st.set_page_config(
 
 st.title("dbt + Databricks Field Enablement")
 st.caption(
-    "Data: `enablement.ecommerce` (dbt platform project) | "
-    "Comparison: `enablement.ecommerce_metric_views` (Databricks Metric Views)"
+    f"Data: `{CATALOG}.{SCHEMA}` (dbt platform project) | "
+    f"Comparison: `{CATALOG}.{MV_SCHEMA}` (Databricks Metric Views)"
 )
 
 # ── Tabs ───────────────────────────────────────────────────────────────────────
@@ -72,7 +80,7 @@ tab_exec, tab_sl, tab_compare, tab_gov = st.tabs([
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_exec:
     st.subheader("Executive Dashboard")
-    st.caption("Source: `enablement.ecommerce` — dbt platform project, all tests passing")
+    st.caption(f"Source: `{CATALOG}.{SCHEMA}` — dbt platform project, all tests passing")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -83,7 +91,7 @@ with tab_exec:
             COUNT(DISTINCT CASE WHEN status = 'completed' THEN order_id END) AS completed_orders,
             COUNT(DISTINCT CASE WHEN status = 'returned'  THEN order_id END)
                 / CAST(COUNT(DISTINCT order_id) AS DECIMAL(10,4)) * 100      AS return_rate
-        FROM enablement.ecommerce.fct_orders
+        FROM {CATALOG}.{SCHEMA}.fct_orders
     """)
 
     if not kpis.empty:
@@ -103,8 +111,8 @@ with tab_exec:
             SELECT
                 c.customer_segment,
                 SUM(CASE WHEN o.status = 'completed' THEN o.amount_paid ELSE 0 END) AS revenue
-            FROM enablement.ecommerce.dim_customers c
-            LEFT JOIN enablement.ecommerce.fct_orders o ON c.customer_id = o.customer_id
+            FROM {CATALOG}.{SCHEMA}.dim_customers c
+            LEFT JOIN {CATALOG}.{SCHEMA}.fct_orders o ON c.customer_id = o.customer_id
             GROUP BY c.customer_segment
             ORDER BY revenue DESC
         """)
@@ -115,7 +123,7 @@ with tab_exec:
         st.markdown("**Customers by Segment**")
         seg_count = safe_query("""
             SELECT customer_segment, COUNT(*) AS customers
-            FROM enablement.ecommerce.dim_customers
+            FROM {CATALOG}.{SCHEMA}.dim_customers
             GROUP BY customer_segment
             ORDER BY customers DESC
         """)
@@ -128,8 +136,8 @@ with tab_exec:
         SELECT
             c.country,
             SUM(CASE WHEN o.status = 'completed' THEN o.amount_paid ELSE 0 END) AS revenue
-        FROM enablement.ecommerce.dim_customers c
-        LEFT JOIN enablement.ecommerce.fct_orders o ON c.customer_id = o.customer_id
+        FROM {CATALOG}.{SCHEMA}.dim_customers c
+        LEFT JOIN {CATALOG}.{SCHEMA}.fct_orders o ON c.customer_id = o.customer_id
         GROUP BY c.country
         ORDER BY revenue DESC
     """)
@@ -145,8 +153,8 @@ with tab_exec:
             p.unit_price,
             COUNT(DISTINCT o.order_id) AS order_count,
             SUM(CASE WHEN o.status = 'completed' THEN o.amount_paid ELSE 0 END) AS revenue
-        FROM enablement.ecommerce.dim_products p
-        LEFT JOIN enablement.ecommerce.fct_orders o ON 1=1
+        FROM {CATALOG}.{SCHEMA}.dim_products p
+        LEFT JOIN {CATALOG}.{SCHEMA}.fct_orders o ON 1=1
         GROUP BY p.product_name, p.category, p.unit_price
         ORDER BY order_count DESC
         LIMIT 10
@@ -173,7 +181,7 @@ with tab_sl:
                     'total_recognised_revenue' AS metric_name,
                     SUM(amount_paid) AS value,
                     'Defined in _semantic_models.yml: SUM(amount_paid) WHERE status = completed' AS definition
-                FROM enablement.ecommerce.fct_orders
+                FROM {CATALOG}.{SCHEMA}.fct_orders
                 WHERE status = 'completed'
             """,
             "breakdown_sql": {
@@ -181,20 +189,20 @@ with tab_sl:
                     SELECT
                         CAST(DATE_TRUNC('month', order_date) AS DATE) AS period,
                         SUM(amount_paid) AS value
-                    FROM enablement.ecommerce.fct_orders
+                    FROM {CATALOG}.{SCHEMA}.fct_orders
                     WHERE status = 'completed'
                     GROUP BY 1 ORDER BY 1
                 """,
                 "by_segment": """
                     SELECT c.customer_segment AS period, SUM(o.amount_paid) AS value
-                    FROM enablement.ecommerce.fct_orders o
-                    JOIN enablement.ecommerce.dim_customers c ON o.customer_id = c.customer_id
+                    FROM {CATALOG}.{SCHEMA}.fct_orders o
+                    JOIN {CATALOG}.{SCHEMA}.dim_customers c ON o.customer_id = c.customer_id
                     WHERE o.status = 'completed'
                     GROUP BY 1 ORDER BY 2 DESC
                 """,
                 "by_payment_method": """
                     SELECT payment_method AS period, SUM(amount_paid) AS value
-                    FROM enablement.ecommerce.fct_orders
+                    FROM {CATALOG}.{SCHEMA}.fct_orders
                     WHERE status = 'completed'
                     GROUP BY 1 ORDER BY 2 DESC
                 """
@@ -206,24 +214,24 @@ with tab_sl:
                     'avg_order_value' AS metric_name,
                     AVG(amount_paid) AS value,
                     'Defined in _semantic_models.yml: AVG(amount_paid) WHERE status = completed' AS definition
-                FROM enablement.ecommerce.fct_orders
+                FROM {CATALOG}.{SCHEMA}.fct_orders
                 WHERE status = 'completed'
             """,
             "breakdown_sql": {
                 "by_month": """
                     SELECT CAST(DATE_TRUNC('month', order_date) AS DATE) AS period, AVG(amount_paid) AS value
-                    FROM enablement.ecommerce.fct_orders WHERE status = 'completed'
+                    FROM {CATALOG}.{SCHEMA}.fct_orders WHERE status = 'completed'
                     GROUP BY 1 ORDER BY 1
                 """,
                 "by_segment": """
                     SELECT c.customer_segment AS period, AVG(o.amount_paid) AS value
-                    FROM enablement.ecommerce.fct_orders o
-                    JOIN enablement.ecommerce.dim_customers c ON o.customer_id = c.customer_id
+                    FROM {CATALOG}.{SCHEMA}.fct_orders o
+                    JOIN {CATALOG}.{SCHEMA}.dim_customers c ON o.customer_id = c.customer_id
                     WHERE o.status = 'completed' GROUP BY 1
                 """,
                 "by_payment_method": """
                     SELECT payment_method AS period, AVG(amount_paid) AS value
-                    FROM enablement.ecommerce.fct_orders WHERE status = 'completed'
+                    FROM {CATALOG}.{SCHEMA}.fct_orders WHERE status = 'completed'
                     GROUP BY 1 ORDER BY 2 DESC
                 """
             }
@@ -235,7 +243,7 @@ with tab_sl:
                     COUNT(DISTINCT CASE WHEN status = 'returned' THEN order_id END)
                         / CAST(COUNT(DISTINCT order_id) AS DECIMAL(10,4)) * 100 AS value,
                     'Defined in _semantic_models.yml: ratio metric — returned/total orders' AS definition
-                FROM enablement.ecommerce.fct_orders
+                FROM {CATALOG}.{SCHEMA}.fct_orders
             """,
             "breakdown_sql": {
                 "by_month": """
@@ -243,21 +251,21 @@ with tab_sl:
                         CAST(DATE_TRUNC('month', order_date) AS DATE) AS period,
                         COUNT(DISTINCT CASE WHEN status = 'returned' THEN order_id END)
                             / CAST(COUNT(DISTINCT order_id) AS DECIMAL(10,4)) * 100 AS value
-                    FROM enablement.ecommerce.fct_orders GROUP BY 1 ORDER BY 1
+                    FROM {CATALOG}.{SCHEMA}.fct_orders GROUP BY 1 ORDER BY 1
                 """,
                 "by_segment": """
                     SELECT c.customer_segment AS period,
                         COUNT(DISTINCT CASE WHEN o.status = 'returned' THEN o.order_id END)
                             / CAST(COUNT(DISTINCT o.order_id) AS DECIMAL(10,4)) * 100 AS value
-                    FROM enablement.ecommerce.fct_orders o
-                    JOIN enablement.ecommerce.dim_customers c ON o.customer_id = c.customer_id
+                    FROM {CATALOG}.{SCHEMA}.fct_orders o
+                    JOIN {CATALOG}.{SCHEMA}.dim_customers c ON o.customer_id = c.customer_id
                     GROUP BY 1
                 """,
                 "by_payment_method": """
                     SELECT payment_method AS period,
                         COUNT(DISTINCT CASE WHEN status = 'returned' THEN order_id END)
                             / CAST(COUNT(DISTINCT order_id) AS DECIMAL(10,4)) * 100 AS value
-                    FROM enablement.ecommerce.fct_orders GROUP BY 1
+                    FROM {CATALOG}.{SCHEMA}.fct_orders GROUP BY 1
                 """
             }
         },
@@ -265,21 +273,21 @@ with tab_sl:
             "sql": """
                 SELECT 'total_customers' AS metric_name, COUNT(DISTINCT customer_id) AS value,
                     'Defined in _semantic_models.yml: COUNT DISTINCT customer_id' AS definition
-                FROM enablement.ecommerce.dim_customers
+                FROM {CATALOG}.{SCHEMA}.dim_customers
             """,
             "breakdown_sql": {
                 "by_month": """
                     SELECT CAST(DATE_TRUNC('month', created_date) AS DATE) AS period,
                         COUNT(DISTINCT customer_id) AS value
-                    FROM enablement.ecommerce.dim_customers GROUP BY 1 ORDER BY 1
+                    FROM {CATALOG}.{SCHEMA}.dim_customers GROUP BY 1 ORDER BY 1
                 """,
                 "by_segment": """
                     SELECT customer_segment AS period, COUNT(DISTINCT customer_id) AS value
-                    FROM enablement.ecommerce.dim_customers GROUP BY 1 ORDER BY 2 DESC
+                    FROM {CATALOG}.{SCHEMA}.dim_customers GROUP BY 1 ORDER BY 2 DESC
                 """,
                 "by_payment_method": """
                     SELECT country AS period, COUNT(DISTINCT customer_id) AS value
-                    FROM enablement.ecommerce.dim_customers GROUP BY 1 ORDER BY 2 DESC
+                    FROM {CATALOG}.{SCHEMA}.dim_customers GROUP BY 1 ORDER BY 2 DESC
                 """
             }
         },
@@ -287,21 +295,21 @@ with tab_sl:
             "sql": """
                 SELECT 'avg_lifetime_value' AS metric_name, AVG(total_lifetime_value) AS value,
                     'Defined in _semantic_models.yml: AVG(total_lifetime_value)' AS definition
-                FROM enablement.ecommerce.dim_customers
+                FROM {CATALOG}.{SCHEMA}.dim_customers
             """,
             "breakdown_sql": {
                 "by_month": """
                     SELECT CAST(DATE_TRUNC('month', created_date) AS DATE) AS period,
                         AVG(total_lifetime_value) AS value
-                    FROM enablement.ecommerce.dim_customers GROUP BY 1 ORDER BY 1
+                    FROM {CATALOG}.{SCHEMA}.dim_customers GROUP BY 1 ORDER BY 1
                 """,
                 "by_segment": """
                     SELECT customer_segment AS period, AVG(total_lifetime_value) AS value
-                    FROM enablement.ecommerce.dim_customers GROUP BY 1 ORDER BY 2 DESC
+                    FROM {CATALOG}.{SCHEMA}.dim_customers GROUP BY 1 ORDER BY 2 DESC
                 """,
                 "by_payment_method": """
                     SELECT country AS period, AVG(total_lifetime_value) AS value
-                    FROM enablement.ecommerce.dim_customers GROUP BY 1 ORDER BY 2 DESC
+                    FROM {CATALOG}.{SCHEMA}.dim_customers GROUP BY 1 ORDER BY 2 DESC
                 """
             }
         },
@@ -347,8 +355,8 @@ with tab_sl:
 with tab_compare:
     st.subheader("Metric Views vs dbt Semantic Layer")
     st.caption(
-        "Same metrics, both systems. Metric Views are in `enablement.ecommerce_metric_views`. "
-        "dbt results are from `enablement.ecommerce` mart tables."
+        f"Same metrics, both systems. Metric Views are in `{CATALOG}.{MV_SCHEMA}`. "
+        f"dbt results are from `{CATALOG}.{SCHEMA}` mart tables."
     )
 
     st.info(
@@ -368,7 +376,7 @@ with tab_compare:
             "- No test coverage on the underlying data\n"
             "- Genie reads column names — no descriptions available"
         )
-        mv_metrics = safe_query("SELECT * FROM enablement.ecommerce_metric_views.all_metrics")
+        mv_metrics = safe_query(f"SELECT * FROM {CATALOG}.{MV_SCHEMA}.all_metrics")
         if not mv_metrics.empty:
             c1, c2, c3 = st.columns(3)
             c1.metric("Total Revenue", f"${mv_metrics['total_revenue'][0]:,.2f}")
@@ -396,12 +404,12 @@ with tab_compare:
                 COUNT(DISTINCT CASE WHEN status = 'returned' THEN order_id END)
                     / CAST(COUNT(DISTINCT order_id) AS DECIMAL(10,4)) * 100      AS return_rate_pct,
                 AVG(amount_paid)                                                  AS avg_order_value
-            FROM enablement.ecommerce.fct_orders
+            FROM {CATALOG}.{SCHEMA}.fct_orders
         """)
         dbt_cust = safe_query("""
             SELECT COUNT(DISTINCT customer_id) AS customer_count,
                    AVG(total_lifetime_value) AS avg_lifetime_value
-            FROM enablement.ecommerce.dim_customers
+            FROM {CATALOG}.{SCHEMA}.dim_customers
         """)
         if not dbt_kpis.empty and not dbt_cust.empty:
             c1, c2, c3 = st.columns(3)
@@ -564,7 +572,7 @@ git log -p platform/models/marts/_marts.yml | grep -A5 "customer_segment"
 st.divider()
 st.caption(
     "Data refreshed every 5 minutes (Streamlit cache TTL=300s) | "
-    "dbt project: platform (enablement.ecommerce) | "
-    "Metric Views: enablement.ecommerce_metric_views | "
+    f"dbt project: platform ({CATALOG}.{SCHEMA}) | "
+    f"Metric Views: {CATALOG}.{MV_SCHEMA} | "
     "Built with Databricks Apps + Streamlit"
 )
