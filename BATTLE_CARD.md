@@ -228,7 +228,7 @@ documented. "This is what 'starting right' looks like."
 | "Unity Catalog is our governance" | "UC governs *access*: who can read what. dbt governs *meaning*: what 'revenue' means, tested, version-controlled, PR-reviewed. Both are needed. UC + dbt = complete governance. UC alone = access control without business logic governance." | **4/8 deals** |
 | "Our team doesn't know dbt / retraining cost" | "dbt Python models run PySpark — your team's existing code. The learning curve is `dbt.ref()` instead of `spark.read.table()`. That's one function signature. The payoff is contracts, lineage, and a Semantic Layer. See `data_science/models/features/rfm_customer_features.py`." | **4/8 deals** |
 | "DBX can do everything dbt does natively" | "Name the DBX feature that: (1) enforces a column contract across teams, (2) serves a named metric via JDBC to Genie, (3) fails a CI build when an upstream schema changes. Those three don't exist natively. That's what dbt adds." | **3/8 deals (DBX SA narrative)** |
-| "DLT replaces dbt models" | "DLT replaces dbt's *execution*. It doesn't replace dbt's *governance*: contracts, Mesh cross-project refs, Semantic Layer, PR-reviewed definitions. DLT is the engine. dbt is the control plane." | **DBX SA narrative** |
+| "SDP/DLT replaces dbt models" | "Spark Declarative Pipelines replace dbt's *execution*. They don't replace dbt's *governance*: contracts, Mesh cross-project refs, Semantic Layer, PR-reviewed definitions. SDP is the engine. dbt is the control plane." | **DBX SA narrative** |
 | "dbt is for SQL-only teams" | "Open `data_science/models/features/customer_churn_features.py`. That's PySpark — window functions, feature engineering, ML features. Running on your Databricks cluster. With `dbt.ref()` contracts. dbt is language-agnostic governance." | **DBX SA narrative** |
 | "Lakeflow Spark Declarative Pipelines make dbt unnecessary" | "Declarative Pipelines improve DLT's developer experience. They don't add contracts, Semantic Layer, cross-project Mesh, CI/CD environments, or Explorer. Better DX on the execution layer doesn't replace the governance layer. See Part 8." | **Emerging — 2/8 but growing** |
 | "We'll use the native dbt task in DBX Jobs" | "It runs `dbt build` on DBX compute. No Semantic Layer, no Explorer, no CI/CD, no Fusion compiler. Works until week 6 when Genie needs governed metrics. See Part 7." | Field gap |
@@ -1365,9 +1365,9 @@ against dbt"). But when they do position, the narratives are:
 
 Response: See 8.4 above. List the six things DBX cannot do. Be specific.
 
-**"Delta Live Tables replaces dbt models"**
+**"Spark Declarative Pipelines (formerly DLT) replace dbt models"**
 
-Response: DLT replaces dbt's *execution engine*. It doesn't replace contracts,
+Response: SDP replaces dbt's *execution engine*. It doesn't replace contracts,
 Semantic Layer, Mesh, CI/CD, or Explorer. "Replaces the engine" ≠ "replaces the platform."
 
 **"dbt is for SQL-only teams, Python-first teams don't need it"**

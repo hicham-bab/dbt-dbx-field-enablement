@@ -11,7 +11,7 @@
 |------|-------------|------|
 | A | Gather Databricks credentials (host, warehouse, token) | 10 min |
 | B | Load raw Delta tables via notebook | 5 min |
-| C | Run the Lakeflow DLT pipeline (13 tables) | 10 min |
+| C | Run the Spark Declarative Pipeline (13 tables) | 10 min |
 | D | Connect dbt Cloud and build all 3 dbt projects (platform + Mesh consumers) | 20 min |
 | E | Schedule the data generator (source freshness demo) | 5 min |
 | F | Create Databricks Metric Views | 3 min |
@@ -144,7 +144,7 @@ The notebook will open automatically.
 
 ### B2. Attach a cluster and run
 
-The setup notebook uses `%sql` magic and does not require a DLT pipeline —
+The setup notebook uses `%sql` magic and does not require a Spark Declarative Pipeline —
 you can run it on any cluster or a SQL Warehouse.
 
 1. At the top of the notebook, click **Connect** (or the cluster dropdown)
@@ -188,9 +188,9 @@ ask them to create the `enablement.ecommerce` schema and grant you `CREATE TABLE
 
 ---
 
-## Part C: Run the Lakeflow Pipeline
+## Part C: Run the Spark Declarative Pipeline
 
-This step creates the DLT medallion pipeline: 5 bronze + 5 silver + 3 gold tables
+This step creates the SDP medallion pipeline: 5 bronze + 5 silver + 3 gold tables
 in `enablement.ecommerce_lakeflow`. This is the "Act 3" dataset for the demo.
 
 ---
@@ -1081,9 +1081,9 @@ Most common causes:
 1. **Raw tables don't exist** — run Part B first. The pipeline reads from `enablement.ecommerce.raw_*`.
 2. **Permission denied on target schema** — your user needs `CREATE TABLE ON SCHEMA enablement.ecommerce_lakeflow`.
    Run: `GRANT CREATE TABLE ON SCHEMA enablement.ecommerce_lakeflow TO \`you@company.com\`;`
-3. **Databricks Runtime too old** — DLT requires Runtime 11.3 LTS or later. Use the default cluster policy.
+3. **Databricks Runtime too old** — Spark Declarative Pipelines require Runtime 11.3 LTS or later. Use the default cluster policy.
 
-Check the pipeline error details in the DLT UI: click on the red node in the DAG
+Check the pipeline error details in the pipeline UI: click on the red node in the DAG
 to see the specific error message.
 
 ---

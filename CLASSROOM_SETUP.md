@@ -12,8 +12,8 @@ Every participant gets their own namespace automatically. No two people will wri
 |---|---|---|
 | Raw data schema | `ecommerce_<username>` derived from `current_user()` | `enablement.ecommerce_alice_martin` |
 | dbt output schema | Same -- set via `DBT_SCHEMA` env var | `enablement.ecommerce_alice_martin` |
-| DLT pipeline output | Each user creates their own pipeline with their own schema | `enablement.ecommerce_alice_martin_lakeflow` |
-| DLT consumer pipelines | Per-user pipeline + schema | `enablement.ecommerce_alice_martin_lakeflow_marketing` |
+| SDP pipeline output | Each user creates their own pipeline with their own schema | `enablement.ecommerce_alice_martin_lakeflow` |
+| SDP consumer pipelines | Per-user pipeline + schema | `enablement.ecommerce_alice_martin_lakeflow_marketing` |
 | DABs bundle (dev) | Auto-appends username via `${workspace.current_user.short_name}` | `ecommerce_dev_alice_martin` |
 | dbt Databricks Job | Dev mode auto-prefixes job name with `[dev alice_martin]` | `[dev alice_martin] dbt platform build - dev` |
 | Metric views | Each user saves to their own schema | `enablement.ecommerce_alice_martin_metric_views` |
@@ -34,7 +34,7 @@ The **catalog** (`enablement`) is shared. Only **schemas** are per-user.
 ### Compute clusters
 - Each user can use **Serverless compute** (auto-provisions per-user)
 - Or share a **multi-user cluster** (Unity Catalog enforces data isolation)
-- DLT pipelines provision their own compute -- no cluster sharing concerns
+- SDP pipelines provision their own compute -- no cluster sharing concerns
 
 ### Unity Catalog (namespace isolation)
 - Per-user schemas prevent write collisions -- two users will never write to the same table
@@ -46,7 +46,7 @@ The **catalog** (`enablement`) is shared. Only **schemas** are per-user.
 - `dbt build` writes only to that user's schema
 - Source freshness, tests, and docs all work independently per-schema
 
-### DLT pipelines (pipeline-level isolation)
+### SDP pipelines (pipeline-level isolation)
 - Each user creates their own named pipeline (e.g., `ecommerce-lakeflow-alice`)
 - Pipeline output goes to the user's own schema
 - Pipelines have their own compute -- no resource sharing
@@ -77,7 +77,7 @@ For dbt, set in your .env:
   DBT_CATALOG=enablement
   DBT_SCHEMA=ecommerce_alice_martin
 
-For DLT pipelines, add to pipeline configuration:
+For SDP pipelines, add to pipeline configuration:
   source_catalog = enablement
   source_schema  = ecommerce_alice_martin
 ```
@@ -102,7 +102,7 @@ source .env
 cd platform && dbt deps && dbt build
 ```
 
-### Step 3: Create your DLT pipeline
+### Step 3: Create your SDP pipeline
 
 1. **Jobs & Pipelines** > **Create** > **ETL pipeline**
 2. Name: `ecommerce-lakeflow-<yourname>` (e.g., `ecommerce-lakeflow-alice`)
@@ -139,7 +139,7 @@ Before the class:
 - [ ] **Participants have**: `USE CATALOG`, `CREATE SCHEMA`, `USE SCHEMA` grants on `enablement`
 - [ ] **SQL Warehouse**: Serverless warehouse available (or Medium+ classic warehouse)
 - [ ] **Unity Catalog enabled**: Required for catalog/schema isolation
-- [ ] **DLT enabled**: Participants need permission to create DLT pipelines
+- [ ] **SDP enabled**: Participants need permission to create SDP pipelines
 - [ ] **Test with 2 accounts**: Run the full setup with two different users to verify isolation
 
 Grant template:
@@ -170,4 +170,4 @@ DROP SCHEMA IF EXISTS enablement.ecommerce_alice_martin_lakeflow_finance CASCADE
 -- DROP CATALOG enablement CASCADE;
 ```
 
-Delete participant DLT pipelines and jobs manually from the Workflows UI.
+Delete participant SDP pipelines and jobs manually from the Workflows UI.
