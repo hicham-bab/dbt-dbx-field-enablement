@@ -24,6 +24,10 @@ models:
       access: public
       contract:
         enforced: true
+    semantic_model:
+      enabled: true
+      name: customers
+    agg_time_dimension: created_date
     columns:
       - name: customer_id
         description: "Unique customer identifier. Primary key."
@@ -31,7 +35,10 @@ models:
         constraints:
           - type: not_null
           - type: primary_key
-        tests:
+        entity:
+          type: primary
+          name: customer
+        data_tests:
           - not_null
           - unique
 
@@ -48,16 +55,21 @@ models:
         data_type: string
         constraints:
           - type: not_null
-        tests:
+        data_tests:
           - not_null
 
       - name: created_date
         description: "Date the customer account was created."
         data_type: date
+        granularity: day
+        dimension:
+          type: time
 
       - name: country
         description: "Uppercased two-letter ISO country code."
         data_type: string
+        dimension:
+          type: categorical
 
       - name: number_of_orders
         description: "Total number of orders placed by this customer, regardless of status."
@@ -81,10 +93,28 @@ models:
           high_value: >= $500 | mid_value: $100–$499 | low_value: < $100.
           Tested with accepted_values — only these three values can exist.
         data_type: string
-        tests:
+        dimension:
+          type: categorical
+        data_tests:
           - accepted_values:
               arguments:
                 values: ['high_value', 'mid_value', 'low_value']
+    metrics:
+      - name: total_customers
+        label: "Total Customers"
+        description: "Distinct count of all customers in the system regardless of order activity."
+        type: simple
+        agg: count_distinct
+        expr: customer_id
+
+      - name: avg_customer_lifetime_value
+        label: "Average Customer Lifetime Value (USD)"
+        description: >
+          Average total_lifetime_value across all customers.
+          Lifetime value = sum of all successful payments, regardless of order status.
+        type: simple
+        agg: average
+        expr: total_lifetime_value
 
   - name: dim_products
     description: >
@@ -96,6 +126,9 @@ models:
       access: public
       contract:
         enforced: true
+    semantic_model:
+      enabled: true
+      name: products
     columns:
       - name: product_id
         description: "Unique product identifier. Primary key."
@@ -103,7 +136,10 @@ models:
         constraints:
           - type: not_null
           - type: primary_key
-        tests:
+        entity:
+          type: primary
+          name: product
+        data_tests:
           - not_null
           - unique
 
@@ -116,6 +152,8 @@ models:
       - name: category
         description: "Lowercased product category (apparel, electronics, fitness, footwear, nutrition)."
         data_type: string
+        dimension:
+          type: categorical
 
       - name: unit_price
         description: "Current list price in USD."
@@ -124,6 +162,23 @@ models:
       - name: is_active
         description: "True if the product is currently available for purchase."
         data_type: boolean
+        dimension:
+          type: categorical
+          name: is_active
+    metrics:
+      - name: total_products
+        label: "Total Products"
+        description: "Distinct count of all products in the catalog."
+        type: simple
+        agg: count_distinct
+        expr: product_id
+
+      - name: avg_product_price
+        label: "Average Product Price (USD)"
+        description: "Average list price across all products in the catalog."
+        type: simple
+        agg: average
+        expr: unit_price
 
   - name: fct_orders
     description: >
@@ -135,6 +190,10 @@ models:
       access: public
       contract:
         enforced: true
+    semantic_model:
+      enabled: true
+      name: orders
+    agg_time_dimension: order_date
     columns:
       - name: order_id
         description: "Unique order identifier. Primary key."
@@ -142,7 +201,10 @@ models:
         constraints:
           - type: not_null
           - type: primary_key
-        tests:
+        entity:
+          type: primary
+          name: order
+        data_tests:
           - not_null
           - unique
 
@@ -151,7 +213,10 @@ models:
         data_type: integer
         constraints:
           - type: not_null
-        tests:
+        entity:
+          type: foreign
+          name: customer
+        data_tests:
           - not_null
           - relationships:
               arguments:
@@ -163,13 +228,18 @@ models:
         data_type: date
         constraints:
           - type: not_null
-        tests:
+        granularity: day
+        dimension:
+          type: time
+        data_tests:
           - not_null
 
       - name: status
         description: "Order lifecycle status. Valid values: placed, shipped, completed, returned."
         data_type: string
-        tests:
+        dimension:
+          type: categorical
+        data_tests:
           - accepted_values:
               arguments:
                 values: ['placed', 'shipped', 'completed', 'returned']
@@ -177,6 +247,8 @@ models:
       - name: payment_method
         description: "Payment method used: credit_card, paypal, bank_transfer."
         data_type: string
+        dimension:
+          type: categorical
 
       - name: number_of_items
         description: "Number of distinct line items in the order."
@@ -192,5 +264,82 @@ models:
           Counts only payments with status = 'success'.
           This is NOT the same as order amount — returns and failed payments are excluded.
         data_type: decimal(18,2)
-        tests:
+        data_tests:
           - not_null
+    metrics:
+      - name: total_revenue
+        label: "Total Revenue (USD)"
+        description: >
+          Sum of amount_paid across ALL orders regardless of status. Includes placed,
+          shipped, completed, and returned. Use total_recognised_revenue for the
+          business-recognised figure. Use the status dimension to filter if needed.
+        type: simple
+        agg: sum
+        expr: amount_paid
+
+      - name: total_recognised_revenue
+        label: "Total Recognised Revenue (USD)"
+        description: >
+          Revenue from completed orders only. This is the canonical definition
+          of recognised revenue for this business. Genie uses this when a user
+          asks about "revenue" without further qualification.
+        type: simple
+        agg: sum
+        expr: amount_paid
+        filter: "{{ Dimension('order__status') }} = 'completed'"
+
+      - name: avg_order_value
+        label: "Average Order Value (USD)"
+        description: >
+          Average amount_paid per order across completed orders.
+          Denominator: count of completed orders. Numerator: sum of amount_paid.
+        type: simple
+        agg: average
+        expr: amount_paid
+
+      - name: total_orders
+        label: "Total Orders"
+        description: "Count of all orders regardless of status."
+        type: simple
+        agg: count_distinct
+        expr: order_id
+
+      - name: completed_orders
+        label: "Completed Orders"
+        description: "Count of orders with status = 'completed'."
+        type: simple
+        agg: count_distinct
+        expr: order_id
+        filter: "{{ Dimension('order__status') }} = 'completed'"
+
+      - name: total_items_sold
+        label: "Total Items Sold"
+        description: "Sum of line items across all orders in scope."
+        type: simple
+        agg: sum
+        expr: number_of_items
+
+metrics:
+  - name: return_rate
+    label: "Order Return Rate (%)"
+    description: >
+      Percentage of orders that were returned. Computed as:
+      returned_orders / total_orders * 100.
+      This is a derived metric — auditable because both inputs are defined above.
+    type: ratio
+    numerator:
+      name: total_orders
+      filter: "{{ Dimension('order__status') }} = 'returned'"
+    denominator: total_orders
+
+  - name: revenue_per_customer
+    label: "Revenue per Customer (USD)"
+    description: >
+      Derived metric: total_recognised_revenue divided by total_customers.
+      Useful for tracking monetisation efficiency over time.
+    type: derived
+    expr: "total_recognised_revenue / total_customers"
+    input_metrics:
+      - name: total_recognised_revenue
+      - name: total_customers
+
