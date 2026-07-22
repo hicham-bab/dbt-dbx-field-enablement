@@ -21,6 +21,23 @@ can review and audit.
 
 ---
 
+**Q: The customer is migrating off a legacy stack (Informatica / Oracle / Teradata). How does dbt + Databricks speed that up?**
+
+It turns a months-long re-platform into a weeks-long migration that lands *governed*
+models. Three accelerators:
+- **dbt Wizard** refactors legacy SQL and stored-proc logic into dbt models from
+  natural language, generating tests and docs and validating each change against the
+  warehouse before you see the diff.
+- **Fusion** catches SQL-dialect differences (Oracle/Teradata → Databricks SQL) at
+  compile time, in real time — where lift-and-shift projects usually stall.
+- **Lakeflow** lands the raw data in Unity Catalog; dbt takes it to governed marts.
+
+The key point: you migrate *into* governance (tests, contracts, docs, Semantic Layer /
+UC metric views) rather than lifting-and-shifting the mess and paying the tech debt
+later. See `MIGRATION_ACCELERATION.md` for the full narrative and demo flow.
+
+---
+
 **Q: Is dbt competing with Databricks Spark Declarative Pipelines (formerly Delta Live Tables)?**
 
 No. Spark Declarative Pipelines (SDP) are a pipeline orchestration tool for
@@ -62,6 +79,38 @@ Fusion runs three ways: the free `dbt` CLI, the dbt VS Code extension (real-time
 compilation and LSP), or the dbt platform. The models and YAML in this repo are
 Fusion-conformant — see `docs/fusion_cheat_sheet.md` for the syntax rules that make
 this code Fusion-compatible.
+
+---
+
+**Q: What is dbt Wizard, and how does it fit the agentic story Databricks is pushing?**
+
+dbt Wizard is dbt's terminal-native AI agent for analytics engineering (public beta;
+available to dbt platform *and* self-hosted users). It replaces the older inline dbt
+Copilot experience. What makes it different from a generic coding assistant is that it
+is **grounded in the dbt project's compiled state, lineage graph, and semantic
+definitions** from the first prompt — it knows which models are healthy, what depends
+on what, and where tests/docs are missing before it writes anything. It builds and
+refactors from natural language, shows a reviewable diff, and **validates its own
+changes against the warehouse** before you see them. It can also connect to MCP servers,
+including the dbt MCP server, for Semantic Layer metadata and cross-project context.
+
+**Bring your own model (BYOK).** The Wizard CLI supports BYOK — configure your own model
+provider with `wizard providers configure <provider>` (or env vars for headless CI):
+OpenAI, Anthropic, Azure OpenAI, AWS Bedrock, Google Gemini, Snowflake Cortex (preview),
+and the **Databricks Unity Catalog AI Gateway** (beta). Usage is billed to your provider
+account, not dbt Labs. The Databricks option is the standout for this audience: Wizard
+connects through the **Unity Catalog AI Gateway** to model-serving endpoints in the
+customer's *own* Databricks workspace (workspace URL + serving endpoint + Databricks PAT).
+So the coding agent's LLM access, spend, and policy stay under the same Unity Catalog
+governance that governs their data and Genie — one governed AI surface, not a separate
+vendor bill. (BYOK is a CLI capability; the platform-managed Wizard experience uses
+dbt-provided models.)
+
+Why this matters on Databricks: Summit 2026 was an agentic story — Agent Bricks (with
+the Claude Code SDK), the Unity AI Gateway, and Genie Ontology. dbt Wizard is the
+governed-development counterpart: agents that *build* trusted data models on the same
+project state that Genie and Databricks agents *consume*. It's AND, not OR — governed
+authoring (dbt Wizard) feeding governed consumption (Genie).
 
 ---
 
@@ -318,12 +367,39 @@ is genuinely good. See `PLATFORM_COMPARISON.md` Section 8.
 
 Yes. See `METRIC_VIEWS_COMPARISON.md` for the full analysis. Short version:
 
-Metric Views are sufficient for simple, stable metrics in Databricks-only environments.
+Metric views are sufficient for simple, stable metrics in Databricks-only environments.
 The dbt Semantic Layer adds: PR-reviewed definitions, derived/ratio metric types,
 multi-tool compatibility, data quality tests on underlying data, and a git audit trail.
 
+And it's not either/or: with dbt-databricks 1.12+, dbt can **author** Unity Catalog
+metric views (`materialized='metric_view'`), so the customer's own metric views become
+version-controlled, tested dbt models.
+
 The key question: "When a stakeholder asks 'who approved this revenue definition?',
-what do you point to?" With Metric Views: the view DDL. With dbt: the PR history.
+what do you point to?" With hand-authored metric views: the view DDL. With dbt: the PR history.
+
+---
+
+**Q: At Summit 2026 Databricks shipped Unity Catalog Metrics (GA), a Business Glossary, Domains, and Genie Ontology. Doesn't that replace the dbt Semantic Layer?**
+
+No — those are complementary, and dbt is the governed source of truth that feeds them.
+Databricks' own framing is useful here: **Genie Ontology is a *context layer* that
+*consumes* a semantic layer** (Unity Catalog Metrics/Glossary) and enriches it with
+relationships and usage signals. dbt sits underneath that:
+
+- **dbt authors and governs UC Metrics** (`materialized='metric_view'`) — version control,
+  tests, contracts, lineage, PR review — instead of hand-authoring them in the catalog.
+- **The dbt Semantic Layer** provides the same governed definitions across the *whole*
+  stack (Tableau, Power BI, Looker, Python, AI agents), not just Databricks tools.
+  Databricks acknowledges the context an agent needs "also lives in dbt, Snowflake,
+  Tableau…" — dbt is a first-class source of that governed context.
+- **UC Glossary + Domains** capture business terms and organization; dbt's descriptions,
+  groups, and `access:` tiers map cleanly to them and can be the reviewed, versioned
+  origin of those definitions.
+
+Net: Genie Ontology and UC Metrics get *better* when the semantic definitions feeding
+them are governed in dbt. Position dbt as the definition source of truth, not a competitor
+to the context layer. (Confirm the latest joint messaging with PMM.)
 
 ---
 
@@ -345,7 +421,7 @@ For demos where Mesh is the central story, dbt platform is required.
 
 See `SETUP.md` for the full walkthrough. Short version:
 
-1. Run `00_setup_raw_data.py` in Databricks — 5 raw Delta tables (5 min)
+1. Run `00_setup_raw_data.py` in Databricks — 6 raw Delta tables (5 min)
 2. Run `01_lakeflow_pipeline.py` as a Spark Declarative Pipeline — 13 tables (10 min)
 3. Connect dbt platform to Databricks, create 3 projects, run jobs (20 min)
 4. Create 3 Genie Spaces (10 min)
@@ -360,7 +436,7 @@ Total: ~55 minutes from zero to live demo.
 Yes — this is the most relevant demo for that customer. Show them:
 - Act 1: what their current Genie experience probably looks like on raw/Lakeflow tables
 - Act 4: what it looks like with dbt metadata
-- The governance moment: `git log _semantic_models.yml`
+- The governance moment: `git log _marts.yml` (metric + contract history in one file)
 
 The ask is not "replace Databricks with dbt" — it's "add the governance layer
 that makes Databricks more valuable." Databricks-native customers have the most

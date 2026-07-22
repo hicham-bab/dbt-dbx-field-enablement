@@ -107,6 +107,13 @@ So the governance story below is no longer dbt *versus* metric views — it's db
 *governing* the metric views the customer already wants. A working example lives
 in `platform/models/metrics/` in this repo.
 
+This matters more after Summit 2026: Unity Catalog Metrics went GA and Databricks
+introduced **Genie Ontology**, a *context layer* that *consumes* the semantic layer
+(UC Metrics/Glossary) to ground Genie. The better those definitions are governed, the
+better Genie performs — and dbt is the version-controlled, tested, multi-platform
+source those definitions can come from. dbt authors the UC metric views *and* serves
+the same governed definitions to every non-Databricks tool.
+
 ---
 
 ## Part 2: The Feature Comparison

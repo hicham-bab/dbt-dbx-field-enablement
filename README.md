@@ -17,7 +17,8 @@ dbt Mesh governance, and an honest Databricks metric views comparison.
 |---|---|
 | `DEMO_SCRIPT.md` | 5-act, 20–25 min demo script with timing, talking points, Q&A anchors |
 | `BATTLE_CARD.md` | 12 competitive concerns with factual responses and demo proof points |
-| `METRIC_VIEWS_COMPARISON.md` | Honest dbt Semantic Layer vs Databricks Metric Views comparison |
+| `METRIC_VIEWS_COMPARISON.md` | dbt Semantic Layer + Databricks metric views — complementary, and how dbt authors/governs them |
+| `MIGRATION_ACCELERATION.md` | Legacy → dbt + Databricks migration: how dbt Wizard + Fusion create faster time to value |
 | `FAQ.md` | Objection handling for customers, champions, and Databricks SAs |
 | `SETUP.md` | Full environment setup — DBX workspace + dbt platform + Mesh |
 | `platform/` | Producer dbt project (Fusion-conformant, contracts, semantic layer) |
