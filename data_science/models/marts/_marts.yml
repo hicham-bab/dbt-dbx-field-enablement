@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: product_affinity_pairs
+  - name: payment_method_affinity_pairs
     description: >
       Payment method co-usage affinity analysis.
       Identifies which payment methods are frequently used by the same customers,

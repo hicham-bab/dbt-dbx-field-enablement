@@ -130,13 +130,13 @@ No. dbt Mesh is most valuable for teams with multiple data consumers (5+ teams,
 or teams in different business units). For a single team with a single dbt project,
 standard dbt with `access: protected` is sufficient.
 
-**Q: Does Mesh require dbt Cloud?**
+**Q: Does Mesh require dbt platform?**
 
 Yes, for cross-project refs. The `{{ ref('platform', 'fct_orders') }}` calls in the
-consumer projects are resolved via dbt Cloud's metadata service — which reads the
+consumer projects are resolved via dbt platform's metadata service — which reads the
 `platform` project's published manifest and enforces access tiers at compile time.
 The `dependencies.yml` in `marketing/` and `finance/` declares this dependency.
-Local CLI runs cannot resolve cross-project refs without the dbt Cloud metadata service.
+Local CLI runs cannot resolve cross-project refs without the dbt platform metadata service.
 
 **Q: How does Mesh relate to Unity Catalog data sharing?**
 

@@ -16,7 +16,7 @@
 | 4 | dbt + Semantic Layer: The Solution | 10 min | Genie on dbt marts — accuracy, consistency, governance, auditability, Semantic Layer vs Metric Views |
 | 4e | Fusion LSP + State-Aware Orchestration *(optional — technical audiences)* | +5 min | Live IDE intelligence + selective rebuilds vs Lakeflow |
 | 4f | Data Science + Python Models *(optional — DS/ML audiences)* | +5 min | dbt Mesh for DS, Python models, single source of truth |
-| 4g | dbt Platform vs Native dbt Task *(optional — "we'll self-host" objection)* | +5 min | Live comparison: native Databricks dbt task vs dbt Cloud |
+| 4g | dbt platform vs Native dbt Task *(optional — "we'll self-host" objection)* | +5 min | Live comparison: native Databricks dbt task vs dbt platform |
 | 5 | Business Close | 3 min | The "AND not OR" message + next steps |
 
 ---
@@ -25,16 +25,16 @@
 
 Complete at least 30 minutes before the demo:
 
-- [ ] `00_setup_raw_data.py` has run — all 5 raw tables exist in `enablement.ecommerce`
+- [ ] `00_setup_raw_data.py` has run — all 6 raw tables exist in `enablement.ecommerce`
 - [ ] `01_lakeflow_pipeline.py` has run — 13 Lakeflow tables in `enablement.ecommerce_lakeflow`
 - [ ] `04_lakeflow_mesh_equivalent.py` has run — marketing + finance Lakeflow tables exist (contrast demo)
 - [ ] `05a_lakeflow_data_science.py` has run — DS Lakeflow tables exist (Act 4f contrast)
-- [ ] dbt Cloud `platform - full build` job is green — all 3 mart tables built, all tests pass
-- [ ] dbt Cloud `marketing`, `finance`, and `data_science` jobs are green — consumer models built
+- [ ] dbt platform `platform - full build` job is green — all 3 mart tables built, all tests pass
+- [ ] dbt platform `marketing`, `finance`, and `data_science` jobs are green — consumer models built
 - [ ] `02_metric_views.sql` has run — metric views exist in `enablement.ecommerce_metric_views`
 - [ ] All 3 Genie Spaces are created and configured (raw, lakeflow, dbt)
 - [ ] Databricks App is deployed and showing all 4 tabs
-- [ ] Browser tabs open: Genie Spaces (all 3), dbt Cloud IDE with `_semantic_models.yml`, dbt Cloud lineage graph
+- [ ] Browser tabs open: Genie Spaces (all 3), dbt platform IDE with `_semantic_models.yml`, dbt platform lineage graph
 - [ ] Fallback: `genie_demo_queries.md` open as backup if Genie is slow
 
 ---
@@ -111,7 +111,7 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
 
 ## Act 3: Spark Declarative Pipelines Gold — Better But Not Enough (5 min)
 
-**Goal:** Show that Spark Declarative Pipelines (SDP, formerly DLT/Lakeflow) alone improve Genie but don't solve the governance problem.
+**Goal:** Show that Spark Declarative Pipelines (SDP, formerly Delta Live Tables) alone improve Genie but don't solve the governance problem.
 
 **Open:** Genie Space `E-Commerce (Lakeflow Gold — Act 3)`
 
@@ -156,14 +156,21 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
    - **Say:** "Same question, third time. Now Genie used the exact SQL that matches
      our business definition. How do I know? Because that definition is in this file."
 
-   **Open `platform/models/semantic/_semantic_models.yml`:**
+   **Open `platform/models/marts/_marts.yml` (the `fct_orders` model):**
    ```yaml
-   - name: total_recognised_revenue
-     description: >
-       Revenue from completed orders only. This is the canonical definition
-       of recognised revenue for this business.
+   metrics:
+     - name: total_recognised_revenue
+       type: simple
+       agg: sum
+       expr: amount_paid
+       filter: "{{ Dimension('order__status') }} = 'completed'"
+       description: >
+         Revenue from completed orders only. This is the canonical definition
+         of recognised revenue for this business.
    ```
-   **Say:** "The definition lives here. In a YAML file. In Git. Reviewable in a PR."
+   **Say:** "The definition lives right on the model — same file as the contract,
+   in Git, reviewable in one PR. That's the Fusion semantic spec: the metric and
+   the model it's built on are governed together."
 
 2. *"Show me revenue by customer segment"*
    - Perfect — join uses tested FK, segment uses accepted_values
@@ -223,7 +230,7 @@ team's build failing first. Governance enforced by the build system."
 
 In terminal:
 ```bash
-git log platform/models/semantic/_semantic_models.yml
+git log platform/models/marts/_marts.yml
 ```
 
 **Say:** "When a CFO asks 'who approved the revenue definition?', this is the answer.
@@ -242,7 +249,7 @@ after the contract walkthrough.
 
 **Step 1 — What definition did Genie use? (10s)**
 
-Open dbt Cloud Explorer, search `total_recognised_revenue`:
+Open dbt platform Explorer, search `total_recognised_revenue`:
 
 ```
 Metric: total_recognised_revenue
@@ -255,7 +262,7 @@ Filter: status = 'completed'
 **Step 2 — Who approved this definition? (10s)**
 
 ```bash
-git log --oneline platform/models/semantic/_semantic_models.yml
+git log --oneline platform/models/marts/_marts.yml
 ```
 
 **Say:** "PR #47. Reviewed by the finance lead. Merged on March 12th.
@@ -348,6 +355,14 @@ correctly — MetricFlow handles the grain, the filter, and the join."
 > metric contract. The difference is what happens when someone asks 'can I trust
 > this number?'"
 
+**The 2026 "AND, not OR" beat (optional):**
+> "And you don't have to choose. Open `platform/models/metrics/orders_metric_view.sql`
+> — that's a Unity Catalog metric view authored *as a dbt model* with
+> `materialized='metric_view'` (dbt-databricks 1.12+). So the customer's own metric
+> views — the ones Genie already uses — become version-controlled, tested, and
+> lineage-tracked. dbt governs the metric views *and* serves the multi-tool Semantic
+> Layer. See METRIC_VIEWS_COMPARISON.md Part 1.5."
+
 ---
 
 ## Act 4d-2: dbt MCP Server + AI Agent Skills *(optional — AI/agentic audiences, +8 min)*
@@ -397,7 +412,7 @@ metrics, model metadata, job runs, test results — through the same governed
 definitions you just saw. The agent doesn't guess SQL. It calls MetricFlow."
 
 **If the customer asks "what about security?":**
-> "The service token has scoped permissions — same RBAC as any dbt Cloud API consumer.
+> "The service token has scoped permissions — same RBAC as any dbt platform API consumer.
 > The agent can only see projects and environments that the token grants access to.
 > And every query goes through the Semantic Layer, so it's the same governed metric
 > definition — not raw SQL the agent invented."
@@ -475,7 +490,7 @@ Ask the agent to list its available dbt tools:
 
 **The setup line:**
 > "The agent doesn't just answer data questions. It can also tell you whether
-> your pipeline is healthy — same information your team checks in the dbt Cloud UI,
+> your pipeline is healthy — same information your team checks in the dbt platform UI,
 > but from a conversation."
 
 **Live demo — check job status:**
@@ -486,7 +501,7 @@ Ask the agent to list its available dbt tools:
 
 > "The agent called `list_jobs` and `list_jobs_runs` from the dbt MCP server.
 > You can see which jobs succeeded, which failed, when they ran, and how long
-> they took. No need to switch to the dbt Cloud UI."
+> they took. No need to switch to the dbt platform UI."
 
 **Follow up — drill into test results:**
 
@@ -495,7 +510,7 @@ Ask the agent to list its available dbt tools:
 **Say:** "The agent called `get_job_run_details` and then `get_job_run_error` to
 inspect the run. It shows you exactly which tests passed, which failed, and the
 error details. Your on-call engineer gets the same information they'd find in
-the dbt Cloud run page — but in a chat interface they can query conversationally."
+the dbt platform run page — but in a chat interface they can query conversationally."
 
 **Show the audit trail connection:**
 
@@ -520,7 +535,7 @@ the dbt Cloud run page — but in a chat interface they can query conversational
 ## Act 4e: Fusion LSP + State-Aware Orchestration *(optional — technical audiences, +5 min)*
 
 **Goal:** Show two developer-experience advantages that have no equivalent in Databricks:
-the Fusion compiler giving instant feedback in the IDE, and dbt only rebuilding what changed.
+the Fusion engine giving instant feedback in the IDE, and dbt only rebuilding what changed.
 
 **When to use this act:** SA-to-SA conversations, data engineering teams, or when the
 audience asks "what does Fusion actually give us beyond faster parsing?"
@@ -531,14 +546,14 @@ audience asks "what does Fusion actually give us beyond faster parsing?"
 
 **The setup line:**
 > "In Databricks notebooks, you find out a table doesn't exist when the pipeline fails.
-> With Fusion running in dbt Cloud Studio, you find out while you're typing."
+> With Fusion running in dbt platform Studio, you find out while you're typing."
 
 **Live demo — introduce a typo:**
 
-1. Open `finance/models/fct_revenue.sql` in dbt Cloud Studio
+1. Open `finance/models/fct_revenue.sql` in dbt platform Studio
 2. Change `{{ ref('platform', 'fct_orders') }}` to `{{ ref('platform', 'fct_orderss') }}`
 3. **Point to the red underline that appears immediately — before saving, before running**
-4. **Say:** "That's the Fusion compiler running in real time as a Language Server.
+4. **Say:** "That's the Fusion engine running in real time as a Language Server.
    It knows the full DAG of all three projects and validated that `fct_orderss`
    does not exist in the platform project. Zero latency. No job run needed."
 5. Revert the typo
@@ -583,7 +598,7 @@ audience asks "what does Fusion actually give us beyond faster parsing?"
 
 **Show the concept with this project:**
 
-Open the dbt Cloud Studio terminal and run:
+Open the dbt platform Studio terminal and run:
 
 ```bash
 dbt build --select state:modified+
@@ -667,7 +682,7 @@ orders = dbt.ref("platform", "fct_orders")
 first two lines: `dbt.ref()` instead of `spark.read.table()`. That one change gives you:
 1. Compile-time validation — if the platform changes `dim_customers`, this build fails immediately
 2. Contract enforcement — the DS team knows the column types won't change without a PR
-3. Full lineage — dbt Cloud Explorer shows DS depends on platform, same graph as marketing and finance
+3. Full lineage — dbt platform Explorer shows DS depends on platform, same graph as marketing and finance
 4. Single source of truth — the `customer_segment` definition comes from platform, not duplicated"
 
 ### Part 4f-3: Python-Native Use Cases (1 min)
@@ -709,7 +724,7 @@ are mechanically provable."
 
 > "Ask your team: how many hours per month do they spend on cross-project job
 > wiring, documentation maintenance, metric discrepancy investigations, and
-> CI/CD setup? Those are activities that dbt Cloud provides as a managed service.
+> CI/CD setup? Those are activities that dbt platform provides as a managed service.
 > The compute savings are meaningful. The engineering savings are usually 10–20x
 > larger."
 
@@ -719,13 +734,14 @@ count."
 
 ---
 
-## Act 4g: dbt Platform vs Native Databricks dbt Task *(optional — "we'll self-host" objection, +5 min)*
+## Act 4g: dbt platform vs Native Databricks dbt Task *(optional — "we'll self-host" objection, +5 min)*
 
-**Goal:** Concretely demonstrate what the customer loses by using the native
-Databricks dbt task instead of dbt Platform (Cloud).
+**Goal:** Concretely demonstrate what the customer loses by using the *bare* native
+Databricks dbt (Core) task instead of dbt platform — and show that the **dbt platform
+task** in Lakeflow Jobs lets a Databricks-orchestration-first team have both.
 
 **When to use this act:** Customer says "we'll just use the native dbt task in
-Databricks Jobs" or "we don't need dbt Cloud, we can self-host dbt Core."
+Databricks Jobs" or "we don't need dbt platform, we can self-host dbt Core."
 
 ---
 
@@ -734,11 +750,11 @@ Databricks Jobs" or "we don't need dbt Cloud, we can self-host dbt Core."
 **Say:** "Let me be precise about what the native dbt task gives you. It's dbt Core —
 the open-source Python compiler — running on Databricks compute, triggered by a
 Databricks Job. It executes `dbt build`. That's it. Everything else — the IDE,
-Explorer, Semantic Layer, CI/CD environments, Fusion compiler — is not included."
+Explorer, Semantic Layer, CI/CD environments, Fusion engine — is not included."
 
 **Show this table (or say it out loud):**
 
-| Capability | Native dbt Task | dbt Platform |
+| Capability | Native dbt Task | dbt platform |
 |---|---|---|
 | Runs `dbt build` | Yes | Yes |
 | Managed IDE with lineage | No | Yes |
@@ -747,8 +763,8 @@ Explorer, Semantic Layer, CI/CD environments, Fusion compiler — is not include
 | Column-level lineage | No | Yes |
 | Semantic Layer JDBC | **No** | **Yes** |
 | Genie queries governed metrics | **No** | **Yes** |
-| Fusion compiler (10-40x faster) | No | Yes |
-| dbt Copilot / AI features | No | Yes |
+| Fusion engine (~30x faster parse/compile) | No | Yes |
+| dbt Wizard / AI features | No | Yes |
 
 ### Part 4g-2: The Week-6 Moment (2 min)
 
@@ -763,7 +779,7 @@ dbt mart tables and a business user asks 'what was total revenue last month?'"
 > is wrong. You realise you need the `total_recognised_revenue` metric that filters
 > to `status = 'completed'`. But that metric lives in `_semantic_models.yml` and
 > is served by the Semantic Layer JDBC endpoint. The native task doesn't have that.
-> You're now 6 weeks into an MVP, and you need to migrate to dbt Cloud to get the
+> You're now 6 weeks into an MVP, and you need to migrate to dbt platform to get the
 > one feature that makes Genie trustworthy."
 
 ### Part 4g-3: The Orchestration Gap (2 min)
@@ -771,13 +787,13 @@ dbt mart tables and a business user asks 'what was total revenue last month?'"
 **Say:** "Beyond the Semantic Layer, there's the orchestration question. The native
 dbt task runs in a Databricks Job. That's fine for a single project. But you have
 four dbt projects — platform, marketing, finance, data science. Each depends on
-platform. In dbt Cloud, cross-project dependencies are handled automatically:
+platform. In dbt platform, cross-project dependencies are handled automatically:
 when platform finishes, downstream projects trigger. With the native task, you're
 manually chaining Databricks Jobs with task dependencies, hoping the timing is right."
 
 **Show the contrast:**
 
-> "In dbt Cloud: define the dependency in `dependencies.yml`, deploy. Done.
+> "In dbt platform: define the dependency in `dependencies.yml`, deploy. Done.
 > Cross-project state awareness, automatic triggering, shared artifacts.
 >
 > With native dbt tasks: create 4 Databricks Jobs, manually wire task dependencies,
@@ -785,9 +801,23 @@ manually chaining Databricks Jobs with task dependencies, hoping the timing is r
 > CI/CD per project. That's a sprint of infrastructure work — and you still don't
 > get the Semantic Layer."
 
+### Part 4g-4: The "Both" Option — the dbt platform task (1 min)
+
+**Say:** "If the real requirement is 'Databricks stays our orchestrator,' you don't
+have to choose the bare dbt task at all. Lakeflow Jobs has a second, newer task
+type — the **dbt platform task** — that triggers and monitors a governed dbt
+platform job right from the Databricks Jobs UI."
+
+> "So you keep your single pane of glass in Databricks, and you still get the
+> Semantic Layer, Explorer, Mesh, state-aware CI, and Fusion. The two native tasks
+> are for two different teams: the **dbt task** for a lone project that just needs
+> `dbt build`, and the **dbt platform task** when governance matters and Databricks
+> owns orchestration. This is an AND, not an OR."
+
 **The closing line:**
-> "The native dbt task saves you the dbt Cloud license in week 1.
+> "The bare dbt task saves you the dbt platform license in week 1.
 > It costs you 2-3 weeks of rebuild in week 6 when you need the Semantic Layer.
+> If Databricks must be the orchestrator, use the dbt platform task and get both.
 > The question is when you want to pay — not whether."
 
 ---
@@ -846,19 +876,21 @@ manually chaining Databricks Jobs with task dependencies, hoping the timing is r
 > language — it adds governance to whatever language your team already uses."
 
 **"We'll just use the native dbt task in Databricks Jobs."**
-> "The native task runs `dbt build`. That's it. No Semantic Layer, no Explorer,
-> no managed CI/CD, no Fusion compiler. It works until week 6 when you connect
-> Genie and realise you can't serve governed metrics. See Act 4g for the full story."
+> "There are two native tasks. The bare **dbt task** runs `dbt build` — no Semantic
+> Layer, no Explorer, no managed CI/CD. It works until week 6 when you connect Genie
+> and realise you can't serve governed metrics. But if you want Databricks to stay
+> the orchestrator, the **dbt platform task** triggers a governed dbt platform job
+> from Lakeflow Jobs — you get both. See Act 4g for the full story."
 
 **"How do AI agents get governed answers instead of hallucinating SQL?"**
 > "The dbt MCP Server. It gives AI agents access to the Semantic Layer via MetricFlow,
 > not raw table access. The agent calls `query_metrics` with named metrics and dimensions —
 > same definitions your team approved in a PR. No SQL guessing. See Act 4d-2."
 
-**"How does this work with dbt Cloud?"**
-> "This is dbt Cloud. The three projects — platform, marketing, finance — each have
-> their own dbt Cloud project with their own deployment job and CI. The Fusion compiler
-> runs inside dbt Cloud on every job run. What you see here is a production setup,
+**"How does this work with dbt platform?"**
+> "This is dbt platform. The three projects — platform, marketing, finance — each have
+> their own dbt platform project with their own deployment job and CI. The Fusion engine
+> runs inside dbt platform on every job run. What you see here is a production setup,
 > not a local demo."
 
 ---
@@ -868,7 +900,7 @@ manually chaining Databricks Jobs with task dependencies, hoping the timing is r
 | Problem | Recovery |
 |---|---|
 | Genie is slow / down | Switch to the Streamlit app — Tab 3 shows the comparison with data |
-| dbt Cloud job hasn't run | Show the SQL files and YAML in the dbt Cloud IDE — the code is the demo |
+| dbt platform job hasn't run | Show the SQL files and YAML in the dbt platform IDE — the code is the demo |
 | Metric Views missing | Show `02_metric_views.sql` and explain what it would create |
 | Wrong query results | Say "even when Genie gets it wrong, we have a ground truth — let me show you the definition" |
 | MCP server won't connect | Show the config JSON and walk through the 3 env vars — explain the architecture even if the live query fails |

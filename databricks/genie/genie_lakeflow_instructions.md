@@ -48,7 +48,7 @@ High-value customer = total_lifetime_value >= 500.
 ```
 
 **Note:** These instructions are written manually. They must be kept in sync with
-the DLT pipeline code manually. There is no `schema.yml` to generate them from.
+the Lakeflow pipeline code manually. There is no `schema.yml` to generate them from.
 
 ---
 
@@ -58,7 +58,7 @@ Ask the same questions as Act 1 — note the improvement but highlight remaining
 
 1. **"What was total revenue last month?"**
    - Expected: Better — Genie finds `daily_revenue` in `gold_fct_revenue`
-   - Talking point: "Better. But `daily_revenue` is defined in Python code in the DLT notebook.
+   - Talking point: "Better. But `daily_revenue` is defined in Python code in the Lakeflow pipeline notebook.
      The instruction I wrote manually says 'completed orders only' — but I had to write that.
      If the pipeline changes, I need to remember to update these instructions too."
 
@@ -87,5 +87,5 @@ Ask the same questions as Act 1 — note the improvement but highlight remaining
 > is still us, writing text in a UI field, not code in a PR."
 
 > "The real question is: when a stakeholder audits the number Genie gave them, what can
-> they point to? With Lakeflow, they point to a DLT notebook. With dbt, they point to
+> they point to? With Lakeflow, they point to a Lakeflow pipeline notebook. With dbt, they point to
 > a YAML file with a Git history and a PR review. Let me show you Act 4."

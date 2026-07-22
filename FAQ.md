@@ -21,7 +21,7 @@ can review and audit.
 
 ---
 
-**Q: Is dbt competing with Databricks Spark Declarative Pipelines (formerly DLT/Lakeflow)?**
+**Q: Is dbt competing with Databricks Spark Declarative Pipelines (formerly Delta Live Tables)?**
 
 No. Spark Declarative Pipelines (SDP) are a pipeline orchestration tool for
 bronze/silver layers — ingestion, streaming, auto-lineage, Python-native transforms.
@@ -36,13 +36,14 @@ The reference architecture: SDP Bronze/Silver → dbt Gold/Marts → Semantic La
 
 **Q: Does dbt work natively with Databricks?**
 
-Yes. The `dbt-databricks` adapter is maintained by Databricks. dbt Fusion (the Rust
-compiler in dbt 1.9+) was co-developed with Databricks for native performance.
-Key integrations:
+Yes. The `dbt-databricks` adapter is maintained by Databricks, and the dbt Fusion
+engine is generally available for Databricks — with native OAuth, ADBC connectivity,
+and parse/compile up to ~30x faster than dbt Core. Key integrations:
 - `persist_docs` pushes column descriptions to Unity Catalog column metadata
 - dbt models run as Databricks SQL queries
-- dbt Cloud orchestrates on Databricks Workflows
-- The Semantic Layer connects to Genie via the MetricFlow API
+- dbt can author Unity Catalog metric views natively (`materialized='metric_view'`, dbt-databricks 1.12+)
+- Orchestrate from either side: run dbt in a Lakeflow Jobs dbt task, or trigger a governed dbt platform job from Lakeflow via the dbt platform task
+- The Semantic Layer connects to Genie and other BI tools via the MetricFlow API
 
 ---
 
@@ -50,13 +51,17 @@ Key integrations:
 
 **Q: What is dbt Fusion and how is it different from dbt Core?**
 
-dbt Fusion is a rewrite of the dbt compiler in Rust, introduced in dbt 1.9.
-It is faster (10x+ for large projects), eliminates the Python runtime bottleneck,
-and enforces stricter SQL syntax (no `::` casting, `arguments:` key on generic tests).
+dbt Fusion is a ground-up rewrite of the dbt engine in Rust — a separate engine,
+not a feature of a specific dbt version. It is generally available (including the
+Databricks adapter), parses and compiles up to ~30x faster on Databricks, eliminates
+the Python runtime bottleneck, and enforces stricter SQL syntax (no `::` casting,
+`arguments:` key on generic tests). dbt Core v2.0 is the Apache-2.0 foundation it
+builds on.
 
-The models and YAML in this repo are Fusion-conformant — the Fusion compiler
-runs inside dbt Cloud on every job execution. See `docs/fusion_cheat_sheet.md`
-for the syntax rules that make this code Fusion-compatible.
+Fusion runs three ways: the free `dbt` CLI, the dbt VS Code extension (real-time
+compilation and LSP), or the dbt platform. The models and YAML in this repo are
+Fusion-conformant — see `docs/fusion_cheat_sheet.md` for the syntax rules that make
+this code Fusion-compatible.
 
 ---
 
@@ -78,16 +83,17 @@ breaking change detection and ownership declarations.
 
 **Q: What is the dbt Semantic Layer and how does it improve Genie?**
 
-The dbt Semantic Layer (MetricFlow) lets you define named metrics in YAML:
+The dbt Semantic Layer (MetricFlow) lets you define named metrics in YAML. On the
+latest spec (dbt Core 1.12+ / Fusion), a metric is configured directly on its model:
 ```yaml
-- name: total_recognised_revenue
-  description: >
-    Revenue from completed orders only. Canonical definition.
-  type: simple
-  type_params:
-    measure:
-      name: total_revenue
-      filter: "{{ Dimension('order__status') }} = 'completed'"
+metrics:
+  - name: total_recognised_revenue
+    description: >
+      Revenue from completed orders only. Canonical definition.
+    type: simple
+    agg: sum
+    expr: amount_paid
+    filter: "{{ Dimension('order__status') }} = 'completed'"
 ```
 
 Genie reads these definitions via Unity Catalog column metadata (pushed by `persist_docs`)
@@ -127,14 +133,14 @@ This is the mechanism that makes dbt Mesh's governance real.
 
 ---
 
-**Q: How does this demo run — dbt Cloud or local CLI?**
+**Q: How does this demo run — dbt platform or local CLI?**
 
-This demo runs on **dbt Cloud**. Three separate dbt Cloud projects (`platform`,
-`marketing`, `finance`) are connected to the Databricks workspace. Each has its
-own deploy job. The Fusion compiler (Rust-based, dbt 1.9+) runs inside dbt Cloud
-on every job execution — you do not need a local dbt installation.
+This demo runs on **dbt platform**. Four dbt platform projects (`platform`,
+`marketing`, `finance`, `data_science`) are connected to the Databricks workspace.
+Each has its own deploy job. The Fusion engine (Rust-based) runs on every job
+execution — you do not need a local dbt installation.
 
-dbt Cloud adds on top of the Fusion compiler:
+dbt platform adds on top of the Fusion engine:
 - Orchestration and scheduled jobs
 - CI/CD environments (dev → staging → prod with slim CI)
 - Project dependencies for Mesh cross-project refs
@@ -142,13 +148,13 @@ dbt Cloud adds on top of the Fusion compiler:
 - Auto-generated docs site from `schema.yml`
 
 The `profiles.yml` files in each project subdirectory are kept for optional
-local development but are not used by dbt Cloud jobs.
+local development but are not used by dbt platform jobs.
 
 ---
 
 ## Deployment Questions
 
-**Q: Can we deploy dbt to Databricks using Asset Bundles instead of dbt Cloud?**
+**Q: Can we deploy dbt to Databricks using Asset Bundles instead of dbt platform?**
 
 Yes. This repo includes a full Declarative Asset Bundle configuration
 (`databricks.yml` + `resources/dbt_job.yml`) and a GitHub Actions CI/CD
@@ -157,13 +163,33 @@ for the complete guide.
 
 Asset Bundles handle the deployment/execution layer: defining dbt jobs as
 infrastructure-as-code, deploying to dev/prod targets, and triggering builds
-from CI/CD. However, they deploy dbt Core on Databricks compute -- **not**
-dbt Cloud. This means the Semantic Layer, Explorer, Mesh cross-project refs,
-and Fusion compiler are not available.
+from CI/CD. The dbt job runs the dbt CLI on Databricks compute (you can use the
+Fusion engine here — it is free and open source). What Asset Bundles alone do
+**not** give you are the dbt platform services layered on top: the hosted
+Semantic Layer API, Explorer, hosted Mesh metadata for cross-project refs, and
+managed orchestration with slim CI.
 
 For customers who need both IaC deployment and governance, the hybrid pattern
-works: Asset Bundles manage the infrastructure, dbt Cloud manages the
+works: Asset Bundles manage the infrastructure, dbt platform manages the
 governance layer. See `docs/dabs_cicd_guide.md` Part 8.
+
+---
+
+**Q: The customer wants Databricks to be the orchestrator. Do they lose dbt governance?**
+
+No — this is a false trade-off in 2026. Lakeflow Jobs has two native dbt integrations:
+
+- **dbt task** — runs dbt Core on Databricks compute (serverless by default). Good
+  for a single project with no Semantic Layer or Mesh needs.
+- **dbt platform task** — triggers and monitors an existing **governed dbt platform
+  job** from Lakeflow Jobs via the dbt platform API. The customer keeps Databricks
+  as the single pane of glass *and* gets the Semantic Layer, Explorer, Mesh, slim
+  CI, and Fusion. (Continuous triggers aren't supported for this task — schedule or
+  event-trigger it.)
+
+So "we orchestrate everything in Databricks" and "we want dbt governance" are no
+longer mutually exclusive. Recommend the dbt platform task for
+Databricks-orchestration-first teams.
 
 ---
 
@@ -195,15 +221,15 @@ Databricks has solid git integration via **Repos (Git Folders)**:
 **Where it gets friction-y:**
 - Merge conflicts in notebooks can be painful — notebook cell markers create noisy diffs
 - No built-in PR-triggered CI — you need GitHub Actions + Asset Bundles (1-2 days setup)
-- No inline test results or lineage preview in the editor (dbt Cloud IDE has this)
+- No inline test results or lineage preview in the editor (dbt platform IDE has this)
 
-**dbt Cloud comparison:** dbt Cloud IDE gives you a purpose-built editor with lineage preview,
+**dbt platform comparison:** dbt platform IDE gives you a purpose-built editor with lineage preview,
 inline test results, and automatic PR-triggered CI with isolated schemas. Both have git.
-dbt Cloud has governance on top.
+dbt platform has governance on top.
 
 **Verdict:** Git integration is **not a gap** in Databricks. The developer experience for
 governance workflows (PR → CI → isolated schema → test → merge) requires more setup
-than dbt Cloud's built-in flow. See `PLATFORM_COMPARISON.md` Section 2.
+than dbt platform's built-in flow. See `PLATFORM_COMPARISON.md` Section 2.
 
 ---
 
@@ -222,12 +248,12 @@ platform gap. Solutions (in order of effort):
 - Separate workspaces — higher effort, full isolation (common in enterprises)
 - Asset Bundle targets (`dev` vs `prod`) — medium effort, code-driven
 
-**dbt Cloud comparison:** dbt Cloud separates environments by default — dev, staging, prod
+**dbt platform comparison:** dbt platform separates environments by default — dev, staging, prod
 each with their own schema and credentials. Production code is inspectable in Explorer
 with one click. No configuration needed.
 
 **Verdict:** Databricks **can** separate production from exploratory, but it requires
-intentional setup. dbt Cloud has it by default. See `PLATFORM_COMPARISON.md` Section 3.
+intentional setup. dbt platform has it by default. See `PLATFORM_COMPARISON.md` Section 3.
 
 ---
 
@@ -301,17 +327,17 @@ what do you point to?" With Metric Views: the view DDL. With dbt: the PR history
 
 ---
 
-**Q: Can we use dbt with Databricks without dbt Cloud?**
+**Q: Can we use dbt with Databricks without dbt platform?**
 
 Yes. The dbt Fusion CLI is free and open source. The `profiles.yml` files in each
 project subdirectory support local execution — set `DBX_HOST`, `DBX_HTTP_PATH`,
 and `DBX_TOKEN` as environment variables and run `dbt build --profiles-dir .`
 from the project directory.
 
-However, **dbt Mesh cross-project refs require dbt Cloud** (Team or Enterprise plan).
-Without dbt Cloud, the `{{ ref('platform', 'fct_orders') }}` calls in the consumer
+However, **dbt Mesh cross-project refs require dbt platform** (Team or Enterprise plan).
+Without dbt platform, the `{{ ref('platform', 'fct_orders') }}` calls in the consumer
 projects will fail because there is no shared metadata service to resolve them.
-For demos where Mesh is the central story, dbt Cloud is required.
+For demos where Mesh is the central story, dbt platform is required.
 
 ---
 
@@ -321,7 +347,7 @@ See `SETUP.md` for the full walkthrough. Short version:
 
 1. Run `00_setup_raw_data.py` in Databricks — 5 raw Delta tables (5 min)
 2. Run `01_lakeflow_pipeline.py` as a Spark Declarative Pipeline — 13 tables (10 min)
-3. Connect dbt Cloud to Databricks, create 3 projects, run jobs (20 min)
+3. Connect dbt platform to Databricks, create 3 projects, run jobs (20 min)
 4. Create 3 Genie Spaces (10 min)
 5. Run the 5-act demo (25 min)
 

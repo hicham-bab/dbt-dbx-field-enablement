@@ -2,7 +2,12 @@
 
 A consolidated, demo-ready repo for dbt SAs and AEs enabling colleagues on
 the dbt + Databricks joint story. Covers dbt Fusion, Genie + Semantic Layer,
-dbt Mesh governance, and an honest Databricks Metric Views comparison.
+dbt Mesh governance, and an honest Databricks metric views comparison.
+
+> **Naming note (2026):** This repo uses **dbt platform** (the managed product,
+> formerly dbt Cloud) and the current **Lakeflow** names (Lakeflow Jobs, Lakeflow
+> Declarative Pipelines). The AI assistant is **dbt Wizard**. Product naming is
+> still in transition — confirm the latest terms with PMM before external use.
 
 ---
 
@@ -14,7 +19,7 @@ dbt Mesh governance, and an honest Databricks Metric Views comparison.
 | `BATTLE_CARD.md` | 12 competitive concerns with factual responses and demo proof points |
 | `METRIC_VIEWS_COMPARISON.md` | Honest dbt Semantic Layer vs Databricks Metric Views comparison |
 | `FAQ.md` | Objection handling for customers, champions, and Databricks SAs |
-| `SETUP.md` | Full environment setup — DBX workspace + dbt Cloud + Mesh |
+| `SETUP.md` | Full environment setup — DBX workspace + dbt platform + Mesh |
 | `platform/` | Producer dbt project (Fusion-conformant, contracts, semantic layer) |
 | `marketing/` | Consumer dbt project — cross-project refs from platform |
 | `finance/` | Consumer dbt project — cross-project refs from platform |
@@ -36,22 +41,23 @@ dbt Mesh governance, and an honest Databricks Metric Views comparison.
 
 - Databricks workspace with Unity Catalog enabled
 - SQL Warehouse (serverless recommended)
-- dbt Cloud account (Team or Enterprise plan for Mesh cross-project refs; 14-day trial includes all features)
+- dbt platform account (Team or Enterprise plan for Mesh cross-project refs; 14-day trial includes all features)
 
 ### Step 1: Load raw data
 
 Import `databricks/notebooks/00_setup_raw_data.py` into your Databricks workspace
-and run it. This creates `enablement.ecommerce` with 5 raw Delta tables.
+and run it. This creates `enablement.ecommerce` with 6 raw Delta tables (dbt uses
+5 of them as sources; `raw_reviews` feeds the Lakeflow/Genie portion of the demo).
 
 ### Step 2: Run the Lakeflow pipeline
 
 Import `databricks/notebooks/01_lakeflow_pipeline.py` into Databricks,
-create a DLT pipeline targeting `enablement.ecommerce_lakeflow`, and run it.
+create a Lakeflow pipeline targeting `enablement.ecommerce_lakeflow`, and run it.
 Expected: 13 tables created (5 bronze + 5 silver + 3 gold).
 
-### Step 3: Connect dbt Cloud and build all 3 projects
+### Step 3: Connect dbt platform and build all 4 projects
 
-In dbt Cloud:
+In dbt platform:
 1. Create a Databricks connection (host, HTTP path, token)
 2. Create 4 projects: `platform`, `marketing`, `finance`, `data_science` — each pointing to the corresponding subdirectory (or separate repos)
 3. Set project dependencies: `marketing`, `finance`, and `data_science` all depend on `platform`
@@ -60,7 +66,7 @@ In dbt Cloud:
 Expected: `dim_customers`, `dim_products`, `fct_orders` in `enablement.ecommerce`;
 `mart_customer_segments`, `mart_country_performance` in `enablement.ecommerce_marketing`;
 `fct_revenue`, `fct_revenue_by_product` in `enablement.ecommerce_finance`;
-`rfm_customer_features`, `customer_churn_features`, `product_affinity_pairs` in `enablement.ecommerce_data_science`.
+`rfm_customer_features`, `customer_churn_features`, `payment_method_affinity_pairs` in `enablement.ecommerce_data_science`.
 
 ### Step 4: Create Metric Views
 
@@ -87,9 +93,9 @@ Open `DEMO_SCRIPT.md` and follow the 5-act structure.
 ## Architecture
 
 ```
-Raw Delta Tables → dbt Cloud (Fusion compiler) → Tested Marts → Semantic Layer → Genie
+Raw Delta Tables → dbt platform (Fusion engine) → Tested Marts → Semantic Layer → Genie
                       ↓               ↓
-               Lakeflow DLT    dbt Mesh Consumers
+               Lakeflow Declarative Pipelines    dbt Mesh Consumers
                (Bronze/Silver)  (marketing, finance, data_science)
                                         ↑
                                   Python models (PySpark)
@@ -106,15 +112,15 @@ This repo supports two deployment paths:
 
 | Method | Best for | Guide |
 |---|---|---|
-| **dbt Cloud** (recommended) | Full governance: Semantic Layer, Explorer, Mesh, Fusion, CI/CD | `SETUP.md` Part D |
-| **Declarative Asset Bundles + CI/CD** | Self-managed IaC deployment on Databricks Workflows | `docs/dabs_cicd_guide.md` |
+| **dbt platform** (recommended) | Full governance: Semantic Layer, Explorer, Mesh, Fusion, CI/CD | `SETUP.md` Part D |
+| **Declarative Asset Bundles + CI/CD** | Self-managed IaC deployment on Lakeflow Jobs | `docs/dabs_cicd_guide.md` |
 
 The Asset Bundle path deploys dbt Core on Databricks compute via `databricks.yml`
 and a GitHub Actions pipeline. It handles execution but does **not** include
-the Semantic Layer, Explorer, or Mesh -- those require dbt Cloud.
+the Semantic Layer, Explorer, or Mesh -- those require dbt platform.
 
-For the 5-act demo, use dbt Cloud. For customers who want IaC-managed
-deployment alongside dbt Cloud, use both (see the hybrid pattern in
+For the 5-act demo, use dbt platform. For customers who want IaC-managed
+deployment alongside dbt platform, use both (see the hybrid pattern in
 `docs/dabs_cicd_guide.md` Part 8).
 
 ```bash
@@ -196,7 +202,7 @@ dbt-dbx-field-enablement/
 │       │   ├── rfm_customer_features.py      (PySpark RFM scoring)
 │       │   └── customer_churn_features.py    (PySpark churn features)
 │       └── marts/
-│           └── product_affinity_pairs.py     (PySpark affinity analysis)
+│           └── payment_method_affinity_pairs.py  (PySpark affinity analysis)
 ├── databricks/
 │   ├── notebooks/
 │   │   ├── 00_setup_raw_data.py
@@ -228,10 +234,10 @@ dbt-dbx-field-enablement/
 
 ## Verification Checklist
 
-- [ ] dbt Cloud: `platform - full build` job → green, 10 models, all tests pass
-- [ ] dbt Cloud: `marketing - full build` job → green, 2 models in `enablement.ecommerce_marketing`
-- [ ] dbt Cloud: `finance - full build` job → green, 2 models in `enablement.ecommerce_finance`
-- [ ] dbt Cloud: `data_science - full build` job → green, 4 models in `enablement.ecommerce_data_science`
+- [ ] dbt platform: `platform - full build` job → green, 10 models, all tests pass
+- [ ] dbt platform: `marketing - full build` job → green, 2 models in `enablement.ecommerce_marketing`
+- [ ] dbt platform: `finance - full build` job → green, 2 models in `enablement.ecommerce_finance`
+- [ ] dbt platform: `data_science - full build` job → green, 4 models in `enablement.ecommerce_data_science`
 - [ ] Lakeflow pipeline → 13 tables in `enablement.ecommerce_lakeflow`
 - [ ] Lakeflow marketing + finance pipelines → 4 tables across 2 schemas (contrast demo)
 - [ ] Lakeflow data science pipeline → 2 tables in `enablement.ecommerce_lakeflow_ds` (Act 4f contrast)

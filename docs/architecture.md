@@ -5,7 +5,7 @@
 This repo implements the recommended reference architecture for dbt + Databricks
 field demos. The architecture has three distinct layers:
 
-1. **Ingestion layer** (Databricks Lakeflow / DLT) — Bronze/Silver
+1. **Ingestion layer** (Databricks Lakeflow Declarative Pipelines) — Bronze/Silver
 2. **Business transformation layer** (dbt Fusion) — Gold/Marts
 3. **Semantic layer** (dbt MetricFlow) — Named metrics → Genie + BI
 
@@ -21,7 +21,7 @@ field demos. The architecture has three distinct layers:
 │  │   enablement      │    │  enablement       │    │  enablement      │  │
 │  │   .ecommerce      │    │  .ecommerce_      │    │  .ecommerce_     │  │
 │  │   (raw tables)    │    │  lakeflow         │    │  metric_views    │  │
-│  │                   │    │  (DLT gold)       │    │  (Metric Views)  │  │
+│  │                   │    │  (Lakeflow gold)       │    │  (Metric Views)  │  │
 │  │  raw_customers    │    │                   │    │                  │  │
 │  │  raw_orders       │    │  gold_dim_cust    │    │  total_revenue   │  │
 │  │  raw_order_items  │    │  gold_fct_orders  │    │  avg_order_value │  │
@@ -66,7 +66,7 @@ field demos. The architecture has three distinct layers:
 │  │                        GENIE + DASHBOARDS                            │  │
 │  │                                                                      │  │
 │  │  Genie Space (raw)  →  ambiguous answers     (Act 1 demo)           │  │
-│  │  Genie Space (DLT)  →  better but manual     (Act 3 demo)           │  │
+│  │  Genie Space (Lakeflow)  →  better but manual     (Act 3 demo)           │  │
 │  │  Genie Space (dbt)  →  accurate + auditable  (Act 4 demo)           │  │
 │  │  Databricks App     →  4-tab dashboard                              │  │
 │  └─────────────────────────────────────────────────────────────────────┘  │
@@ -87,14 +87,14 @@ flowchart TD
         R5[raw_payments]
     end
 
-    subgraph Lakeflow["Lakeflow DLT — enablement.ecommerce_lakeflow"]
+    subgraph Lakeflow["Lakeflow Declarative Pipelines — enablement.ecommerce_lakeflow"]
         B[Bronze 5 tables]
         S[Silver 5 tables]
         G[Gold 3 tables]
         B --> S --> G
     end
 
-    subgraph Platform["dbt Platform Project"]
+    subgraph Platform["dbt platform Project"]
         STG[Staging views\nprotected access]
         INT[Intermediate\nephemeral]
         MARTS[Mart tables\npublic + contracts]

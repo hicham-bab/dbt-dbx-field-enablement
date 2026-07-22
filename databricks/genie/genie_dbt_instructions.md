@@ -138,7 +138,7 @@ Ask the same questions as Acts 1 and 3 — highlight the accuracy, consistency, 
 > "Three things happened that didn't happen in Act 1 or Act 3:
 > 1. Every column has a tested, documented definition — not inferred from the column name
 > 2. Business rules are explicit — not assumed by Genie's LLM
-> 3. The audit trail is a git log — not 'trust me, the DLT notebook is correct'"
+> 3. The audit trail is a git log — not 'trust me, the Lakeflow pipeline notebook is correct'"
 
 > "When a CFO asks 'how can I trust this number?', the answer is:
 > pull request #47, reviewed by [name], approved on [date],
