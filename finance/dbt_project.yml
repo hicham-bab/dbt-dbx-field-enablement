@@ -1,7 +1,7 @@
 name: finance
 version: '1.0.0'
 
-# dbt Fusion (Rust compiler) — no config-version key
+# dbt Fusion (Rust engine) — no config-version key
 require-dbt-version: [">=1.9.0"]
 
 profile: finance

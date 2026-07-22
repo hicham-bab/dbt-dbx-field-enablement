@@ -1,13 +1,21 @@
-# dbt Fusion — Syntax Rules and dbt Cloud Reference
+# dbt Fusion — Syntax Rules and Reference
 
 ## What is dbt Fusion?
 
-dbt Fusion is the Rust-based compiler introduced in dbt 1.9. It runs inside dbt Cloud
-on every job execution — you do not install it separately. All three projects in this
-repo (`platform`, `marketing`, `finance`) are Fusion-conformant by design.
+dbt Fusion is dbt Labs' Rust-based engine for dbt — a ground-up rewrite of the parser,
+compiler, and runtime. It is **not** a feature of a particular dbt version; it is a new
+engine that is now **generally available, including the Databricks adapter**. You can run
+Fusion three ways: the free `dbt` CLI, the dbt VS Code extension (real-time compilation
+and LSP), or the dbt platform. dbt Core v2.0 is the Apache-2.0 open-source foundation
+that Fusion builds on.
 
-The Fusion compiler is stricter than the older Python-based compiler. The rules below
-explain why the SQL and YAML in this repo look the way they do.
+On Databricks, Fusion parses and compiles projects up to **~30x faster** than dbt Core,
+connects over the **ADBC** standard, and supports **native OAuth**. All four dbt projects
+in this repo (`platform`, `marketing`, `finance`, `data_science`) are Fusion-conformant
+by design.
+
+The Fusion engine is stricter than the legacy Python-based parser. The rules below explain
+why the SQL and YAML in this repo look the way they do.
 
 ---
 
@@ -68,7 +76,7 @@ coalesce(amount, cast(0 as decimal(18, 2)))
 
 ---
 
-## dbt Cloud: Job Commands
+## dbt platform: Job Commands
 
 Each project has a deploy job with two commands:
 
@@ -96,9 +104,9 @@ dbt build
 
 ---
 
-## dbt Cloud: Project Dependencies (Mesh)
+## dbt platform: Project Dependencies (Mesh)
 
-Cross-project refs like `{{ ref('platform', 'fct_orders') }}` resolve via dbt Cloud's
+Cross-project refs like `{{ ref('platform', 'fct_orders') }}` resolve via dbt platform's
 metadata service. For this to work:
 
 1. The `platform` project's Production environment must have **Generate docs on run** enabled
@@ -143,6 +151,6 @@ dbt deps --profiles-dir .
 dbt build --profiles-dir .
 ```
 
-Note: **cross-project refs require dbt Cloud**. Running `marketing` or `finance`
+Note: **cross-project refs require dbt platform**. Running `marketing` or `finance`
 locally will fail on `{{ ref('platform', ...) }}` because there is no local metadata
 service to resolve the cross-project dependency.

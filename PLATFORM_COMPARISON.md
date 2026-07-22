@@ -1,6 +1,6 @@
-# dbt Cloud vs Databricks Native: Fair Platform Comparison
+# dbt platform vs Databricks Native: Fair Platform Comparison
 
-**Purpose:** Honest, structured comparison for field teams. For each topic, we state what Databricks does, what dbt Cloud does, what's a **real platform gap** vs what's just **"we didn't configure it"**, and where the two are complementary.
+**Purpose:** Honest, structured comparison for field teams. For each topic, we state what Databricks does, what dbt platform does, what's a **real platform gap** vs what's just **"we didn't configure it"**, and where the two are complementary.
 
 **Rule:** If Databricks can do something with reasonable configuration effort, say so. If it requires building custom infrastructure that dbt provides out of the box, say that too. Never claim a gap that's just a setup step.
 
@@ -9,15 +9,15 @@
 ## 1. Spark Declarative Pipelines (SDP) vs dbt Models
 
 ### What Databricks offers
-Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide a declarative way to define data pipelines in SQL or Python. Key features:
+Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative way to define data pipelines in SQL or Python. Key features:
 - `CREATE OR REFRESH MATERIALIZED VIEW` / `CREATE OR REFRESH STREAMING TABLE` syntax
 - Expectations (data quality constraints): `EXPECT`, `EXPECT OR DROP`, `EXPECT OR FAIL`
-- Auto-lineage within a pipeline (visible in the DLT UI)
+- Auto-lineage within a pipeline (visible in the Lakeflow UI)
 - Auto-retry and auto-scaling compute
 - Streaming and batch in the same framework
-- Lakeflow Designer (visual pipeline builder, preview)
+- Lakeflow Designer (visual/low-code pipeline builder — confirm current GA/preview status)
 
-### What dbt Cloud offers
+### What dbt platform offers
 - SQL or Python models (one model per file)
 - `ref()` for compile-time dependency resolution
 - 4 built-in tests + unlimited custom SQL tests + packages (dbt_expectations, etc.)
@@ -59,7 +59,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 - **Files in Repos:** Non-notebook files (YAML, configs) are visible and editable.
 - **CI/CD:** Git changes can trigger Asset Bundle deployments via GitHub Actions or similar.
 
-### What dbt Cloud offers
+### What dbt platform offers
 - **Native Git integration:** Connect GitHub/GitLab/Azure DevOps. Every project is a repo.
 - **Cloud IDE:** Full development environment with file tree, SQL editor, lineage preview, `dbt build` in one click.
 - **PR-based CI:** Every pull request automatically triggers a CI build in an isolated schema (`dbt_pr_123_*`).
@@ -67,19 +67,19 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 
 ### The honest comparison
 
-| Dimension | Databricks | dbt Cloud | Verdict |
+| Dimension | Databricks | dbt platform | Verdict |
 |---|---|---|---|
 | Git clone and branch | Yes (Repos UI) | Yes (IDE + CLI) | Parity |
-| Edit code in browser | Yes (workspace IDE) | Yes (Cloud IDE with lineage) | dbt Cloud IDE is more purpose-built |
-| Commit, push, pull | Yes (basic UI, no merge/rebase) | Yes (full git operations) | dbt Cloud slightly better |
-| PR triggers CI build | **Must configure yourself** (GitHub Actions + DABs) | **Built-in** (automatic) | dbt Cloud wins |
+| Edit code in browser | Yes (workspace IDE) | Yes (Cloud IDE with lineage) | dbt platform IDE is more purpose-built |
+| Commit, push, pull | Yes (basic UI, no merge/rebase) | Yes (full git operations) | dbt platform slightly better |
+| PR triggers CI build | **Must configure yourself** (GitHub Actions + DABs) | **Built-in** (automatic) | dbt platform wins |
 | Code review workflow | Use GitHub/GitLab natively | Use GitHub/GitLab natively | Parity |
 | Notebook-specific merge conflicts | Can be painful (JSON cell conflicts) | N/A (plain SQL/YAML files) | dbt avoids the problem |
 
 ### Real gap vs didn't configure it
 
 - **Databricks has git integration** -- this is NOT a gap. Repos work fine for version control.
-- **PR-triggered CI is a configuration gap** -- Databricks CAN do this with GitHub Actions + DABs, but it's 1-2 days of setup vs dbt Cloud's zero-config CI. The lift is real but not prohibitive.
+- **PR-triggered CI is a configuration gap** -- Databricks CAN do this with GitHub Actions + DABs, but it's 1-2 days of setup vs dbt platform's zero-config CI. The lift is real but not prohibitive.
 - **Merge conflicts in notebooks** -- **real friction point**. Notebook format (even as `.py` with `# COMMAND ----------` markers) creates harder merge conflicts than plain SQL files.
 
 ---
@@ -111,7 +111,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 | **Separate workspaces** (`prod-workspace` vs `dev-workspace`) | Best -- full isolation | Higher effort, typical for enterprises |
 | **Asset Bundles with targets** | Good -- `dev` and `prod` targets with different paths | Medium effort, code-driven |
 
-### What dbt Cloud offers
+### What dbt platform offers
 - **Environments are built-in:** Dev, Staging, Prod -- each with its own schema, credentials, and job configuration.
 - **Dev environment:** Each developer gets `dbt_<username>` schema automatically. No collision.
 - **Production is code:** The production job runs from the main branch. You see exactly what's deployed in the Git repo.
@@ -120,8 +120,8 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 ### Real gap vs didn't configure it
 
 - **Databricks CAN separate production from exploratory** -- this is a **configuration gap**. With separate catalogs, workspaces, or Asset Bundle targets, you get clean separation. But it requires intentional setup.
-- **dbt Cloud has separation by default** -- this is a genuine advantage. No configuration needed.
-- **"Where is the production code?" is harder in Databricks** -- **real friction**. You need to know which repo, branch, and commit a job uses. dbt Cloud's Explorer makes this one-click.
+- **dbt platform has separation by default** -- this is a genuine advantage. No configuration needed.
+- **"Where is the production code?" is harder in Databricks** -- **real friction**. You need to know which repo, branch, and commit a job uses. dbt platform's Explorer makes this one-click.
 
 ---
 
@@ -136,7 +136,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 | **`%run` (notebook inclusion)** | Execute another notebook inline. Variables are shared. | Tight coupling. Hard to test. No dependency graph. |
 | **Python libraries (wheels/packages)** | Package shared code as a Python library. Import in notebooks. | Requires packaging infrastructure (build, publish, version). |
 | **Shared notebooks in Repos** | Import functions from `.py` files in the same repo. | Works within one repo. No cross-repo dependency management. |
-| **DLT pipeline composition** | A DLT pipeline can include multiple notebooks. Each notebook contributes tables. | Within one pipeline only. No cross-pipeline reuse. |
+| **Lakeflow pipeline composition** | A Lakeflow pipeline can include multiple notebooks. Each notebook contributes tables. | Within one pipeline only. No cross-pipeline reuse. |
 | **Unity Catalog functions** | Register Python/SQL UDFs in UC. Callable from any notebook or query. | Good for scalar functions. Not for full transformations. |
 | **Databricks Asset Bundles** | Define pipeline configurations in YAML. Parameterize with variables. | Infrastructure reuse, not logic reuse. |
 
@@ -147,7 +147,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 | **`ref()`** | Reference any model. Compile-time resolved. DAG-aware. | dbt-specific. |
 | **Macros** | Jinja functions reusable across models. | Can become complex. Learning curve. |
 | **Packages** | Install community packages (`dbt_utils`, `dbt_expectations`). | Versioned dependency management built in. |
-| **Cross-project refs (Mesh)** | `ref('platform', 'dim_customers')` -- governed reuse across projects. | Requires dbt Cloud for multi-project orchestration. |
+| **Cross-project refs (Mesh)** | `ref('platform', 'dim_customers')` -- governed reuse across projects. | Requires dbt platform for multi-project orchestration. |
 | **Python models** | Write PySpark/Pandas with `dbt.ref()` for inputs. | Full language flexibility with governed dependencies. |
 
 ### The honest comparison
@@ -186,9 +186,9 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 
 **Total initial setup: 2-3 days.** Ongoing maintenance is minimal -- you're editing YAML files.
 
-### How this compares to dbt Cloud CI
+### How this compares to dbt platform CI
 
-| | DABs CI (Databricks) | dbt Cloud CI |
+| | DABs CI (Databricks) | dbt platform CI |
 |---|---|---|
 | Initial setup | 2-3 days (YAML + GitHub Actions) | **30 minutes** (connect repo, enable CI) |
 | PR isolation (schema per PR) | **Build it yourself** (parameterize schema per PR) | **Built-in** (`dbt_pr_123_*`) |
@@ -200,9 +200,10 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 ### Real gap vs didn't configure it
 
 - **DABs is genuinely powerful** -- not a gap. It's real IaC for Databricks resources.
-- **DABs does not do PR-isolated schemas** -- **configuration gap** with significant effort. You CAN build this with parameterized schemas, but it's a day of engineering vs dbt Cloud's zero config.
+- **DABs does not do PR-isolated schemas** -- **configuration gap** with significant effort. You CAN build this with parameterized schemas, but it's a day of engineering vs dbt platform's zero config.
 - **DABs does not do state-aware builds** -- **real gap**. There is no `state:modified+` equivalent. Every deploy runs the full pipeline.
-- **DABs + dbt Cloud work together** -- DABs handles infrastructure deployment; dbt Cloud handles the governance layer. This is the recommended hybrid pattern. See `docs/dabs_cicd_guide.md`.
+- **DABs + dbt platform work together** -- DABs handles infrastructure deployment; dbt platform handles the governance layer. This is the recommended hybrid pattern. See `docs/dabs_cicd_guide.md`.
+- **Orchestrate from Databricks without losing governance** -- Lakeflow Jobs' **dbt platform task** triggers and monitors a governed dbt platform job (Semantic Layer, Explorer, Mesh, state-aware CI) directly from the Databricks Jobs UI. Databricks stays the single pane of glass; dbt platform still owns governance. Use this for Databricks-orchestration-first teams.
 
 ---
 
@@ -218,9 +219,9 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 | **Unity Catalog catalogs** | `dev_catalog`, `prod_catalog` | Medium | Better isolation, separate permissions |
 | **Separate workspaces** | `dev.workspace.com`, `prod.workspace.com` | High | Full isolation, separate billing |
 | **DABs targets** | `dev` and `prod` in `databricks.yml` | Medium | Code-driven, repeatable |
-| **DLT pipeline settings** | Each pipeline has its own target catalog/schema | Low per pipeline | Good for pipeline isolation |
+| **Lakeflow pipeline settings** | Each pipeline has its own target catalog/schema | Low per pipeline | Good for pipeline isolation |
 
-### How dbt Cloud handles environments
+### How dbt platform handles environments
 - **Built-in:** Dev, Staging, Prod environments created in the UI.
 - **Dev:** Each developer gets `dbt_<username>` schema automatically.
 - **CI:** Each PR gets `dbt_pr_<number>` schema automatically.
@@ -230,20 +231,20 @@ Spark Declarative Pipelines (formerly Delta Live Tables / Lakeflow DLT) provide 
 
 ### The honest comparison
 
-| | Databricks | dbt Cloud |
+| | Databricks | dbt platform |
 |---|---|---|
 | Per-developer isolation | **Manual** (schema naming conventions or separate catalogs) | **Automatic** (`dbt_<username>`) |
 | Per-PR isolation | **Build it yourself** | **Automatic** (`dbt_pr_<number>`) |
 | Prod deployment | DABs `deploy -t prod` or manual job config | One-click from main branch |
 | Environment switching | Change target/schema in config | Toggle in UI |
-| Credentials management | Workspace tokens, service principals, secrets | Centralized in dbt Cloud |
+| Credentials management | Workspace tokens, service principals, secrets | Centralized in dbt platform |
 | **Total setup effort** | **1-3 days** (depending on isolation level) | **30 minutes** |
 
 ### Real gap vs didn't configure it
 
 - **Databricks CAN do multi-environment** -- **configuration gap**, not a platform gap. Unity Catalog provides the isolation primitives.
 - **The lift is real but not prohibitive** -- 1-3 days for a solid setup. The ongoing maintenance is where it adds up (managing service principals, schema cleanup, CI job parameterization).
-- **Per-developer and per-PR isolation is the hard part** -- **configuration gap with significant effort**. dbt Cloud provides this for free. Building it in Databricks requires custom scripting.
+- **Per-developer and per-PR isolation is the hard part** -- **configuration gap with significant effort**. dbt platform provides this for free. Building it in Databricks requires custom scripting.
 
 ---
 
@@ -289,8 +290,8 @@ dbt adds a *model-level* access tier:
 
 **Effort:** Medium for basic isolation. But you have **no contract enforcement, no compile-time validation, and no cross-team lineage** linking producer and consumer pipelines.
 
-**On dbt Cloud + Databricks (Mesh):**
-1. Each domain team has their own **dbt Cloud project** targeting their own UC schema
+**On dbt platform + Databricks (Mesh):**
+1. Each domain team has their own **dbt platform project** targeting their own UC schema
 2. Cross-project dependencies declared in `dependencies.yml`
 3. `ref('platform', 'fct_orders')` -- compile-time validated, contract-enforced
 4. `access: public/protected/private` controls who can reference what
@@ -363,7 +364,7 @@ SELECT * FROM snowflake_data.schema.table;
 dbt doesn't directly query across platforms in a single project. Instead:
 - Each project targets one data platform (Databricks, Snowflake, etc.)
 - Cross-platform data movement happens at the infrastructure layer (Lakehouse Federation, Fivetran, etc.)
-- dbt Cloud Explorer shows lineage within and across dbt projects, but not external sources
+- dbt platform Explorer shows lineage within and across dbt projects, but not external sources
 
 ### Real gap vs didn't configure it
 
@@ -375,15 +376,15 @@ dbt doesn't directly query across platforms in a single project. Instead:
 
 ## 9. Summary: The Honest Scorecard
 
-| Topic | Databricks native | dbt Cloud | Winner | Notes |
+| Topic | Databricks native | dbt platform | Winner | Notes |
 |---|---|---|---|---|
 | Streaming ingestion | **Strong** | Not applicable | Databricks | dbt is not for streaming |
 | Batch transformations (SQL) | Adequate | **Strong** | dbt | SQL-first, concise, ref() |
 | PySpark transformations | **Strong** | Good (Python models) | Databricks (slight) | Both work; DBX more natural |
 | Data quality tests | Basic (3 types) | **Strong** (4+ types, packages, custom) | dbt | Depth and flexibility |
 | Git integration | Good (Repos) | Good (IDE) | Tie | Both work |
-| PR-based CI | Build it yourself (1-2 days) | **Built-in** | dbt Cloud | Real effort difference |
-| Environment management | Build it yourself (1-3 days) | **Built-in** (30 min) | dbt Cloud | Real effort difference |
+| PR-based CI | Build it yourself (1-2 days) | **Built-in** | dbt platform | Real effort difference |
+| Environment management | Build it yourself (1-3 days) | **Built-in** (30 min) | dbt platform | Real effort difference |
 | RBAC (data access) | **Strong** (Unity Catalog) | N/A (uses UC) | Databricks | UC is excellent |
 | Model-level access control | None | **Strong** (public/protected/private) | dbt | Real gap |
 | Schema contracts | None | **Strong** (enforced contracts) | dbt | Real gap |
@@ -392,24 +393,24 @@ dbt doesn't directly query across platforms in a single project. Instead:
 | Cross-instance data sharing | **Strong** (Delta Sharing) | N/A | Databricks | Good feature |
 | Cross-platform queries | **Strong** (Lakehouse Federation) | N/A | Databricks | Good feature |
 | Documentation & metadata | Manual (UC comments) | **Strong** (YAML, persist_docs) | dbt | Governance difference |
-| Lineage (within project) | Good (DLT UI) | **Strong** (Explorer, column-level) | dbt | Depth difference |
+| Lineage (within project) | Good (Lakeflow UI) | **Strong** (Explorer, column-level) | dbt | Depth difference |
 | Lineage (cross-project) | Basic (UC catalog-level) | **Strong** (Explorer, Mesh) | dbt | Real gap |
 | Modular reuse (within project) | Good (%run, packages) | **Strong** (ref, macros, packages) | dbt | Governed reuse |
 | Modular reuse (cross-project) | Runtime only (spark.read.table) | **Strong** (Mesh refs, contracts) | dbt | Real gap |
-| Production visibility | Requires navigation to Jobs/Git | **Strong** (Explorer, one-click) | dbt Cloud | Friction difference |
+| Production visibility | Requires navigation to Jobs/Git | **Strong** (Explorer, one-click) | dbt platform | Friction difference |
 | DABs / IaC | **Strong** | N/A (uses DABs for infra) | Databricks | DABs is good |
 
 ### The pattern
 
 - **Databricks wins** on: infrastructure, streaming, RBAC, cross-platform, compute
-- **dbt Cloud wins** on: governance, contracts, semantic layer, CI/CD, documentation, cross-project
-- **They're complementary** on: the recommended architecture is Databricks for infrastructure + dbt Cloud for governance
+- **dbt platform wins** on: governance, contracts, semantic layer, CI/CD, documentation, cross-project
+- **They're complementary** on: the recommended architecture is Databricks for infrastructure + dbt platform for governance
 
 ### The "real gap" vs "didn't configure it" cheat sheet
 
 | Claimed gap | Reality |
 |---|---|
-| "Databricks has no CI/CD" | **Didn't configure it** -- DABs + GitHub Actions works. But more effort than dbt Cloud. |
+| "Databricks has no CI/CD" | **Didn't configure it** -- DABs + GitHub Actions works. But more effort than dbt platform. |
 | "Databricks has no environment management" | **Didn't configure it** -- UC schemas + DABs targets. More effort. |
 | "Databricks has no git integration" | **Wrong** -- Repos works fine. |
 | "Databricks can't document columns" | **Wrong** -- `COMMENT` clauses work. But not version-controlled or PR-reviewed. |
@@ -427,16 +428,16 @@ dbt doesn't directly query across platforms in a single project. Instead:
 When running the demo, use these to address each question naturally:
 
 **"Show me git integration"**
-> Open Databricks Repos. Clone the repo, switch branches, show the file tree. Then show: "Now look at dbt Cloud IDE -- same repo, but with lineage preview, inline test results, and one-click `dbt build`. Both have git. dbt Cloud has governance on top."
+> Open Databricks Repos. Clone the repo, switch branches, show the file tree. Then show: "Now look at dbt platform IDE -- same repo, but with lineage preview, inline test results, and one-click `dbt build`. Both have git. dbt platform has governance on top."
 
 **"Where is production code?"**
-> "In Git -- same as any software project. In Databricks, production code runs via Jobs referencing the main branch. In dbt Cloud, production is visible in Explorer: every model, its status, its test results, its lineage. The difference is discoverability."
+> "In Git -- same as any software project. In Databricks, production code runs via Jobs referencing the main branch. In dbt platform, production is visible in Explorer: every model, its status, its test results, its lineage. The difference is discoverability."
 
 **"Can you build modular pipelines?"**
 > "In Databricks: yes -- use Python packages, `%run`, or UC functions for shared utilities. In dbt: `ref()` for governed dependencies, macros for shared logic, packages for community libraries. The gap is not 'can you reuse code' -- it's 'can you govern the reuse.' `spark.read.table()` works but doesn't validate. `ref()` validates at compile time."
 
 **"How heavy is CI with Asset Bundles?"**
-> "Initial setup: 2-3 days. Ongoing: editing YAML. It's real IaC -- genuinely good. But it doesn't give you PR-isolated schemas or state-aware builds. Those require dbt Cloud or custom engineering."
+> "Initial setup: 2-3 days. Ongoing: editing YAML. It's real IaC -- genuinely good. But it doesn't give you PR-isolated schemas or state-aware builds. Those require dbt platform or custom engineering."
 
 **"How does RBAC work? Can you do Data Mesh?"**
 > "Unity Catalog RBAC is excellent for data access control. For Data Mesh governance -- contracts, access tiers, cross-project lineage -- you need dbt Mesh. UC controls who can read the data. dbt Mesh controls who can depend on the model and guarantees the schema won't change without failing builds."

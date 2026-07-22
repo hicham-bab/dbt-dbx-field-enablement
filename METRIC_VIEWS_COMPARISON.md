@@ -1,13 +1,22 @@
-# Databricks Metric Views vs dbt Semantic Layer (MetricFlow)
+# Databricks Metric Views + dbt: Governing Your Metrics
 
-An honest, side-by-side comparison for dbt field teams. This document answers
-the question: "Our customer already has Databricks Metric Views — do they need
-the dbt Semantic Layer?"
+An honest guide for dbt field teams on how dbt and Databricks metric views fit
+together. It answers the two questions customers ask: "Our customer already has
+Databricks metric views — where does dbt fit?" and "dbt Semantic Layer or Unity
+Catalog metric views?"
 
-**Short answer:** Metric Views define *what to compute*. The dbt Semantic Layer
-defines *what it means, who approved it, what tests guard it, and where the
-data came from*. The first is a SQL view. The second is a governed, auditable,
-multi-tool metric contract.
+**Short answer (2026): it's AND, not OR.**
+
+- As of **dbt-databricks 1.12+**, dbt can **author and govern Unity Catalog
+  metric views directly** (`materialized='metric_view'`). The customer's own
+  metric views become version-controlled, tested, PR-reviewed dbt models.
+- The **dbt Semantic Layer** serves governed metrics to *any* BI tool — not just
+  Databricks — through one API.
+
+So the real question is not "metric views or dbt." It's "which **serving surface**
+do you need (Unity Catalog metric views for Databricks-native tools; the Semantic
+Layer API for a multi-tool stack), and who governs the definitions upstream?"
+Either way, **dbt is the authoring and governance layer.**
 
 ---
 
@@ -15,9 +24,10 @@ multi-tool metric contract.
 
 ### Databricks Metric Views
 
-Databricks Metric Views (introduced 2024, GA 2025) are YAML-defined metric
-objects saved to Unity Catalog. They define measures, dimensions, and display
-formatting. They appear as first-class objects in Genie and the SQL editor.
+Databricks Metric Views (GA April 2026; the implementation is being open-sourced
+into Apache Spark) are YAML-defined metric objects saved to Unity Catalog. They
+define measures, dimensions, and display formatting. They appear as first-class
+objects in Genie and the SQL editor.
 
 Example (from `databricks/notebooks/02a_metric_view_orders.yml`):
 
@@ -41,24 +51,25 @@ editor can use it. The definition lives in the catalog, not in code.
 ### dbt Semantic Layer (MetricFlow)
 
 The dbt Semantic Layer uses MetricFlow to define semantic models (entities,
-dimensions, measures) and named metrics in YAML files that live next to dbt
-models in Git. Metrics are served via the Semantic Layer API (MetricFlow JDBC),
-queryable by Genie, Tableau, PowerBI, Python SDK, and MCP-connected AI agents.
+dimensions) and named metrics. On the latest spec (dbt Core 1.12+ / Fusion),
+this is configured as metadata on the dbt model itself, in Git. Metrics are
+served via the Semantic Layer API (MetricFlow JDBC), queryable by Genie, Tableau,
+PowerBI, Python SDK, and MCP-connected AI agents.
 
-Example (from `platform/models/semantic/_semantic_models.yml`):
+Example (a metric defined on the `fct_orders` model in `platform/models/marts/_marts.yml`):
 
 ```yaml
-- name: total_recognised_revenue
-  label: "Total Recognised Revenue (USD)"
-  description: >
-    Revenue from completed orders only. This is the canonical definition
-    of recognised revenue for this business. Genie uses this when a user
-    asks about "revenue" without further qualification.
-  type: simple
-  type_params:
-    measure:
-      name: total_revenue
-      filter: "{{ Dimension('order__status') }} = 'completed'"
+metrics:
+  - name: total_recognised_revenue
+    label: "Total Recognised Revenue (USD)"
+    description: >
+      Revenue from completed orders only. This is the canonical definition
+      of recognised revenue for this business. Genie uses this when a user
+      asks about "revenue" without further qualification.
+    type: simple
+    agg: sum
+    expr: amount_paid
+    filter: "{{ Dimension('order__status') }} = 'completed'"
 ```
 
 **What you get:** A named, tested, version-controlled, PR-reviewed metric
@@ -66,9 +77,48 @@ definition that is served to every BI tool and AI agent via a single API.
 
 ---
 
+## Part 1.5: dbt Can Author Your Databricks Metric Views (`materialized='metric_view'`)
+
+This is the 2026 update that reframes the whole conversation. With
+**dbt-databricks 1.12+**, a Unity Catalog metric view can be a **dbt model**: set
+`materialized='metric_view'` and put the metric-view YAML in the model body. dbt
+deploys it to Unity Catalog like any other object.
+
+```sql
+-- platform/models/metrics/orders_metric_view.sql
+{{ config(materialized='metric_view') }}
+version: 1.1
+source: {{ ref('fct_orders') }}
+measures:
+  - name: total_revenue
+    expr: SUM(CASE WHEN status = 'completed' THEN amount_paid ELSE 0 END)
+    display_name: Total Revenue
+```
+
+That means the customer's own Unity Catalog metric views — the ones Genie and
+Databricks SQL already use — become:
+
+- **Version-controlled** — every definition change is a commit and a PR
+- **Tested** — the underlying mart carries dbt tests and an enforced contract
+- **Lineage-tracked** — `ref('fct_orders')` wires the metric view into the dbt DAG
+- **CI/CD-deployed** — promoted dev → prod through the same pipeline as every model
+
+So the governance story below is no longer dbt *versus* metric views — it's dbt
+*governing* the metric views the customer already wants. A working example lives
+in `platform/models/metrics/` in this repo.
+
+---
+
 ## Part 2: The Feature Comparison
 
-| Feature | Databricks Metric Views | dbt Semantic Layer (MetricFlow) |
+This compares the two **serving surfaces** at their common defaults: a metric
+view hand-authored in the catalog vs a dbt Semantic Layer metric. Keep Part 1.5
+in mind — dbt can now author the left column too, in which case the "version
+control", "tests", and "lineage" rows apply to metric views as well. Choose the
+serving surface by *where* the metrics are consumed; govern *both* with dbt
+upstream.
+
+| Feature | Databricks Metric Views (hand-authored) | dbt Semantic Layer (MetricFlow) |
 |---|---|---|
 | **Definition format** | YAML saved to Unity Catalog | YAML in Git, next to dbt models |
 | **Version control** | No — saved to catalog, no git history | Yes — every change is a commit, every commit is reviewable |
@@ -150,7 +200,7 @@ last change?"
 
 **dbt Semantic Layer answer:**
 ```bash
-$ git log --oneline platform/models/semantic/_semantic_models.yml
+$ git log --oneline platform/models/marts/_marts.yml
 
 a3f7c21  Update revenue definition to exclude returned orders (#47)
 9e2b134  Add return_rate ratio metric (#42)
@@ -191,7 +241,7 @@ Genie returns: $127,450.00
 
 **Step 2: Trace the metric definition**
 
-Open dbt Cloud Explorer → search "total_recognised_revenue" → click:
+Open dbt platform Explorer → search "total_recognised_revenue" → click:
 
 ```
 Metric: total_recognised_revenue
@@ -261,7 +311,7 @@ metric filter uses. If bad data enters, the tests catch it before Genie sees it.
 **Step 6: Audit the definition history**
 
 ```bash
-$ git log --oneline platform/models/semantic/_semantic_models.yml
+$ git log --oneline platform/models/marts/_marts.yml
 a3f7c21  Update revenue definition to exclude returned orders (#47)
 ```
 
@@ -275,7 +325,7 @@ asks 'who approved this?', you have a name, a date, and a discussion thread."
 > Step 2: Find the metric view in the catalog, read the SQL expression. Step 3:
 > The `source` field says `fct_orders`. How was `fct_orders` built? Read the
 > notebook. Step 4: What tests validate the data? There are none on the metric
-> view — you'd need to check the notebook's DLT expectations, if they exist.
+> view — you'd need to check the notebook's Lakeflow expectations, if they exist.
 > Step 5: Who approved this definition? Check the UC audit log — it shows a
 > timestamp and a user ID, but not the rationale, the discussion, or the review."
 
@@ -339,9 +389,12 @@ Without Layers 1–5, Layer 6 is a named metric built on ungoverned foundations.
 
 ---
 
-## Part 4: Where Metric Views Are Sufficient
+## Part 4: Where Metric Views Are the Right Serving Surface
 
-Be honest. Metric Views are the right choice when:
+Be honest. Unity Catalog metric views are the right serving surface when — and
+remember dbt can still author and govern them via `materialized='metric_view'`
+(Part 1.5), so this is about *where metrics are served*, not whether dbt is
+involved:
 
 1. **Simple, stable metrics** — fewer than 10 metrics, rarely change, no complex
    filters or time-grain requirements
@@ -400,22 +453,22 @@ What Genie doesn't see: that this metric is a ratio with an explicit
 numerator and denominator, that the underlying data is tested, or that
 the definition was PR-reviewed.
 
-### dbt Semantic Layer version (_semantic_models.yml)
+### dbt Semantic Layer version (cross-model metric in `_semantic_models.yml`)
 
 ```yaml
-- name: return_rate
-  label: "Order Return Rate (%)"
-  description: >
-    Percentage of orders that were returned. Computed as:
-    returned_orders / total_orders * 100.
-    This is a derived metric — auditable because both inputs are defined above.
-  type: ratio
-  type_params:
+metrics:
+  - name: return_rate
+    label: "Order Return Rate (%)"
+    description: >
+      Percentage of orders that were returned. Computed as:
+      returned_orders / total_orders * 100.
+      Auditable because both inputs are governed simple metrics on fct_orders.
+    type: ratio
     numerator:
-      name: order_count
+      name: total_orders
       filter: "{{ Dimension('order__status') }} = 'returned'"
     denominator:
-      name: order_count
+      name: total_orders
 ```
 
 What Genie sees: a named metric with a label, a description, and an explicit
@@ -430,7 +483,7 @@ Ask Genie: *"What is our return rate?"*
 | SQL generated | Evaluates the `expr` — raw SQL | Uses the ratio definition — semantic |
 | Genie explanation | "return_rate from the metric view" | "Return rate = returned orders / total orders x 100" |
 | Can Genie explain the denominator? | No — it's buried in the SQL expression | Yes — `order_count` is a separate, named measure |
-| Auditability | UC audit log (timestamp + user ID) | `git log _semantic_models.yml` (commit + PR + author + rationale) |
+| Auditability | UC audit log (timestamp + user ID) | `git log _marts.yml` (commit + PR + author + rationale) |
 | Definition drift possible? | Yes — anyone with UC permissions can edit | No — PR required, review enforced by Git workflow |
 | Downstream impact visibility | None — no contract, no consumers tracked | Explorer shows every model and metric that depends on this |
 
@@ -443,7 +496,7 @@ principal ID. You won't find the reason, the discussion, or the review approval.
 
 **dbt Semantic Layer:**
 ```bash
-$ git log --oneline platform/models/semantic/_semantic_models.yml
+$ git log --oneline platform/models/marts/_marts.yml
 a3f7c21  Update revenue to exclude returned orders (#47)  — reviewed by @finance-lead
 9e2b134  Add return_rate ratio metric (#42)                — reviewed by @analytics-eng
 6d1a8f0  Initial semantic models (#38)                     — reviewed by @platform-team
@@ -455,16 +508,20 @@ Every change. Every reviewer. Every rationale. Immutable.
 
 ## Part 7: The Honest Assessment
 
-Metric Views are a genuine improvement over raw tables. They give Genie named
-metrics with display formatting and comments. For simple, Databricks-only use
-cases with low governance requirements, they are sufficient.
+Metric views are a genuine improvement over raw tables, and they are the natural
+serving surface for Databricks-native tools like Genie and Databricks SQL. The
+2026 point is that you no longer have to choose between them and dbt:
 
-The dbt Semantic Layer costs more to set up (YAML files, dbt Cloud license,
-Semantic Layer configuration). But it provides a fundamentally different thing:
+- **A metric view authored by hand in the catalog** = a named calculation with no
+  version control, tests, or lineage
+- **A metric view authored as a dbt model** (`materialized='metric_view'`) = the
+  same Databricks-native object, now version-controlled, tested, and lineage-tracked
+- **The dbt Semantic Layer** = a governed metric contract served to *every* tool
+  (Tableau, Power BI, Looker, Python, AI agents) via one API — for stacks that
+  reach beyond Databricks
 
-- **Metric Views = named calculation** saved to a catalog
-- **dbt Semantic Layer = governed metric contract** backed by version control,
-  tests, column contracts, cross-project Mesh, multi-tool API, and full lineage
+dbt is the authoring and governance layer underneath both serving surfaces. The
+choice is about where metrics are consumed, not whether dbt adds value.
 
 **The question to ask your customer:**
 
@@ -492,8 +549,8 @@ compliance, or leadership stakeholders.
 | Step | Action | What you show | Time |
 |---|---|---|---|
 | 1 | "What definition did Genie use?" | Open Explorer → search `total_recognised_revenue` → show definition, label, description, filter | 10s |
-| 2 | "Who approved this definition?" | Terminal: `git log --oneline _semantic_models.yml` → show PR #47, author, date | 10s |
-| 3 | "What changed in the last update?" | Terminal: `git diff HEAD~1 _semantic_models.yml` → show the filter that was added | 10s |
+| 2 | "Who approved this definition?" | Terminal: `git log --oneline _marts.yml` → show PR #47, author, date | 10s |
+| 3 | "What changed in the last update?" | Terminal: `git diff HEAD~1 _marts.yml` → show the filter that was added | 10s |
 | 4 | "Where does the data come from?" | Explorer → `fct_orders` → column-level lineage → trace `amount_paid` back to `raw_payments` | 15s |
 | 5 | "Is the data correct?" | Explorer → `fct_orders` data health tile → 7 tests passing, last run timestamp | 10s |
 | 6 | "Can someone break this silently?" | Show `_marts.yml` → `contract: enforced: true` → "If anyone changes the schema, CI fails before production" | 5s |

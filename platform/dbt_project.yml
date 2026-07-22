@@ -1,7 +1,7 @@
 name: platform
 version: '1.0.0'
 
-# dbt Fusion (Rust compiler) — no config-version key
+# dbt Fusion (Rust engine) — no config-version key
 require-dbt-version: [">=1.9.0"]
 
 profile: platform
@@ -37,4 +37,9 @@ models:
       +persist_docs:
         relation: true
         columns: true
+
+    # Databricks Unity Catalog metric views authored as dbt models
+    # (dbt-databricks 1.12+). See models/metrics/.
+    metrics:
+      +materialized: metric_view
 

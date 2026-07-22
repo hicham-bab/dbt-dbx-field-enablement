@@ -1,6 +1,13 @@
 # dbt Job definition for Databricks Asset Bundles
-# Deploys the platform dbt project as a Databricks Workflow
-# See docs/dabs_cicd_guide.md for the full guide
+# Deploys the platform dbt project as a Lakeflow Job (native dbt task).
+#
+# NOTE ON ENGINE: the native Lakeflow "dbt task" runs dbt Core on Databricks
+# compute (the dependencies below). This path does NOT include the dbt platform
+# services (Semantic Layer API, Explorer, hosted Mesh metadata). If the customer
+# wants governance AND Databricks as the orchestrator, use a Lakeflow "dbt
+# platform task" instead: it triggers a governed dbt platform job (Fusion engine,
+# Semantic Layer, Explorer, Mesh) and streams status back into the Jobs UI.
+# See docs/dabs_cicd_guide.md and BATTLE_CARD.md Part 6/7 for the full guide.
 
 resources:
   jobs:
@@ -30,7 +37,7 @@ resources:
       # Task chain: deps -> seed -> run -> test
       tasks:
         - task_key: dbt_deps
-          description: "Install dbt packages (dbt_utils, dbt_expectations)"
+          description: "Install dbt packages (dbt_utils)"
           environment_key: serverless_dbt_env
           dbt_task:
             project_directory: ./platform
@@ -83,11 +90,12 @@ resources:
             catalog: ${var.catalog}
             schema: ${var.schema}
 
-      # Serverless compute environment with dbt dependencies
-      # dbt-core and dbt-databricks are installed automatically
+      # Serverless compute environment with dbt dependencies.
+      # The native dbt task runs dbt Core; the adapter pulls a compatible dbt-core.
+      # dbt-databricks 1.12+ is required for the metric_view materialization used
+      # by platform/models/metrics/orders_metric_view.sql.
       environments:
         - environment_key: serverless_dbt_env
           spec:
             dependencies:
-              - dbt-core==1.10.15
-              - dbt-databricks>=1.8.0,<2.0.0
+              - dbt-databricks>=1.12.0,<2.0.0

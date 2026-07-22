@@ -14,11 +14,8 @@ models:
 
   - name: dim_customers
     description: >
-      PUBLIC model. Customer dimension with LTV metrics and segmentation.
-      Consumed by: marketing (segmentation), finance (revenue attribution).
-      Contract enforced — column changes are a breaking change for all consumers.
-      Column descriptions are persisted to Unity Catalog via dbt-databricks adapter,
-      making them available to Genie without manual copy-paste.
+      PUBLIC model. Customer dimension with LTV metrics and segmentation. Consumed by: marketing (segmentation), finance (revenue attribution). Contract enforced — column changes are a breaking change for all consumers. Column descriptions are persisted to Unity Catalog via dbt-databricks adapter, making them available to Genie without manual copy-paste.
+       Semantic model built on dim_customers. One row per customer. Defines the customer grain, segmentation dimensions, and value measures. This is the authoritative definition of a "customer" for all BI and Genie queries.
     config:
       group: platform_core
       access: public
@@ -35,6 +32,9 @@ models:
           - not_null
           - unique
 
+        entity:
+          type: primary
+          name: customer
       - name: first_name
         description: "Customer first name."
         data_type: string
@@ -55,10 +55,15 @@ models:
         description: "Date the customer account was created."
         data_type: date
 
+        dimension:
+          type: time
+        granularity: day
       - name: country
         description: "Uppercased two-letter ISO country code."
         data_type: string
 
+        dimension:
+          type: categorical
       - name: number_of_orders
         description: "Total number of orders placed by this customer, regardless of status."
         data_type: bigint
@@ -86,11 +91,46 @@ models:
               arguments:
                 values: ['high_value', 'mid_value', 'low_value']
 
+        dimension:
+          type: categorical
+    semantic_model:
+      enabled: true
+      name: dim_customers
+    metrics:
+      - name: total_customers
+        label: "Total Customers"
+        description: "Distinct count of all customers in the system regardless of order activity."
+        type: simple
+        agg: count_distinct
+        expr: customer_id
+      - name: avg_customer_lifetime_value
+        label: "Average Customer Lifetime Value (USD)"
+        description: >
+          Average total_lifetime_value across all customers.
+          Lifetime value = sum of all successful payments, regardless of order status.
+        type: simple
+        agg: average
+        expr: total_lifetime_value
+      - name: total_lifetime_value
+        agg: sum
+        expr: total_lifetime_value
+        description: >
+          Sum of all successful payment amounts across all orders for each customer.
+          Denominated in USD. Revenue = successful payments only (status = 'success').
+
+        type: simple
+        hidden: true
+      - name: total_orders_per_customer
+        agg: sum
+        expr: number_of_orders
+        description: "Total number of orders placed across all customers in scope."
+        type: simple
+        hidden: true
+
   - name: dim_products
     description: >
-      PUBLIC model. Product catalog dimension.
-      Consumed by: finance (revenue by product/category).
-      Contract enforced.
+      PUBLIC model. Product catalog dimension. Consumed by: finance (revenue by product/category). Contract enforced.
+       Semantic model built on dim_products. One row per product. Defines the product grain, category dimension, and pricing measures. This is the authoritative definition of a "product" for all BI and Genie queries.
     config:
       group: platform_core
       access: public
@@ -107,6 +147,9 @@ models:
           - not_null
           - unique
 
+        entity:
+          type: primary
+          name: product
       - name: product_name
         description: "Human-readable product name."
         data_type: string
@@ -117,6 +160,8 @@ models:
         description: "Lowercased product category (apparel, electronics, fitness, footwear, nutrition)."
         data_type: string
 
+        dimension:
+          type: categorical
       - name: unit_price
         description: "Current list price in USD."
         data_type: decimal(18,2)
@@ -125,11 +170,32 @@ models:
         description: "True if the product is currently available for purchase."
         data_type: boolean
 
+    semantic_model:
+      enabled: true
+      name: dim_products
+    derived_semantics:
+      entities: []
+      dimensions:
+        - name: is_active
+          type: categorical
+          expr: cast(is_active as string)
+    metrics:
+      - name: total_products
+        label: "Total Products"
+        description: "Distinct count of all products in the catalog."
+        type: simple
+        agg: count_distinct
+        expr: product_id
+      - name: avg_product_price
+        label: "Average Product Price (USD)"
+        description: "Average list price across all products in the catalog."
+        type: simple
+        agg: average
+        expr: unit_price
   - name: fct_orders
     description: >
-      PUBLIC model. Order fact table enriched with item counts and payment totals.
-      Consumed by: finance (revenue), marketing (customer activity).
-      Contract enforced — this is the canonical order grain for all downstream consumers.
+      PUBLIC model. Order fact table enriched with item counts and payment totals. Consumed by: finance (revenue), marketing (customer activity). Contract enforced — this is the canonical order grain for all downstream consumers.
+       Semantic model built on fct_orders. One row per order. Defines order-level revenue, count, and status dimensions. Revenue here = amount_paid for orders with status = 'completed'. This definition is version-controlled — any change goes through a PR.
     config:
       group: platform_core
       access: public
@@ -146,6 +212,9 @@ models:
           - not_null
           - unique
 
+        entity:
+          type: primary
+          name: order
       - name: customer_id
         description: "Foreign key to dim_customers."
         data_type: integer
@@ -158,6 +227,9 @@ models:
                 to: ref('dim_customers')
                 field: customer_id
 
+        entity:
+          type: foreign
+          name: customer
       - name: order_date
         description: "Date the order was placed."
         data_type: date
@@ -166,6 +238,9 @@ models:
         tests:
           - not_null
 
+        dimension:
+          type: time
+        granularity: day
       - name: status
         description: "Order lifecycle status. Valid values: placed, shipped, completed, returned."
         data_type: string
@@ -174,10 +249,14 @@ models:
               arguments:
                 values: ['placed', 'shipped', 'completed', 'returned']
 
+        dimension:
+          type: categorical
       - name: payment_method
         description: "Payment method used: credit_card, paypal, bank_transfer."
         data_type: string
 
+        dimension:
+          type: categorical
       - name: number_of_items
         description: "Number of distinct line items in the order."
         data_type: bigint
@@ -194,3 +273,58 @@ models:
         data_type: decimal(18,2)
         tests:
           - not_null
+    semantic_model:
+      enabled: true
+      name: fct_orders
+    metrics:
+      - name: total_revenue
+        label: "Total Revenue (USD)"
+        description: >
+          Sum of amount_paid across ALL orders regardless of status. Includes placed,
+          shipped, completed, and returned. Use total_recognised_revenue for the
+          business-recognised figure. Use the status dimension to filter if needed.
+        type: simple
+        agg: sum
+        expr: amount_paid
+      - name: total_recognised_revenue
+        label: "Total Recognised Revenue (USD)"
+        description: >
+          Revenue from completed orders only. This is the canonical definition
+          of recognised revenue for this business. Genie uses this when a user
+          asks about "revenue" without further qualification.
+        type: simple
+        agg: sum
+        expr: amount_paid
+        filter: "{{ Dimension('order__status') }} = 'completed'"
+      - name: avg_order_value
+        label: "Average Order Value (USD)"
+        description: >
+          Average amount_paid per order across completed orders.
+          Denominator: count of completed orders. Numerator: sum of amount_paid.
+        type: simple
+        agg: average
+        expr: amount_paid
+      - name: total_orders
+        label: "Total Orders"
+        description: "Count of all orders regardless of status."
+        type: simple
+        agg: count_distinct
+        expr: order_id
+      - name: completed_orders
+        label: "Completed Orders"
+        description: "Count of orders with status = 'completed'."
+        type: simple
+        agg: count_distinct
+        expr: "case when status = 'completed' then order_id end"
+      - name: total_items_sold
+        label: "Total Items Sold"
+        description: "Sum of line items across all orders in scope."
+        type: simple
+        agg: sum
+        expr: number_of_items
+      - name: return_flag
+        agg: sum
+        expr: "case when status = 'returned' then 1 else 0 end"
+        description: "Count of returned orders. Use for return rate calculation."
+        type: simple
+        hidden: true

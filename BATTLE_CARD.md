@@ -30,7 +30,7 @@ the column descriptions come from — code or manual entry?"
 #### 1. Enhanced enterprise capabilities reducing dbt differentiation
 
 **What they say:** "Databricks keeps adding enterprise features — Unity Catalog lineage,
-DLT governance, Genie. Each release closes the gap with dbt."
+Lakeflow governance, Genie. Each release closes the gap with dbt."
 
 **What is true:** Databricks is investing heavily in the governance and documentation
 layer. Unity Catalog now supports table and column comments. Lakeflow has improved.
@@ -43,17 +43,17 @@ business rules that are PR-reviewed and semantically typed.
 
 **Demo proof point:** Show Act 4 — the `_semantic_models.yml` file with `return_rate`
 as a ratio metric with an explicit description. Ask: "Where is this definition in
-Unity Catalog or DLT?"
+Unity Catalog or Lakeflow?"
 
 ---
 
 #### 2. Spark declarative pipelines sharing assets across catalog
 
-**What they say:** "Spark + DLT can share assets across catalogs in Unity Catalog.
+**What they say:** "Spark + Lakeflow can share assets across catalogs in Unity Catalog.
 We have cross-catalog lineage. Why do we need dbt Mesh?"
 
 **What is true:** Unity Catalog does provide cross-catalog data sharing and lineage.
-DLT pipelines can read from multiple catalogs.
+Lakeflow pipelines can read from multiple catalogs.
 
 **Our response:** Cross-catalog data access is not the same as cross-project governance.
 dbt Mesh adds contract enforcement (if the platform team changes a schema, consumer
@@ -70,10 +70,10 @@ changes its schema.
 
 #### 3. "Notebooks aren't scalable" argument weakening
 
-**What they say:** "You used to say notebooks aren't scalable — but DLT has improved
+**What they say:** "You used to say notebooks aren't scalable — but Lakeflow has improved
 so much that notebooks are now production-ready. The argument is outdated."
 
-**What is true:** DLT pipelines running in notebooks are production-ready for
+**What is true:** Lakeflow pipelines running in notebooks are production-ready for
 ingestion and ETL. The auto-lineage, retry logic, and expectation framework are
 genuinely good. Notebooks CAN also add column descriptions to Unity Catalog via
 `ALTER TABLE ... CHANGE COLUMN ... COMMENT '...'` or inline `CREATE TABLE` DDL —
@@ -228,11 +228,11 @@ documented. "This is what 'starting right' looks like."
 | "Unity Catalog is our governance" | "UC governs *access*: who can read what. dbt governs *meaning*: what 'revenue' means, tested, version-controlled, PR-reviewed. Both are needed. UC + dbt = complete governance. UC alone = access control without business logic governance." | **4/8 deals** |
 | "Our team doesn't know dbt / retraining cost" | "dbt Python models run PySpark — your team's existing code. The learning curve is `dbt.ref()` instead of `spark.read.table()`. That's one function signature. The payoff is contracts, lineage, and a Semantic Layer. See `data_science/models/features/rfm_customer_features.py`." | **4/8 deals** |
 | "DBX can do everything dbt does natively" | "Name the DBX feature that: (1) enforces a column contract across teams, (2) serves a named metric via JDBC to Genie, (3) fails a CI build when an upstream schema changes. Those three don't exist natively. That's what dbt adds." | **3/8 deals (DBX SA narrative)** |
-| "SDP/DLT replaces dbt models" | "Spark Declarative Pipelines replace dbt's *execution*. They don't replace dbt's *governance*: contracts, Mesh cross-project refs, Semantic Layer, PR-reviewed definitions. SDP is the engine. dbt is the control plane." | **DBX SA narrative** |
+| "SDP replaces dbt models" | "Spark Declarative Pipelines replace dbt's *execution*. They don't replace dbt's *governance*: contracts, Mesh cross-project refs, Semantic Layer, PR-reviewed definitions. SDP is the engine. dbt is the control plane." | **DBX SA narrative** |
 | "dbt is for SQL-only teams" | "Open `data_science/models/features/customer_churn_features.py`. That's PySpark — window functions, feature engineering, ML features. Running on your Databricks cluster. With `dbt.ref()` contracts. dbt is language-agnostic governance." | **DBX SA narrative** |
 | "Lakeflow Spark Declarative Pipelines make dbt unnecessary" | "Declarative Pipelines improve DLT's developer experience. They don't add contracts, Semantic Layer, cross-project Mesh, CI/CD environments, or Explorer. Better DX on the execution layer doesn't replace the governance layer. See Part 8." | **Emerging — 2/8 but growing** |
-| "We'll use the native dbt task in DBX Jobs" | "It runs `dbt build` on DBX compute. No Semantic Layer, no Explorer, no CI/CD, no Fusion compiler. Works until week 6 when Genie needs governed metrics. See Part 7." | Field gap |
-| "We'll use Databricks Asset Bundles for dbt deployment" | "DABs handle deployment as IaC -- that's the infrastructure layer. dbt Cloud handles the governance layer: Semantic Layer, Explorer, Mesh, CI/CD. You can use both. See `docs/dabs_cicd_guide.md` Part 8 for the hybrid pattern." | Emerging |
+| "We'll use the native dbt task in DBX Jobs" | "It runs `dbt build` on DBX compute. No Semantic Layer, no Explorer, no CI/CD, no Fusion engine. Works until week 6 when Genie needs governed metrics. See Part 7." | Field gap |
+| "We'll use Databricks Asset Bundles for dbt deployment" | "DABs handle deployment as IaC -- that's the infrastructure layer. dbt platform handles the governance layer: Semantic Layer, Explorer, Mesh, CI/CD. You can use both. See `docs/dabs_cicd_guide.md` Part 8 for the hybrid pattern." | Emerging |
 | "Genie works fine on our Lakeflow tables" | "Great — open the Genie Space and ask 'what was total revenue last month?' three times. If you get the same answer each time, with the correct business definition, you don't need dbt. If not — that's exactly what the Semantic Layer solves." | Field gap |
 
 ---
@@ -244,13 +244,14 @@ When positioning dbt + Databricks together:
 1. **Genie is better with dbt.** This is the clearest joint value — dbt's metadata
    makes Genie more accurate, consistent, and auditable. Frame dbt as a Genie accelerator.
 
-2. **dbt Fusion is Databricks-optimized.** The Rust compiler was co-developed to run
-   natively on Databricks. No `config-version`, `cast()` syntax, Unity Catalog-native.
+2. **dbt Fusion is Databricks-optimized.** The Rust engine is GA on Databricks with
+   native OAuth and ADBC connectivity — ~30x faster parse/compile. No `config-version`,
+   `cast()` syntax, Unity Catalog-native.
 
 3. **dbt uses Unity Catalog.** `persist_docs` pushes column descriptions from YAML
    into UC column metadata. dbt doesn't replace UC — it populates it.
 
-4. **Databricks + dbt Cloud = enterprise data stack.** Orchestration (Databricks Workflows),
+4. **Databricks + dbt platform = enterprise data stack.** Orchestration (Lakeflow Jobs),
    governance (UC + dbt contracts), semantic layer (MetricFlow), AI/BI (Genie) —
    all components are complementary.
 
@@ -277,7 +278,7 @@ When positioning dbt + Databricks together:
 ## Part 5: Time to Value — The Three Deployment Patterns
 
 This section is the most important one for conversations where a customer says
-"we're already on Databricks, do we really need dbt Cloud?" or "we can just run
+"we're already on Databricks, do we really need dbt platform?" or "we can just run
 dbt Core ourselves." It reframes the question from *cost of adoption* to *cost of delay*.
 
 ---
@@ -286,18 +287,18 @@ dbt Core ourselves." It reframes the question from *cost of adoption* to *cost o
 
 **Pattern 1 — Databricks Notebooks only**
 The team builds pipelines directly in Databricks notebooks (Python/PySpark/SQL).
-DLT manages orchestration and lineage. Unity Catalog manages access control.
+Lakeflow manages orchestration and lineage. Unity Catalog manages access control.
 No dbt in the stack.
 
 **Pattern 2 — dbt Core self-hosted + Databricks**
 The team runs open-source dbt Core, self-managed on their own infrastructure
-(typically triggered by Airflow, Dagster, or Databricks Workflows). The dbt Cloud
+(typically triggered by Airflow, Dagster, or Lakeflow Jobs). The dbt platform
 IDE, environments, and Semantic Layer API are not part of the stack.
 
-**Pattern 3 — dbt Platform (Cloud) + Databricks**
-The team uses dbt Cloud with the full platform: managed IDE, CI/CD environments,
+**Pattern 3 — dbt platform + Databricks**
+The team uses dbt platform with the full platform: managed IDE, CI/CD environments,
 Explorer, the Semantic Layer API (MetricFlow), and native Databricks integration
-(OAuth, Unity Catalog metadata push, Fusion compiler).
+(OAuth, Unity Catalog metadata push, Fusion engine).
 
 ---
 
@@ -307,7 +308,7 @@ The key distinction is between **time to first pipeline** (easy) and
 **time to first trusted metric** (hard). The two are separated by weeks or months
 depending on the pattern — and for AI use cases, only one pattern ever gets there.
 
-| Milestone | Notebooks only | dbt Core + DBX | dbt Platform + DBX |
+| Milestone | Notebooks only | dbt Core + DBX | dbt platform + DBX |
 |---|---|---|---|
 | First pipeline running | **Day 1** | Day 3–5 | Day 3–5 |
 | First transformation under version control | Week 2+ (manual git) | Day 3 | Day 3 |
@@ -322,8 +323,11 @@ depending on the pattern — and for AI use cases, only one pattern ever gets th
 | New team member productive in < 1 week | Never | Rarely | **Yes** (Explorer) |
 
 **The column that should end the conversation:** `dbt Core + DBX` and `Notebooks only`
-never reach the semantic layer. Not "later" — never. MetricFlow's Semantic Layer API
-is a dbt Cloud-only feature. There is no self-hosted path to it.
+don't serve a semantic layer on their own — the MetricFlow Semantic Layer API is a
+dbt platform service. The path to it is adopting dbt platform, not self-hosting the
+API. Note this doesn't force a change of orchestrator: a Databricks-orchestration-first
+team can trigger the governed dbt platform job straight from Lakeflow Jobs via the
+**dbt platform task**.
 
 ---
 
@@ -343,7 +347,7 @@ The compounding effect:
   and BI tools against a governed semantic layer.
 - **Month 12:** Pattern 1 teams are in a cycle of tribal knowledge, broken dashboards,
   and Genie giving different answers to the same question depending on which table
-  it hits. Pattern 2 teams are evaluating dbt Cloud because they've hit the ceiling
+  it hits. Pattern 2 teams are evaluating dbt platform because they've hit the ceiling
   of what self-hosted can do (no semantic layer, no Explorer, no managed environments).
   Pattern 3 teams are deploying AI agents against a trusted semantic layer.
 - **Month 18+:** Pattern 1 and 2 teams are paying the migration cost they avoided at
@@ -506,8 +510,8 @@ calibrate for each customer, not fixed numbers.
 
 | Activity | Why it exists without Mesh | Why Mesh eliminates it | How to discover the customer's cost |
 |---|---|---|---|
-| **Cross-project job wiring** | With notebooks, each team's pipeline is a separate Databricks Job. Dependencies are manual: "Job B triggers after Job A." Adding a new consumer means wiring a new trigger. | `dependencies.yml` — one line per dependency. dbt Cloud handles trigger ordering. | "How do you ensure the marketing pipeline runs after the platform pipeline finishes? Who maintains that?" |
-| **CI/CD environment setup** | dbt Cloud creates isolated schemas per PR (`dbt_pr_123_*`). Without it, teams either skip CI entirely (most common) or build per-PR environments manually. | Built-in. Zero maintenance. | "When an engineer opens a PR, does it run against an isolated environment or against the shared dev schema?" |
+| **Cross-project job wiring** | With notebooks, each team's pipeline is a separate Databricks Job. Dependencies are manual: "Job B triggers after Job A." Adding a new consumer means wiring a new trigger. | `dependencies.yml` — one line per dependency. dbt platform handles trigger ordering. | "How do you ensure the marketing pipeline runs after the platform pipeline finishes? Who maintains that?" |
+| **CI/CD environment setup** | dbt platform creates isolated schemas per PR (`dbt_pr_123_*`). Without it, teams either skip CI entirely (most common) or build per-PR environments manually. | Built-in. Zero maintenance. | "When an engineer opens a PR, does it run against an isolated environment or against the shared dev schema?" |
 | **Documentation maintenance** | Column descriptions, model documentation, metric definitions — all maintained manually in notebooks, Confluence, or README files. Always out of date. | YAML co-located with models. `persist_docs` pushes to UC. Always in sync because it's the same file as the model definition. | "Where do your column descriptions live? When was the last time they were updated?" |
 | **Metric discrepancy investigation** | Without a single Semantic Layer, teams define "revenue" independently. When Genie, Tableau, and a notebook return different numbers, someone investigates. | Single `_semantic_models.yml`. One definition. One JDBC endpoint. No discrepancies by construction. | "Has your team ever had two reports showing different revenue numbers? How long did it take to figure out which one was right?" |
 | **Onboarding** | New team members learn through tribal knowledge — reading notebooks, asking colleagues, deciphering undocumented pipelines. | Explorer provides a searchable, lineage-aware catalog. New hire reads the DAG and column descriptions on day one. | "When you hired your last data engineer, how long before they could independently modify a pipeline?" |
@@ -526,7 +530,7 @@ A typical fully-loaded rate for a senior data engineer:
 
 **The structural argument (use this instead of specific numbers):**
 
-> "Every activity in this list is infrastructure that dbt Cloud provides as a
+> "Every activity in this list is infrastructure that dbt platform provides as a
 > managed service. Without dbt, your engineers build and maintain this themselves.
 > The question isn't whether these activities exist — they do, in every multi-team
 > deployment. The question is whether your engineers should be building governance
@@ -608,11 +612,11 @@ silent schema changes (contracts), metric drift (Semantic Layer),
 and data quality issues (tests). I can demo each prevention mechanism."
 ```
 
-**Step 5 — Compare to dbt Cloud license:**
+**Step 5 — Compare to dbt platform license:**
 
 ```
 "Add up the compute savings + the engineering hours at your hourly rate.
-Compare that to the dbt Cloud license cost for your team size.
+Compare that to the dbt platform license cost for your team size.
 That's the ROI calculation — and it doesn't include the incident prevention,
 which is the hardest to quantify but often the most valuable."
 ```
@@ -673,9 +677,9 @@ have landed (Acts 1–4). Cost is a supporting argument, not the lead. Lead with
 
 ---
 
-### Why dbt Platform + DBX Is the Required Infrastructure for AI
+### Why dbt platform + DBX Is the Required Infrastructure for AI
 
-This is the argument that closes the deal in 2025 and beyond. The conversation has
+This is the argument that closes the deal in 2026 and beyond. The conversation has
 moved from "do we need governance" to "how do we make our AI infrastructure trustworthy."
 
 **The problem every Databricks AI customer has:**
@@ -708,7 +712,7 @@ data gets the same answer, derived from the same definition.
 
 This is why the three-pattern comparison matters for AI:
 
-| AI capability | Notebooks only | dbt Core + DBX | dbt Platform + DBX |
+| AI capability | Notebooks only | dbt Core + DBX | dbt platform + DBX |
 |---|---|---|---|
 | Genie can query tables | Yes (raw) | Yes (mart tables) | Yes (mart tables + descriptions) |
 | Genie knows what columns mean | No | Sometimes (manual UC comments) | Yes (`persist_docs` + YAML descriptions) |
@@ -720,31 +724,31 @@ This is why the three-pattern comparison matters for AI:
 **The "define once, serve everywhere" principle:**
 
 This is the architectural argument that resonates most with engineering leaders.
-With dbt Platform as the semantic layer, a metric defined in `_semantic_models.yml`
+With dbt platform as the semantic layer, a metric defined in `_semantic_models.yml`
 is immediately available to:
 - Genie (via the Semantic Layer JDBC connection)
 - Tableau and PowerBI (via the same JDBC endpoint)
 - Python notebooks (via the `dbt-sl-sdk` Python client)
 - Any AI agent or MCP server that queries the Semantic Layer API
-- dbt Copilot and future dbt AI features
+- dbt Wizard and future dbt AI features
 
-Without dbt Platform, each of these tools defines its own version of the metric.
-You get five "total revenue" numbers that are all different. With dbt Platform,
+Without dbt platform, each of these tools defines its own version of the metric.
+You get five "total revenue" numbers that are all different. With dbt platform,
 you get one. The governance is defined in code, reviewed in a PR, and propagated
 automatically to every consumer.
 
 **The MCP / AI agent infrastructure angle:**
 
-The emerging AI infrastructure pattern in 2025 is the **Model Context Protocol (MCP)**
+The AI infrastructure pattern that has taken hold is the **Model Context Protocol (MCP)**
 — a standard interface that allows AI agents (Claude, GPT-4, Copilot) to query
-external data systems using tools. dbt Cloud exposes an MCP server that allows
+external data systems using tools. dbt platform exposes an MCP server that allows
 AI agents to:
 - Browse the catalog of metrics and semantic models
 - Query metrics by name with filters and time grains
 - Get lineage information about how a metric is computed
 - Understand which models and tests govern a metric
 
-This means a company running dbt Platform + Databricks today is building the
+This means a company running dbt platform + Databricks today is building the
 AI infrastructure that will power their analytics agents tomorrow. The semantic
 layer is not a nice-to-have — it's the **contract layer between humans and AI**.
 Humans define what metrics mean. AI agents query that definition. Without the
@@ -762,10 +766,10 @@ With Notebooks only or dbt Core: nowhere. The definitions will be scattered acro
 dashboards, notebooks, Confluence pages, and individual engineers' mental models.
 Every agent will generate different SQL for the same question.
 
-With dbt Platform: the Semantic Layer. One place. Version controlled. Auditable.
+With dbt platform: the Semantic Layer. One place. Version controlled. Auditable.
 Available to every tool via a standard API.
 
-This is why dbt Platform + Databricks is not just a better deployment pattern —
+This is why dbt platform + Databricks is not just a better deployment pattern —
 **it's the required infrastructure for any company that takes AI-powered analytics
 seriously.**
 
@@ -773,7 +777,7 @@ seriously.**
 
 ### Handling the "dbt Core Is Good Enough" Objection
 
-When a customer says "we can just run dbt Core ourselves and save on the dbt Cloud
+When a customer says "we can just run dbt Core ourselves and save on the dbt platform
 license," acknowledge what's true and be direct about what's missing:
 
 **What's true:** dbt Core handles transformations, tests, and documentation. For a
@@ -784,7 +788,7 @@ it can work.
 
 1. **The Semantic Layer API.** Not in dbt Core. Not available via self-hosting.
    A hard stop. If you need MetricFlow to serve Genie, Tableau, PowerBI, or any AI
-   agent via JDBC, you need dbt Cloud. This alone closes the argument for any
+   agent via JDBC, you need dbt platform. This alone closes the argument for any
    customer with Genie.
 
 2. **Managed environments.** dbt Core has no concept of dev/staging/prod isolation
@@ -792,22 +796,22 @@ it can work.
    environment variables. This takes weeks to set up and months to stabilize.
 
 3. **Explorer and lineage UI.** dbt Core generates `manifest.json`. What you do
-   with it is your problem. dbt Cloud Explorer gives you a searchable, lineage-aware
+   with it is your problem. dbt platform Explorer gives you a searchable, lineage-aware
    catalog of every model, metric, and test in the project — without standing up
    infrastructure.
 
-4. **dbt Fusion performance.** The Rust-based compiler in dbt Cloud is 10–40x faster
+4. **dbt Fusion performance.** The Rust-based Fusion engine parses and compiles up to ~30x faster on Databricks
    than dbt Core's Python compiler on large projects. This matters in CI/CD pipelines
    where compile time directly affects developer velocity.
 
 5. **Support and SLAs.** When the platform that governs your business metrics goes
    down, you want Tier 1 support, not Stack Overflow.
 
-6. **dbt Copilot and future AI features.** All AI-assisted development features in
+6. **dbt Wizard and future AI features.** All AI-assisted development features in
    dbt (column description generation, test generation, SQL suggestions) are
    Cloud-only. Self-hosting dbt Core opts you out of the roadmap.
 
-**The honest framing:** dbt Core is the foundation. dbt Cloud is the platform.
+**The honest framing:** dbt Core is the foundation. dbt platform is the platform.
 The license cost buys the Semantic Layer API, managed environments, Explorer, Fusion
 performance, support, and the AI roadmap. For a company that plans to use Genie
 and build AI infrastructure on Databricks, the ROI calculation is straightforward:
@@ -816,11 +820,21 @@ from ungoverned metadata far exceeds the license cost in the first year.
 
 ---
 
-## Part 6: The MVP Decision — Why the Native Databricks dbt Task Is a False Start
+## Part 6: The MVP Decision — Don't Confuse the Bare dbt (Core) Task with a Governed dbt Job
 
 This is the section to use when a customer says: "We'll start with the native dbt
 task in Databricks Jobs — it's free, it's built-in, and we just need something
-working for the MVP. We'll evaluate dbt Cloud later."
+working for the MVP. We'll evaluate dbt platform later."
+
+> **Read this first — there are now two native tasks in Lakeflow Jobs.** The
+> **dbt task** runs dbt Core on Databricks compute (the subject of this section).
+> The newer **dbt platform task** *triggers and monitors a governed dbt platform
+> job* from Lakeflow Jobs via the dbt platform API. So the choice is not
+> "Databricks orchestration vs dbt governance" — a Databricks-orchestration-first
+> team can keep its single pane of glass in Lakeflow Jobs *and* get the Semantic
+> Layer, Explorer, Mesh, and Fusion by using the dbt platform task. The argument
+> below is specifically about teams choosing the *bare dbt (Core) task* and
+> deferring governance — not about where the orchestrator lives.
 
 The argument is not that the native task is broken. It works. The argument is that
 it optimises for the wrong thing — it minimises week-one cost while maximising
@@ -833,22 +847,22 @@ in the middle of a live project and the migration is disruptive.
 
 Before the argument, be precise. The native Databricks dbt task ("Configure and run
 dbt projects on Databricks") is **dbt Core running on Databricks compute**,
-orchestrated by Databricks Jobs. It is not a reduced version of dbt Cloud. It is
+orchestrated by Databricks Jobs. It is not a reduced version of dbt platform. It is
 a completely different product with a different ceiling:
 
-| | Native dbt Task | dbt Platform (Cloud) |
+| | Native dbt Task | dbt platform |
 |---|---|---|
 | Executes dbt commands | Yes | Yes |
-| Managed IDE with lineage | No | Yes (Cloud IDE) |
+| Managed IDE with lineage | No | Yes (dbt Studio) |
 | CI/CD dev → staging → prod | Manual (job parameters) | Yes (managed environments) |
 | `dbt docs` browseable as UI | No (raw JSON artifacts) | Yes (Explorer) |
 | Column-level lineage | No | Yes |
 | Data health tiles (test status per model) | No | Yes |
 | Semantic Layer JDBC endpoint | **No** | **Yes** |
 | Genie queries governed metrics by name | **No** | **Yes** |
-| dbt Fusion (Rust compiler) | No | Yes |
+| dbt Fusion (Rust engine, GA on Databricks) | No | Yes |
 | Support SLA | No | Yes |
-| AI roadmap (Copilot, MCP server) | No | Yes |
+| AI roadmap (dbt Wizard, MCP server) | No | Yes |
 
 The native task gives you the bottom row of that table — execution — and nothing above it.
 
@@ -869,7 +883,7 @@ Hidden cost already accumulating:
   in every run. One developer's test run overwrites another's.
 - No CI/CD — every PR merge deploys to prod immediately unless someone builds
   a custom job-per-branch setup. This takes days to get right.
-- The dbt Cloud IDE setup takes 2 hours. The native task equivalent (Git sync,
+- The dbt platform IDE setup takes 2 hours. The native task equivalent (Git sync,
   custom compute, per-developer profiles, CI job) takes 2–3 days.
 
 **Week 3–4: Building models**
@@ -905,17 +919,17 @@ What happens:
    generate raw SQL from column descriptions, and it will always be inconsistent.
 
 This is not a week-6 problem that can be fixed in week 7. It is an architectural
-decision made in week 1 that cannot be resolved without migrating to dbt Cloud.
+decision made in week 1 that cannot be resolved without migrating to dbt platform.
 
 **The migration cost at week 6:**
 
-If the customer decides to add dbt Cloud at this point, they are not doing a
+If the customer decides to add dbt platform at this point, they are not doing a
 "lift and shift." They are doing a rebuild:
-- Reconnect the dbt Cloud project to the same Git repo (straightforward)
-- Re-configure dev/staging/prod environments in dbt Cloud (1–2 days)
-- Re-create all Databricks Jobs to point at dbt Cloud instead of the native task
+- Reconnect the dbt platform project to the same Git repo (straightforward)
+- Re-configure dev/staging/prod environments in dbt platform (1–2 days)
+- Re-create all Databricks Jobs to point at dbt platform instead of the native task
 - Add `_semantic_models.yml` with semantic models and metrics (1 sprint)
-- Enable the Semantic Layer in dbt Cloud project settings
+- Enable the Semantic Layer in dbt platform project settings
 - Create service tokens and reconnect Genie to the JDBC endpoint
 - Re-test all Genie queries against the new metric definitions
 - Retrain business users on the new, consistent Genie answers
@@ -934,12 +948,12 @@ Do not frame this as "the native task is bad." Frame it as a timing argument:
 > ambitions — they just want transformations to run. But you're on Databricks,
 > you're deploying Genie, and you're planning to use AI. The Semantic Layer is
 > not an advanced feature you add later. It's the foundation that makes Genie
-> trustworthy. Setting it up takes one afternoon in dbt Cloud. Migrating to it
+> trustworthy. Setting it up takes one afternoon in dbt platform. Migrating to it
 > after the MVP takes two weeks. The question is when you want to pay that cost."
 
 The conversation then becomes: **what does the Semantic Layer setup cost on day one?**
 
-- Create a dbt Cloud project: 30 minutes
+- Create a dbt platform project: 30 minutes
 - Connect to Databricks via OAuth: 30 minutes
 - Enable the Semantic Layer in project settings: 5 minutes
 - Add `_semantic_models.yml` with 3 semantic models and 10 metrics: half a day
@@ -955,7 +969,7 @@ not have the Semantic Layer at the end of it.
 
 If you need to put this in a deck, the message is three numbers:
 
-| | Native dbt Task MVP | dbt Platform MVP |
+| | Native dbt Task MVP | dbt platform MVP |
 |---|---|---|
 | **Week-1 setup cost** | ~3 days (manual CI, profiles, environments) | ~1 day (managed) |
 | **Week-6 Genie demo** | Inconsistent answers, no governed metrics | Governed metrics, auditable answers |
@@ -973,10 +987,10 @@ The MVP is not cheaper with the native task. It is deferred payment with interes
 
 This section extends Part 6 for customers who say "we'll orchestrate dbt with
 Databricks Jobs — the native dbt task is built in, it's free, and we already
-manage everything in Databricks Workflows."
+manage everything in Lakeflow Jobs."
 
 The argument: the native dbt task is a single-project execution primitive.
-dbt Platform is a multi-project governance platform. The difference is invisible
+dbt platform is a multi-project governance platform. The difference is invisible
 at 1 project and catastrophic at 4+.
 
 ---
@@ -1002,7 +1016,7 @@ The moment you have more than one dbt project — which this demo has four of
 
 **Problem 1: No cross-project dependency awareness**
 
-In dbt Cloud, when platform finishes, downstream projects (marketing, finance,
+In dbt platform, when platform finishes, downstream projects (marketing, finance,
 data_science) are triggered automatically because `dependencies.yml` declares the
 relationship. The Semantic Layer knows all projects. Explorer shows the full graph.
 
@@ -1017,8 +1031,8 @@ With native dbt tasks in Databricks Jobs, you must:
 
 **Problem 2: No CI/CD isolation**
 
-dbt Cloud creates isolated schemas for every PR: `dbt_pr_123_platform`.
-When a data engineer opens a PR, dbt Cloud runs the modified models in isolation,
+dbt platform creates isolated schemas for every PR: `dbt_pr_123_platform`.
+When a data engineer opens a PR, dbt platform runs the modified models in isolation,
 compares results, and blocks merge if tests fail.
 
 With native dbt tasks:
@@ -1028,7 +1042,7 @@ With native dbt tasks:
 
 **Problem 3: No Semantic Layer**
 
-The Semantic Layer API (MetricFlow JDBC) is a dbt Cloud-only feature. The native
+The Semantic Layer API (MetricFlow JDBC) is a dbt platform-only feature. The native
 task cannot serve it. This means:
 - Genie cannot query governed metrics by name
 - BI tools cannot hit a single metric endpoint
@@ -1047,7 +1061,7 @@ The native task produces `manifest.json` as a job artifact. To make this browsea
 
 ### The Orchestration Comparison Table
 
-| Capability | Native dbt Task + Databricks Jobs | dbt Platform (Cloud) |
+| Capability | Native dbt Task + Databricks Jobs | dbt platform |
 |---|---|---|
 | Single project `dbt build` | Yes | Yes |
 | Multi-project dependency triggers | Manual job chaining | Automatic (dependencies.yml) |
@@ -1058,10 +1072,17 @@ The native task produces `manifest.json` as a job artifact. To make this browsea
 | Explorer (searchable catalog) | **No** | **Yes** |
 | Column-level lineage | **No** | **Yes** |
 | Data health tiles per model | **No** | **Yes** |
-| Fusion compiler (10-40x faster) | **No** | **Yes** |
-| dbt Copilot / AI features | **No** | **Yes** |
+| Fusion engine (~30x faster parse/compile) | **No** | **Yes** |
+| dbt Wizard / AI features | **No** | **Yes** |
 | Cost to set up 4-project orchestration | 1-2 sprints | 1 day |
 | Ongoing maintenance burden | High (custom scripts, job wiring) | Zero (managed) |
+
+> **The "both" option:** if the customer wants Databricks to stay the top-level
+> orchestrator, the **dbt platform task** in Lakeflow Jobs triggers the governed
+> dbt platform job (right-hand column) and streams status back into the Databricks
+> Jobs UI. You get the managed multi-project orchestration, Semantic Layer, and
+> Explorer *and* a single pane of glass in Databricks. Continuous triggers aren't
+> supported for the dbt platform task — schedule or event-trigger it instead.
 
 ---
 
@@ -1071,21 +1092,24 @@ The native dbt task is free. But free means:
 
 - **You are the platform team.** Every CI/CD pipeline, every environment, every
   artifact pipeline is your responsibility. When it breaks at 2am, your on-call fixes it.
-- **You are permanently locked out of the Semantic Layer.** There is no migration path
-  from "native task" to "Semantic Layer" without adopting dbt Cloud. The Semantic Layer
-  is not a feature you can self-host.
+- **The bare task gives you no Semantic Layer.** The Semantic Layer is a dbt platform
+  service — the bare dbt (Core) task cannot serve it. The good news for a
+  Databricks-orchestration-first team: you don't have to move your orchestrator to
+  get it. Point a Lakeflow Jobs **dbt platform task** at a governed dbt platform job
+  and you keep the single pane of glass in Databricks while gaining the Semantic
+  Layer, Explorer, and Mesh.
 - **You accumulate orchestration debt.** Every new dbt project means another job to wire,
   another dependency to maintain, another manifest to pass. At 10 projects, this is a
-  full-time job. dbt Cloud handles it with a YAML file.
+  full-time job. dbt platform handles it with a YAML file.
 
 **The honest framing for the customer:**
 
 > "The native dbt task is dbt Core running on your compute. That's a valid choice
 > if you have one project, no Genie, and no BI tool integration needs. But you're
 > building four projects, you're deploying Genie, and your DS team needs governed
-> features. The native task gives you execution. dbt Platform gives you governance,
+> features. The native task gives you execution. dbt platform gives you governance,
 > orchestration, and the Semantic Layer. The license cost is a fraction of the
-> engineering time you'd spend building what dbt Cloud already provides."
+> engineering time you'd spend building what dbt platform already provides."
 
 ---
 
@@ -1095,7 +1119,7 @@ If a customer pushes back during the demo, use this concrete example:
 
 1. Show `data_science/dependencies.yml` — one line: `- name: platform`
 2. Show `data_science/models/features/rfm_customer_features.py` — `dbt.ref("platform", "dim_customers")`
-3. **Say:** "In dbt Cloud, when the platform job finishes, the data_science job
+3. **Say:** "In dbt platform, when the platform job finishes, the data_science job
    automatically knows which models changed and only rebuilds what's affected.
    With the native task, you'd need to: create a separate Databricks Job for
    data_science, wire it to trigger after the platform job, pass the manifest
@@ -1124,13 +1148,13 @@ The field does not feel confident positioning dbt in Databricks-heavy environmen
 Only 1 respondent rated themselves 5/5. Three rated themselves 1–2/5.
 
 **Root causes from the survey:**
-- Reps struggle to differentiate dbt from DLT/Lakeflow specifically
+- Reps struggle to differentiate dbt from Lakeflow Declarative Pipelines specifically
 - Deep technical DBX questions expose knowledge gaps
 - DBX is evolving fast — reps feel behind on what's new
 - Cross-workspace and lineage limitations create real product gaps
 
 **What this demo solves:** Acts 1–4 provide a concrete, repeatable comparison.
-A rep who has run this demo once can answer "why not just DLT?" with a live example.
+A rep who has run this demo once can answer "why not just Lakeflow?" with a live example.
 
 ---
 
@@ -1183,7 +1207,7 @@ built the governance layer manually, and dbt automates it.
 > "dbt costs a license fee and a YAML file per model. Not having dbt costs
 > duplicated definitions, wrong numbers in production, and documentation sprints
 > every quarter. Most teams spend more on incident response from wrong Genie answers
-> in month 3 than they'd spend on dbt Cloud in a year."
+> in month 3 than they'd spend on dbt platform in a year."
 
 ---
 
@@ -1200,7 +1224,7 @@ built the governance layer manually, and dbt automates it.
 > "The customers who eliminate dbt to reduce vendors don't eliminate the *need*
 > for governance. They just push it onto their engineering team as custom code.
 > Six months later, they're maintaining a homegrown governance layer that costs
-> more than dbt Cloud and does less."
+> more than dbt platform and does less."
 
 ---
 
@@ -1209,7 +1233,7 @@ built the governance layer manually, and dbt automates it.
 Already covered in Parts 6 and 7, but the field data shows this needs sharper
 differentiation. The key distinction:
 
-| | Lakeflow/Workflows | dbt Cloud |
+| | Lakeflow/Workflows | dbt platform |
 |---|---|---|
 | Executes pipelines | Yes | Yes |
 | State-aware rebuilds (only changed models) | No (full refresh) | Yes (`state:modified+`) |
@@ -1298,7 +1322,7 @@ to less technical users.
 - No Explorer with searchable, lineage-aware model catalog
 - No CI/CD with isolated PR environments
 - No state-aware orchestration (`state:modified+`)
-- No dbt Fusion compiler (10-40x faster on large projects)
+- No dbt Fusion engine (~30x faster parse/compile on Databricks)
 
 **The reframe:**
 > "Declarative Pipelines improve the *writing* experience for Lakeflow. They make
@@ -1320,7 +1344,7 @@ to less technical users.
 
 This question came up directly in the survey. Here is the definitive answer:
 
-**Things you cannot do with Databricks alone (as of March 2026):**
+**Things you cannot do with Databricks-native tooling alone (i.e., without dbt):**
 
 1. **Serve a governed Semantic Layer API.** No MetricFlow JDBC. Genie generates
    raw SQL from column descriptions — it doesn't query named metrics with
@@ -1334,7 +1358,7 @@ This question came up directly in the survey. Here is the definitive answer:
    is a runtime call. `dbt.ref("platform", "fct_orders")` is a compile-time check.
    The difference: dbt catches the error before anything runs.
 
-4. **State-aware orchestration.** Databricks Workflows run full pipelines.
+4. **State-aware orchestration.** Lakeflow Jobs run full pipelines.
    `dbt build --select state:modified+` runs only what changed. At 200 models,
    this saves 30-40 minutes per CI run.
 
@@ -1345,13 +1369,13 @@ This question came up directly in the survey. Here is the definitive answer:
 6. **Searchable model catalog with column-level lineage.** dbt Explorer.
    Nothing equivalent exists natively in Databricks for dbt models.
 
-7. **CI/CD with isolated PR environments.** dbt Cloud creates `dbt_pr_123_*`
+7. **CI/CD with isolated PR environments.** dbt platform creates `dbt_pr_123_*`
    schemas for every PR. There is no native equivalent in Databricks Jobs.
 
 **The one-liner for reps:**
 > "Databricks handles compute, storage, and orchestration. dbt handles governance,
 > semantic layer, and cross-team contracts. If you only need the first three, DBX
-> is enough. If you need all six — and you do, the moment you deploy Genie or AI
+> is enough. If you need all seven — and you do, the moment you deploy Genie or AI
 > agents — you need dbt."
 
 ---
@@ -1365,7 +1389,7 @@ against dbt"). But when they do position, the narratives are:
 
 Response: See 8.4 above. List the six things DBX cannot do. Be specific.
 
-**"Spark Declarative Pipelines (formerly DLT) replace dbt models"**
+**"Spark Declarative Pipelines (formerly Delta Live Tables) replace dbt models"**
 
 Response: SDP replaces dbt's *execution engine*. It doesn't replace contracts,
 Semantic Layer, Mesh, CI/CD, or Explorer. "Replaces the engine" ≠ "replaces the platform."
@@ -1391,7 +1415,7 @@ The survey identified these specific requests. This repo addresses most of them:
 
 | Field request | Status in this repo |
 |---|---|
-| Clear comparison matrix (DLT vs dbt) | Part 8.3 + Act 3 vs Act 4 in demo |
+| Clear comparison matrix (Lakeflow vs dbt) | Part 8.3 + Act 3 vs Act 4 in demo |
 | Customer stories of DLT → dbt migrations | Not included (need real customer data) |
 | Cost example before/after dbt | Part 8.2 (cost comparison table) |
 | Unique differentiators | Part 8.4 (the 7 things DBX can't do) |
@@ -1400,9 +1424,9 @@ The survey identified these specific requests. This repo addresses most of them:
 | Positioning vs Lakeflow Designer | Part 8.3 |
 
 **Still needed (not in this repo):**
-- Named customer references who migrated from DLT-only to dbt + DBX
+- Named customer references who migrated from Lakeflow-only to dbt + DBX
 - Quantified ROI case study (compute savings from `state:modified+`, incident reduction)
-- Lakeflow Designer live comparison (when GA — currently in preview)
+- Lakeflow Designer live comparison (confirm current GA/preview status before relying on it)
 
 ---
 
@@ -1415,6 +1439,6 @@ not proof.
 | Stage | What happens | What to do |
 |---|---|---|
 | Initial Discovery (2/8) | Prospect says "DBX does everything" before you can demo | Lead with the question: "Can you audit a Genie answer?" If yes, you may not have a deal. If no, you have the opening. |
-| Mid-Stage Evaluation (2/8) | Prospect compares DLT vs dbt feature-for-feature | Don't play feature bingo. Reframe: "DLT and dbt solve different problems. Let me show you the 6 things DBX can't do." Use Part 8.4. |
+| Mid-Stage Evaluation (2/8) | Prospect compares Lakeflow vs dbt feature-for-feature | Don't play feature bingo. Reframe: "Lakeflow and dbt solve different problems. Let me show you the 6 things DBX can't do." Use Part 8.4. |
 | Technical Deep Dive (1/8) | DBX SA joins, pushes "native is better" | Run Acts 1-4 of the demo. Let the Genie results speak. Then show the contract, the git log, the Semantic Layer. |
 | Consistently difficult (2/8) | Prospect has a strong DBX SA relationship | Focus on the "AND not OR" message. Frame dbt as making DBX better, not replacing it. Use Part 4 (Mutual Wins). |

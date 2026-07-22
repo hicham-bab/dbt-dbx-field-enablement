@@ -51,9 +51,9 @@ The **catalog** (`enablement`) is shared. Only **schemas** are per-user.
 - Pipeline output goes to the user's own schema
 - Pipelines have their own compute -- no resource sharing
 
-### Git / dbt Cloud (project-level isolation)
-- Each user can have their own branch or dbt Cloud dev environment
-- dbt Cloud dev credentials target per-user schemas
+### Git / dbt platform (project-level isolation)
+- Each user can have their own branch or dbt platform dev environment
+- dbt platform dev credentials target per-user schemas
 
 ### What can still collide?
 - **Catalog creation**: `CREATE CATALOG IF NOT EXISTS enablement` is safe -- idempotent
