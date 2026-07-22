@@ -94,13 +94,16 @@ refactors from natural language, shows a reviewable diff, and **validates its ow
 changes against the warehouse** before you see them. It can also connect to MCP servers,
 including the dbt MCP server, for Semantic Layer metadata and cross-project context.
 
-**Bring your own model (BYOK).** The Wizard CLI supports BYOK — you configure your own
-model provider with `wizard providers configure <provider>` (or env vars for headless
-CI). Supported providers include OpenAI, Anthropic, AWS Bedrock, Google Gemini, Snowflake
-Cortex (preview), and **Databricks**. Usage is billed to your provider account, not dbt
-Labs. For a Databricks customer this is a clean fit: point Wizard at **Databricks as the
-model provider** so LLM usage and spend stay inside their Databricks account and
-governance. (BYOK is a CLI capability; the platform-managed Wizard experience uses
+**Bring your own model (BYOK).** The Wizard CLI supports BYOK — configure your own model
+provider with `wizard providers configure <provider>` (or env vars for headless CI):
+OpenAI, Anthropic, Azure OpenAI, AWS Bedrock, Google Gemini, Snowflake Cortex (preview),
+and the **Databricks Unity Catalog AI Gateway** (beta). Usage is billed to your provider
+account, not dbt Labs. The Databricks option is the standout for this audience: Wizard
+connects through the **Unity Catalog AI Gateway** to model-serving endpoints in the
+customer's *own* Databricks workspace (workspace URL + serving endpoint + Databricks PAT).
+So the coding agent's LLM access, spend, and policy stay under the same Unity Catalog
+governance that governs their data and Genie — one governed AI surface, not a separate
+vendor bill. (BYOK is a CLI capability; the platform-managed Wizard experience uses
 dbt-provided models.)
 
 Why this matters on Databricks: Summit 2026 was an agentic story — Agent Bricks (with

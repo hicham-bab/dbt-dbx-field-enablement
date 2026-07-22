@@ -33,9 +33,11 @@ it doesn't fix it, and the tech debt resurfaces the moment someone connects Geni
    generates the tests and documentation as it goes, shows a **reviewable diff**, and
    **validates each change against the warehouse** before you see it. It's
    impact-aware — it flags the downstream models, tests, and metrics a change affects.
-   The Wizard CLI is **BYOK**: point it at your own model provider (OpenAI, Anthropic,
-   AWS Bedrock, Google Gemini, Snowflake Cortex, or **Databricks**) so LLM spend and
-   governance stay inside the customer's account — a clean fit for Databricks shops.
+   The Wizard CLI is **BYOK**: point it at the **Databricks Unity Catalog AI Gateway**
+   (beta) — models served from the customer's *own* Databricks workspace — so the agent's
+   LLM access, spend, and policy stay under the same Unity Catalog governance as their
+   data. (Also supports OpenAI, Anthropic, Azure OpenAI, Bedrock, Gemini, and Snowflake
+   Cortex.)
 
 2. **Fusion catches dialect differences in real time.** Cross-dialect translation
    (Oracle / Teradata / T-SQL → Databricks SQL) is where migrations stall. Fusion's
