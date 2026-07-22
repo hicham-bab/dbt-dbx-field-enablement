@@ -281,6 +281,12 @@ This section is the most important one for conversations where a customer says
 "we're already on Databricks, do we really need dbt platform?" or "we can just run
 dbt Core ourselves." It reframes the question from *cost of adoption* to *cost of delay*.
 
+> **Migrating off a legacy stack?** The fastest time-to-value story is a migration
+> one: **dbt Wizard** (AI agent) + **Fusion** (real-time dialect checking) turn a
+> months-long lift-and-shift off Informatica/Oracle/Teradata into a weeks-long
+> migration that lands *governed* models — tested, documented, Semantic-Layer-ready.
+> Full narrative and demo flow in `MIGRATION_ACCELERATION.md`.
+
 ---
 
 ### The Three Patterns
@@ -730,7 +736,8 @@ is immediately available to:
 - Tableau and PowerBI (via the same JDBC endpoint)
 - Python notebooks (via the `dbt-sl-sdk` Python client)
 - Any AI agent or MCP server that queries the Semantic Layer API
-- dbt Wizard and future dbt AI features
+- dbt Wizard (the terminal-native AI agent) and the dbt MCP server
+- Databricks Genie Ontology, as a governed source of context it can consume
 
 Without dbt platform, each of these tools defines its own version of the metric.
 You get five "total revenue" numbers that are all different. With dbt platform,
@@ -753,6 +760,27 @@ AI infrastructure that will power their analytics agents tomorrow. The semantic
 layer is not a nice-to-have — it's the **contract layer between humans and AI**.
 Humans define what metrics mean. AI agents query that definition. Without the
 contract layer, AI agents are guessing. With it, they're governed.
+
+**Summit 2026 grounding (why this lands harder now):**
+
+Databricks Data + AI Summit 2026 was an agentic story — **Agent Bricks** (with the
+Claude Code SDK), the **Unity AI Gateway**, and **Genie Ontology**. Two things follow
+directly for positioning:
+
+- **Genie Ontology is a *context layer* that *consumes* a semantic layer.** Databricks
+  itself says the context an agent needs "also lives in dbt, Snowflake, Tableau…" So
+  the governed definitions dbt produces are exactly what feeds a trustworthy ontology.
+  dbt is the source of truth; Genie Ontology is a consumer that gets better when that
+  source is governed.
+- **Unity Catalog Metrics went GA** — and dbt can author them (`materialized='metric_view'`).
+  So the customer's UC-native metrics can be version-controlled dbt models rather than
+  hand-authored objects. Same with UC Glossary/Domains: dbt descriptions, groups, and
+  `access:` tiers are the reviewed, versioned origin those definitions can point back to.
+
+Positioning line: "Databricks just made the semantic/context layer central to its agent
+platform. That raises the value of governing those definitions in dbt — the layer that
+feeds UC Metrics, Genie Ontology, and every non-Databricks tool at the same time."
+(Confirm the latest joint messaging with PMM before leaning on specific Summit names.)
 
 **The mandatory infrastructure argument:**
 
@@ -800,16 +828,20 @@ it can work.
    catalog of every model, metric, and test in the project — without standing up
    infrastructure.
 
-4. **dbt Fusion performance.** The Rust-based Fusion engine parses and compiles up to ~30x faster on Databricks
-   than dbt Core's Python compiler on large projects. This matters in CI/CD pipelines
-   where compile time directly affects developer velocity.
+4. **Managed Fusion + slim CI.** The Rust Fusion engine itself is free and open
+   source (not a lock-in) — but you run it yourself. dbt platform runs Fusion for you
+   with managed dev/staging/prod, `state:modified+` slim CI, and the VS Code + Explorer
+   integration wired in. The engine is free; the governed CI/CD platform around it is
+   the value.
 
 5. **Support and SLAs.** When the platform that governs your business metrics goes
    down, you want Tier 1 support, not Stack Overflow.
 
-6. **dbt Wizard and future AI features.** All AI-assisted development features in
-   dbt (column description generation, test generation, SQL suggestions) are
-   Cloud-only. Self-hosting dbt Core opts you out of the roadmap.
+6. **Governed metrics for AI agents.** dbt Wizard (the terminal-native AI agent) is
+   available to self-hosted users too — but the thing agents actually need, the
+   Semantic Layer API / dbt MCP server serving *governed* metrics by name, is a dbt
+   platform service. Self-hosting dbt Core means your agents query ungoverned SQL, not
+   named metrics.
 
 **The honest framing:** dbt Core is the foundation. dbt platform is the platform.
 The license cost buys the Semantic Layer API, managed environments, Explorer, Fusion
