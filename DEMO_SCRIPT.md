@@ -778,9 +778,9 @@ are mechanically provable."
 > The compute savings are meaningful. The engineering savings are usually 10–20x
 > larger."
 
-**Say:** "The framework is in `BATTLE_CARD.md` Part 5. We can build the TCO with
-your numbers in 15 minutes — pull up your SQL Warehouse query history and let's
-count."
+**Say:** "The levers are in `BATTLE_CARD.md` (Business value & cost of delay). We can
+build the case with your numbers in 15 minutes — pull up your SQL Warehouse query
+history and let's count."
 
 ---
 
