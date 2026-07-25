@@ -191,12 +191,37 @@ The combined platform compresses "raw source → governed, activated data" becau
 
 ---
 
+## Worked example in this repo — Salesforce → dbt → Slack + Genie
+
+This repo now ships a **runnable full-loop example** you can point at (not just prose):
+
+| Stage | Where it lives |
+|---|---|
+| **Ingest** — Salesforce via MDLS → Unity Catalog | `fivetran/mdls_salesforce_destination.md` |
+| **Source** — Fivetran Salesforce schema, freshness | `platform/models/staging/salesforce/_salesforce__sources.yml` |
+| **Transform** — staging → governed marts | `platform/models/staging/salesforce/`, `platform/models/marts/crm/` (`dim_accounts`, `fct_opportunities`, `crm_opportunity_alerts`) |
+| **Govern** — contracts + tests + Semantic Layer metrics | `platform/models/marts/crm/_crm.yml` (open_pipeline, win_rate, avg_deal_size, …) |
+| **Activate** — governed alerts → Slack | `fivetran/activations_slack.md` (reverse-ETL `crm_opportunity_alerts`) |
+| **Consume** — Genie on the governed CRM | `databricks/genie/genie_salesforce_crm_instructions.md` |
+
+The point it proves: the *same* governed model (`crm_opportunity_alerts`, and the
+pipeline metrics) drives the **Slack alert**, the **Genie answer**, and **BI** — one
+definition, activated and analyzed everywhere, with no drift. It's built as a
+self-contained CRM slice alongside the e-commerce demo, so both run independently.
+
+> Adapting to a real account: swap the connector, then let the Fivetran ERD (or the
+> `fivetran/dbt_salesforce_source` package) tell you the exact landed columns, and
+> adjust the staging models. Salesforce custom fields (`*__c`) differ per org — verify
+> the schema before relying on specific columns.
+
+---
+
 ## Demo flow
 
-See `DEMO_SCRIPT.md` — the optional **Act 0** (Fivetran MDLS ingest → governed
-Iceberg/Delta in Unity Catalog) and the **final activation act** (reverse-ETL a
-governed mart to a SaaS tool) bookend the existing 5-act dbt-on-Databricks demo,
-turning it into the complete loop.
+See `DEMO_SCRIPT.md` — the optional **Act 0** (Fivetran MDLS ingest of Salesforce →
+governed Iceberg/Delta in Unity Catalog) and the **final activation act** (reverse-ETL
+`crm_opportunity_alerts` to **Slack**) bookend the existing 5-act dbt-on-Databricks
+demo, turning it into the complete loop.
 
 ---
 

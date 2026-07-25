@@ -42,9 +42,11 @@ Complete at least 30 minutes before the demo:
 - [ ] Databricks App is deployed and showing all 4 tabs
 - [ ] Browser tabs open: Genie Spaces (all 3), dbt platform IDE with `_semantic_models.yml`, dbt platform lineage graph
 - [ ] Fallback: `genie_demo_queries.md` open as backup if Genie is slow
-- [ ] *(Optional — Act 0/4h)* Fivetran account with a configured connector + Managed
-      Data Lake Service destination, and a Fivetran Activations sync to a sandbox SaaS
-      tool (Salesforce/HubSpot dev org). If live access isn't available, use screenshots.
+- [ ] *(Optional — Act 0/4h)* Fivetran account with a Salesforce connector + Managed
+      Data Lake Service destination landing `enablement.salesforce.*` in Unity Catalog,
+      the CRM marts built (`dbt build --select staging.salesforce+ crm`), and a Fivetran
+      Activations sync from `crm_opportunity_alerts` to a Slack channel. If live access
+      isn't available, use screenshots. Config: `fivetran/` + `genie_salesforce_crm_instructions.md`.
 
 ---
 
@@ -59,25 +61,31 @@ or is weighing native ingestion. Run it before Act 1 so the rest of the demo sit
 Fivetran-landed data.
 
 **Say:** "Before Genie can answer anything, the data has to arrive — governed. Here's a
-Fivetran connector for [Salesforce/Stripe/Postgres]. The Managed Data Lake Service lands
-it in Unity Catalog as open tables — Delta *and* Iceberg over the same Parquet — and
-Fivetran maintains those tables for me. No pipeline to hand-build, no compute of mine
-burned on compaction."
+Fivetran **Salesforce** connector. The Managed Data Lake Service lands it in Unity
+Catalog as open tables — Delta *and* Iceberg over the same Parquet — and Fivetran
+maintains those tables for me. No pipeline to hand-build, no compute of mine burned on
+compaction." *(Config: `fivetran/mdls_salesforce_destination.md`.)*
 
 **Show:**
-1. A Fivetran connector sync (or its dashboard) → rows flowing to the MDLS destination.
-2. The landed tables in **Unity Catalog** — point out they're open Delta/Iceberg and
-   governed by UC like any other table.
-3. **Say:** "This is the same `enablement.ecommerce` raw layer the rest of the demo uses
-   — except Fivetran landed it, governed, in minutes. If this customer is Iceberg-first,
-   this is the moment: open, multi-engine, no format lock-in, and dbt transforms it next."
+1. A Fivetran Salesforce connector sync (or its dashboard) → rows flowing to the MDLS
+   destination.
+2. The landed tables in **Unity Catalog** — `enablement.salesforce.account`,
+   `.opportunity`, … — open Delta/Iceberg, governed by UC like any other table.
+3. **Say:** "Fivetran landed governed Salesforce data in minutes. If this customer is
+   Iceberg-first, this is the moment: open, multi-engine, no format lock-in — and dbt
+   transforms it next into contracted marts (`dim_accounts`, `fct_opportunities`)."
 
 **Contrast line (vs Lakeflow Connect):** "Lakeflow Connect covers a focused set of
 connectors to Delta. Fivetran brings 700+ with automatic schema-drift handling and dual
 Delta/Iceberg output — faster time-to-value on the long tail, and open by default."
 
-**Transition to Act 1:** "Now the data's landed. Let's see what Genie does with it raw —
-before we govern it."
+**Note:** this Salesforce → CRM path is a **self-contained full-loop example** (see
+`FIVETRAN_DBT_DATABRICKS.md`); Acts 1–4 below run on the e-commerce dataset. Use Act 0
++ Act 4h together to tell the complete Fivetran + dbt loop, or the e-commerce acts for
+the core dbt-on-Databricks story.
+
+**Transition to Act 1:** "That's the ingest end. Now let's see the governance story on
+the e-commerce data — starting with what Genie does with it raw."
 
 ---
 
@@ -874,19 +882,22 @@ actually *do* with this?" audiences.
 Semantic Layer and you want to land the business value — or whenever activation/CRM sync
 is a stated need.
 
-**Say:** "We've got governed, tested, auditable marts and metrics. But the CFO isn't the
-only consumer — sales and marketing live in Salesforce and HubSpot. Databricks has no
-native reverse ETL. With Fivetran Activations, the same governed definitions flow back to
-those tools."
+**Say:** "We've got governed, tested, auditable pipeline models and metrics. But reps
+don't live in a dashboard — they live in Slack. Databricks has no native reverse ETL.
+With Fivetran Activations, the same governed definition pushes a real-time alert to the
+sales channel." *(Config: `fivetran/activations_slack.md`.)*
 
 **Show:**
-1. A **Fivetran Activations** sync reading a governed mart — e.g.
-   `marketing.mart_customer_segments` (or the RFM/churn features from `data_science`) —
-   from Databricks.
-2. The mapping to a destination object (Salesforce Account / HubSpot Contact).
-3. **Say:** "The customer segment in Salesforce now comes from the *same* dbt definition
-   Genie uses and the dashboard shows. One governed source, activated everywhere — no
-   drift between the CRM number and the boardroom number."
+1. Open the governed model `crm_opportunity_alerts` (from the CRM slice in Act 0) — the
+   high-value / overdue open opportunities. Point out it's a *contracted, tested dbt
+   model*, not an ad-hoc query.
+2. A **Fivetran Activations** sync reading `crm_opportunity_alerts` from Databricks →
+   destination **Slack** (`#sales-alerts`), keyed on `opportunity_id`.
+3. Show a resulting Slack message: *":rotating_light: High value open — Acme renewal,
+   $250k, closes Fri, owner @rep."*
+4. **Say:** "That alert, the pipeline number in Genie, and the BI dashboard all read the
+   *same* governed dbt model. One definition — activated in Slack, analyzed in Genie — no
+   drift between what the rep sees and what the VP sees."
 
 **The loop line:**
 > "That's the full loop: Fivetran landed the data, dbt governed it, Databricks AI reads

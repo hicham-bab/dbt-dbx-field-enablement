@@ -32,6 +32,7 @@ dbt Mesh governance, and an honest Databricks metric views comparison.
 | `docs/` | Architecture diagrams, Mesh explainer, Fusion cheat sheet, DABs CI/CD guide |
 | `databricks.yml` | Declarative Asset Bundle configuration (IaC for Databricks Jobs) |
 | `resources/` | Bundle resource definitions (dbt job YAML) |
+| `fivetran/` | Fivetran config for the full-loop example — MDLS (Salesforce → Unity Catalog) ingest + Activations (governed alerts → Slack) |
 | `dbt_profiles/` | dbt profiles for Asset Bundle deployments (OAuth M2M) |
 | `.github/workflows/` | CI/CD pipeline (GitHub Actions: validate -> deploy -> run) |
 

@@ -1,0 +1,262 @@
+version: 2
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CRM marts — the "govern" step of the Fivetran + dbt loop.
+# Source data: Salesforce, landed by the Fivetran Managed Data Lake Service into
+# Unity Catalog (see models/staging/salesforce/). These public, contracted marts
+# feed Genie (governed pipeline metrics) and Fivetran Activations (Slack alerts).
+# Fusion-conformant: cast() only, arguments: on generic tests, data_type on all
+# contracted columns, semantic layer in the latest (Fusion) spec.
+# ─────────────────────────────────────────────────────────────────────────────
+
+models:
+  - name: dim_accounts
+    description: >
+      PUBLIC. Salesforce account dimension with owner name resolved. One row per
+      account. The governed definition of a "customer account" for BI, Genie, and
+      activation. Column docs persist to Unity Catalog.
+    config:
+      group: platform_core
+      access: public
+      contract:
+        enforced: true
+    columns:
+      - name: account_id
+        description: "Salesforce Account Id. Primary key."
+        data_type: string
+        constraints:
+          - type: not_null
+          - type: primary_key
+        tests:
+          - not_null
+          - unique
+      - name: account_name
+        description: "Account (company) name."
+        data_type: string
+      - name: account_type
+        description: "Account type (Customer, Prospect, Partner, ...)."
+        data_type: string
+      - name: industry
+        description: "Industry classification."
+        data_type: string
+      - name: annual_revenue
+        description: "Reported annual revenue (USD)."
+        data_type: decimal(18,2)
+      - name: number_of_employees
+        description: "Employee count."
+        data_type: bigint
+      - name: billing_country
+        description: "Uppercased billing country."
+        data_type: string
+      - name: owner_id
+        description: "FK to the Salesforce user who owns the account."
+        data_type: string
+      - name: account_owner
+        description: "Resolved name of the account owner."
+        data_type: string
+      - name: created_date
+        description: "Date the account was created in Salesforce."
+        data_type: date
+
+  - name: fct_opportunities
+    description: >
+      PUBLIC. Salesforce opportunity fact — one row per deal, with account name,
+      owner name, and a weighted amount (amount x probability). The governed
+      pipeline definition consumed by Genie and by the Slack activation.
+    config:
+      group: platform_core
+      access: public
+      contract:
+        enforced: true
+    columns:
+      - name: opportunity_id
+        description: "Salesforce Opportunity Id. Primary key."
+        data_type: string
+        constraints:
+          - type: not_null
+          - type: primary_key
+        tests:
+          - not_null
+          - unique
+        entity:
+          type: primary
+          name: opportunity
+      - name: account_id
+        description: "FK to dim_accounts."
+        data_type: string
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_accounts')
+                field: account_id
+        entity:
+          type: foreign
+          name: account
+      - name: account_name
+        description: "Denormalized account name."
+        data_type: string
+      - name: opportunity_name
+        description: "Opportunity name."
+        data_type: string
+      - name: stage_name
+        description: "Sales stage (Prospecting, Negotiation, Closed Won, ...)."
+        data_type: string
+        dimension:
+          type: categorical
+      - name: amount
+        description: "Deal amount (USD)."
+        data_type: decimal(18,2)
+      - name: close_date
+        description: "Expected or actual close date."
+        data_type: date
+        granularity: day
+        dimension:
+          type: time
+      - name: probability
+        description: "Win probability (0-100) for the current stage."
+        data_type: decimal(5,2)
+      - name: is_closed
+        description: "True if the opportunity is in a closed stage."
+        data_type: boolean
+        dimension:
+          type: categorical
+      - name: is_won
+        description: "True if Closed Won."
+        data_type: boolean
+        dimension:
+          type: categorical
+      - name: opportunity_type
+        description: "Opportunity type (New Business, Existing Business, ...)."
+        data_type: string
+        dimension:
+          type: categorical
+      - name: lead_source
+        description: "Originating lead source."
+        data_type: string
+        dimension:
+          type: categorical
+      - name: owner_id
+        description: "FK to the Salesforce user who owns the opportunity (the rep)."
+        data_type: string
+        entity:
+          type: foreign
+          name: owner
+      - name: opportunity_owner
+        description: "Resolved name of the opportunity owner (rep)."
+        data_type: string
+      - name: weighted_amount
+        description: "amount x probability / 100 — the probability-weighted deal value."
+        data_type: decimal(18,2)
+      - name: created_date
+        description: "Date the opportunity was created."
+        data_type: date
+    semantic_model:
+      enabled: true
+      name: fct_opportunities
+    agg_time_dimension: close_date
+    metrics:
+      - name: open_pipeline_amount
+        label: "Open Pipeline (USD)"
+        description: "Sum of amount for opportunities that are not closed."
+        type: simple
+        agg: sum
+        expr: amount
+        filter: "{{ Dimension('opportunity__is_closed') }} = false"
+      - name: weighted_pipeline_amount
+        label: "Weighted Pipeline (USD)"
+        description: "Probability-weighted pipeline for open opportunities."
+        type: simple
+        agg: sum
+        expr: weighted_amount
+        filter: "{{ Dimension('opportunity__is_closed') }} = false"
+      - name: won_amount
+        label: "Won Amount (USD)"
+        description: "Sum of amount for Closed Won opportunities."
+        type: simple
+        agg: sum
+        expr: amount
+        filter: "{{ Dimension('opportunity__is_won') }} = true"
+      - name: opportunity_count
+        label: "Opportunities"
+        description: "Distinct count of opportunities."
+        type: simple
+        agg: count_distinct
+        expr: opportunity_id
+      - name: won_count
+        label: "Won Opportunities"
+        description: "Distinct count of Closed Won opportunities."
+        type: simple
+        agg: count_distinct
+        expr: opportunity_id
+        filter: "{{ Dimension('opportunity__is_won') }} = true"
+        hidden: true
+      - name: closed_count
+        label: "Closed Opportunities"
+        description: "Distinct count of closed opportunities (won or lost)."
+        type: simple
+        agg: count_distinct
+        expr: opportunity_id
+        filter: "{{ Dimension('opportunity__is_closed') }} = true"
+        hidden: true
+      - name: avg_deal_size
+        label: "Average Won Deal Size (USD)"
+        description: "Average amount across Closed Won opportunities."
+        type: simple
+        agg: average
+        expr: amount
+        filter: "{{ Dimension('opportunity__is_won') }} = true"
+      - name: win_rate
+        label: "Win Rate (%)"
+        description: "Won opportunities / closed opportunities. Ratio of two governed metrics."
+        type: ratio
+        numerator: won_count
+        denominator: closed_count
+
+  - name: crm_opportunity_alerts
+    description: >
+      PUBLIC. Governed activation feed — open opportunities that are high-value
+      (>= $100k) or overdue. This is the exact, version-controlled row set Fivetran
+      Activations syncs to Slack. See fivetran/activations_slack.md.
+    config:
+      group: platform_core
+      access: public
+      contract:
+        enforced: true
+    columns:
+      - name: opportunity_id
+        description: "Salesforce Opportunity Id. Primary key."
+        data_type: string
+        constraints:
+          - type: not_null
+          - type: primary_key
+        tests:
+          - not_null
+          - unique
+      - name: account_id
+        description: "FK to dim_accounts."
+        data_type: string
+      - name: account_name
+        description: "Account name."
+        data_type: string
+      - name: opportunity_name
+        description: "Opportunity name."
+        data_type: string
+      - name: opportunity_owner
+        description: "Rep who owns the opportunity — used to @mention/route the Slack alert."
+        data_type: string
+      - name: stage_name
+        description: "Sales stage."
+        data_type: string
+      - name: amount
+        description: "Deal amount (USD)."
+        data_type: decimal(18,2)
+      - name: close_date
+        description: "Expected close date."
+        data_type: date
+      - name: alert_reason
+        description: "Why this opportunity is flagged for a Slack alert."
+        data_type: string
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['high_value_open', 'overdue_open']
