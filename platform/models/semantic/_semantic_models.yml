@@ -1,8 +1,8 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# dbt Semantic Layer — Cross-model metrics (latest spec, Fusion)
+# dbt Semantic Layer - Cross-model metrics (latest spec, Fusion)
 #
 # On the latest spec (dbt Core 1.12+ / Fusion), semantic models are configured
-# as metadata on the dbt models themselves — see the `semantic_model:`,
+# as metadata on the dbt models themselves - see the `semantic_model:`,
 # `entity:`, `dimension:`, and per-model `metrics:` blocks in
 # models/marts/_marts.yml.
 #
@@ -11,7 +11,7 @@
 # their model.
 #
 # Compare this to Lakeflow / Metric Views:
-#   - A Lakeflow gold table has "total_revenue" as a column — but nothing that
+#   - A Lakeflow gold table has "total_revenue" as a column - but nothing that
 #     defines what counts as revenue, what the grain is, or what filters apply.
 #   - Genie querying the Lakeflow table will guess. Genie querying the semantic
 #     layer here will use the exact definition, every time, reproducibly.

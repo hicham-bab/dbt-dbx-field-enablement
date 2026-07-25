@@ -4,7 +4,7 @@ Payment-method co-usage affinity.
 Identifies which payment methods are frequently used by the same customers,
 with average spend per method. Consumes the platform project's governed
 fct_orders mart through dbt Mesh, so it uses the same order and payment
-definitions as marketing and finance — single source of truth.
+definitions as marketing and finance - single source of truth.
 
 This model demonstrates a use case that is naturally Python-native: self-join
 pair generation is awkward in SQL but concise in PySpark. dbt Python models let
@@ -20,7 +20,7 @@ method is the co-occurrence signal available from the governed marts.
 def model(dbt, session):
     from pyspark.sql import functions as F
 
-    # Cross-project ref — validated at compile time by dbt Mesh.
+    # Cross-project ref - validated at compile time by dbt Mesh.
     orders = dbt.ref("platform", "fct_orders")
 
     # One row per (customer, payment_method) usage, completed orders only.

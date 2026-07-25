@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Lakeflow — Finance Team Consumer Pipeline
+# MAGIC # Lakeflow - Finance Team Consumer Pipeline
 # MAGIC
 # MAGIC This is what the **finance team** would need to build and maintain in Lakeflow
 # MAGIC to get their own governed dataset on top of the platform gold tables.
@@ -13,19 +13,19 @@
 # MAGIC
 # MAGIC -- fct_revenue_by_product.sql
 # MAGIC select * from {{ ref('platform', 'fct_orders') }}   -- validated
-# MAGIC -- Note: cannot ref staging models — access: protected blocks it at compile time
+# MAGIC -- Note: cannot ref staging models - access: protected blocks it at compile time
 # MAGIC ```
 # MAGIC
 # MAGIC In Lakeflow, this team needs **their own pipeline** with hardcoded table strings,
 # MAGIC duplicated business logic, and no protection against breaking changes upstream.
 # MAGIC
-# MAGIC **Run `01_lakeflow_pipeline.py` first** — this notebook reads from its gold tables.
+# MAGIC **Run `01_lakeflow_pipeline.py` first** - this notebook reads from its gold tables.
 # MAGIC
 # MAGIC ## Pipeline configuration:
 # MAGIC 1. **Jobs & Pipelines** → **Create** → **ETL pipeline**
 # MAGIC 2. In the dialog: name = `ecommerce-lakeflow-finance`, catalog = `enablement`, schema = `ecommerce_lakeflow_finance` → **Create**
 # MAGIC 3. On the "Next step" screen → **Add existing assets** → select this notebook → **Add**
-# MAGIC 4. Click **Start** — creates 2 tables: `finance_fct_revenue`, `finance_fct_revenue_by_product`
+# MAGIC 4. Click **Start** - creates 2 tables: `finance_fct_revenue`, `finance_fct_revenue_by_product`
 
 # COMMAND ----------
 
@@ -35,7 +35,7 @@ from pyspark.sql.functions import (
     when, coalesce, lit
 )
 
-# Source catalog/schema for upstream gold tables — set via DLT pipeline configuration.
+# Source catalog/schema for upstream gold tables - set via DLT pipeline configuration.
 SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
 SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow")
 
@@ -68,7 +68,7 @@ SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow"
         NOTE: Revenue recognition rule (status = 'completed') is duplicated from
         the platform pipeline's gold_fct_revenue. If the platform team adds a new
         status or changes revenue recognition logic, finance must update this
-        pipeline separately — there is no contract linking them.
+        pipeline separately - there is no contract linking them.
 
         dbt Mesh equivalent: finance.fct_revenue (8 lines, validated ref)
         Lakeflow reads from: enablement.ecommerce_lakeflow.gold_fct_orders (hardcoded)
@@ -76,7 +76,7 @@ SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow"
     table_properties={"quality": "gold", "team": "finance"}
 )
 def finance_fct_revenue():
-    # Hardcoded string — no compile-time validation, no contract.
+    # Hardcoded string - no compile-time validation, no contract.
     # dbt Mesh equivalent: {{ ref('platform', 'fct_orders') }}
     orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
@@ -107,18 +107,18 @@ def finance_fct_revenue():
 
         NOTE: No product-level gold table exists in the platform pipeline, so finance
         reads directly from silver_products. In dbt Mesh, silver/staging models are
-        access: protected — the finance project cannot compile a ref to them.
+        access: protected - the finance project cannot compile a ref to them.
         In Lakeflow there is no such enforcement: any team can read any table at any layer.
 
         dbt Mesh equivalent: finance.fct_revenue_by_product (validated refs only to public models)
         Lakeflow reads from: enablement.ecommerce_lakeflow.gold_fct_orders (hardcoded)
-                             enablement.ecommerce_lakeflow.silver_products  (hardcoded — bypassing gold layer)
+                             enablement.ecommerce_lakeflow.silver_products  (hardcoded - bypassing gold layer)
     """,
     table_properties={"quality": "gold", "team": "finance"}
 )
 def finance_fct_revenue_by_product():
     orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
-    # Bypassing gold layer — reading silver directly because no product gold table exists.
+    # Bypassing gold layer - reading silver directly because no product gold table exists.
     # In dbt Mesh this is impossible: staging is access: protected.
     products = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.silver_products")
 

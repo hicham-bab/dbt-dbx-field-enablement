@@ -4,7 +4,7 @@
 
 Demonstrates the Fivetran + dbt loop end-to-end: Salesforce data ingested by Fivetran
 (MDLS → Unity Catalog), governed by dbt into contracted marts + a Semantic Layer, and
-consumed by Genie. Genie answers pipeline questions from **governed definitions** — the
+consumed by Genie. Genie answers pipeline questions from **governed definitions** - the
 same ones that drive the Slack activation.
 
 ---
@@ -35,7 +35,7 @@ same ones that drive the Slack activation.
 
 ## Instructions (paste into the Genie Space Instructions field)
 
-These come directly from `platform/models/marts/crm/_crm.yml` — version-controlled,
+These come directly from `platform/models/marts/crm/_crm.yml` - version-controlled,
 PR-reviewed definitions, not hand-typed context.
 
 ```
@@ -44,26 +44,26 @@ contracted it. Every column definition is version-controlled YAML reviewed in a 
 
 TABLES:
 
-dim_accounts — one row per Salesforce account. Primary key: account_id.
+dim_accounts - one row per Salesforce account. Primary key: account_id.
   Key fields: account_name, account_type, industry, annual_revenue,
   number_of_employees, billing_country, account_owner.
 
-fct_opportunities — one row per opportunity (deal). Primary key: opportunity_id.
+fct_opportunities - one row per opportunity (deal). Primary key: opportunity_id.
   Foreign keys: account_id -> dim_accounts, owner_id.
   Key fields: stage_name, amount, close_date, probability, is_closed, is_won,
   opportunity_type, lead_source, opportunity_owner,
   weighted_amount (= amount x probability / 100).
 
-crm_opportunity_alerts — open opportunities flagged as high-value (>= $100k) or
+crm_opportunity_alerts - open opportunities flagged as high-value (>= $100k) or
   overdue. This is the same governed list Fivetran Activations sends to Slack.
 
 GOVERNED METRICS (prefer these over ad-hoc SQL):
-  open_pipeline_amount     — SUM(amount) WHERE is_closed = false
-  weighted_pipeline_amount — SUM(weighted_amount) WHERE is_closed = false
-  won_amount               — SUM(amount) WHERE is_won = true
-  avg_deal_size            — AVG(amount) WHERE is_won = true
-  opportunity_count        — COUNT(DISTINCT opportunity_id)
-  win_rate                 — won opportunities / closed opportunities (%)
+  open_pipeline_amount     - SUM(amount) WHERE is_closed = false
+  weighted_pipeline_amount - SUM(weighted_amount) WHERE is_closed = false
+  won_amount               - SUM(amount) WHERE is_won = true
+  avg_deal_size            - AVG(amount) WHERE is_won = true
+  opportunity_count        - COUNT(DISTINCT opportunity_id)
+  win_rate                 - won opportunities / closed opportunities (%)
 
 RULES:
 - "Pipeline" means OPEN opportunities (is_closed = false). Use open_pipeline_amount.
@@ -84,7 +84,7 @@ RULES:
 ## Talking Points
 
 - Genie's pipeline numbers match the Slack alerts and the BI dashboards because all
-  three read the *same* governed dbt models — one definition, activated and analyzed
+  three read the *same* governed dbt models - one definition, activated and analyzed
   everywhere.
 - Ask "where does this number come from?" → trace `open_pipeline_amount` in Explorer to
   `fct_opportunities`, its contract, tests, and the Fivetran-landed Salesforce source.

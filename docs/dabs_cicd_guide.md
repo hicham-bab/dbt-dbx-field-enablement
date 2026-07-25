@@ -191,7 +191,7 @@ task running inside a Databricks Job.
 
 **Important:** Asset Bundles deploy dbt Core on Databricks compute. This means
 you get execution but **not** the Semantic Layer, Explorer, managed CI/CD,
-or Fusion engine. See `BATTLE_CARD.md` (Orchestration — the two native dbt tasks) for the full comparison.
+or Fusion engine. See `BATTLE_CARD.md` (Orchestration - the two native dbt tasks) for the full comparison.
 If your customer needs Genie with governed metrics, dbt platform is required.
 
 ---
@@ -906,7 +906,7 @@ databricks bundle validate -t prod
 ## Related Documentation
 
 - `SETUP.md` -- Full environment setup (dbt platform path)
-- `BATTLE_CARD.md` (Orchestration — the two native dbt tasks) -- native dbt task vs dbt platform
+- `BATTLE_CARD.md` (Orchestration - the two native dbt tasks) -- native dbt task vs dbt platform
 - `docs/architecture.md` -- Reference architecture diagrams
 - `docs/fusion_cheat_sheet.md` -- dbt Fusion syntax rules
 - `DEMO_SCRIPT.md` Act 4g -- dbt platform vs Native dbt Task demo

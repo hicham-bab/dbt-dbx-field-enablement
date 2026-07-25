@@ -4,15 +4,15 @@
 
 This repo implements the recommended reference architecture for dbt + Databricks
 field demos. Since the **Fivetran + dbt Labs merger (2026-06-01)** the reference is a
-complete governed loop — ingest, govern, activate — on the Databricks lakehouse:
+complete governed loop - ingest, govern, activate - on the Databricks lakehouse:
 
-1. **Ingestion layer** — Fivetran (700+ connectors) + the **Managed Data Lake
+1. **Ingestion layer** - Fivetran (700+ connectors) + the **Managed Data Lake
    Service** landing open Delta/Iceberg tables in Unity Catalog, and/or Databricks
    Lakeflow Declarative Pipelines for streaming/Spark-native sources
-2. **Business transformation layer** (dbt Fusion) — Gold/Marts, contracts, tests
-3. **Semantic layer** (dbt MetricFlow + UC metric views) — governed metrics → Genie,
+2. **Business transformation layer** (dbt Fusion) - Gold/Marts, contracts, tests
+3. **Semantic layer** (dbt MetricFlow + UC metric views) - governed metrics → Genie,
    BI, and AI agents
-4. **Activation layer** — Fivetran Activations (reverse ETL) syncs governed outputs
+4. **Activation layer** - Fivetran Activations (reverse ETL) syncs governed outputs
    back to operational tools (Salesforce, HubSpot, …)
 
 See `FIVETRAN_DBT_DATABRICKS.md` for the competitive positioning of this loop.
@@ -99,7 +99,7 @@ ingestion (Fivetran/Lakeflow) and activation (Fivetran Activations) ends wrap it
 
 ```mermaid
 flowchart TD
-    subgraph Raw["Raw Layer — enablement.ecommerce"]
+    subgraph Raw["Raw Layer - enablement.ecommerce"]
         R1[raw_customers]
         R2[raw_orders]
         R3[raw_order_items]
@@ -107,7 +107,7 @@ flowchart TD
         R5[raw_payments]
     end
 
-    subgraph Lakeflow["Lakeflow Declarative Pipelines — enablement.ecommerce_lakeflow"]
+    subgraph Lakeflow["Lakeflow Declarative Pipelines - enablement.ecommerce_lakeflow"]
         B[Bronze 5 tables]
         S[Silver 5 tables]
         G[Gold 3 tables]
@@ -175,7 +175,7 @@ from using the dbt mart metadata to answer questions about raw tables.
 ### Why `access: public` on marts only?
 
 dbt Mesh requires `access: public` for cross-project refs. Staging and intermediate
-models are `protected` — they can only be referenced within the platform project.
+models are `protected` - they can only be referenced within the platform project.
 This enforces that consumers always use the clean, tested, contract-enforced mart layer.
 
 ### Why `persist_docs`?
@@ -188,7 +188,7 @@ Unity Catalog column metadata. This means:
 
 ### Why both Lakeflow and dbt in the same demo?
 
-The demo is more credible when it shows Lakeflow honestly — acknowledging what it
+The demo is more credible when it shows Lakeflow honestly - acknowledging what it
 does well (medallion architecture, streaming, auto-lineage) before showing what
 dbt adds (governance, testing, semantic layer). Customers trust a fair comparison
 more than a one-sided pitch.
@@ -199,6 +199,6 @@ Post-merger, one company covers the whole loop. Fivetran connectors + the Manage
 Data Lake Service land open Delta/Iceberg tables in Unity Catalog faster than
 hand-building ingestion (the standout for Iceberg/open-format customers), and
 Fivetran Activations closes the loop by syncing governed dbt outputs back to
-operational tools — a capability Databricks has no first-class native answer for.
+operational tools - a capability Databricks has no first-class native answer for.
 Lakeflow remains in the picture for streaming/Spark-native sources; the two are
 complementary. See `FIVETRAN_DBT_DATABRICKS.md`.

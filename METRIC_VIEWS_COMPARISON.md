@@ -2,7 +2,7 @@
 
 An honest guide for dbt field teams on how dbt and Databricks metric views fit
 together. It answers the two questions customers ask: "Our customer already has
-Databricks metric views — where does dbt fit?" and "dbt Semantic Layer or Unity
+Databricks metric views - where does dbt fit?" and "dbt Semantic Layer or Unity
 Catalog metric views?"
 
 **Short answer (2026): it's AND, not OR.**
@@ -10,8 +10,8 @@ Catalog metric views?"
 - As of **dbt-databricks 1.12+**, dbt can **author and govern Unity Catalog
   metric views directly** (`materialized='metric_view'`). The customer's own
   metric views become version-controlled, tested, PR-reviewed dbt models.
-- The **dbt Semantic Layer** serves governed metrics to *any* BI tool — not just
-  Databricks — through one API.
+- The **dbt Semantic Layer** serves governed metrics to *any* BI tool - not just
+  Databricks - through one API.
 
 So the real question is not "metric views or dbt." It's "which **serving surface**
 do you need (Unity Catalog metric views for Databricks-native tools; the Semantic
@@ -95,22 +95,22 @@ measures:
     display_name: Total Revenue
 ```
 
-That means the customer's own Unity Catalog metric views — the ones Genie and
-Databricks SQL already use — become:
+That means the customer's own Unity Catalog metric views - the ones Genie and
+Databricks SQL already use - become:
 
-- **Version-controlled** — every definition change is a commit and a PR
-- **Tested** — the underlying mart carries dbt tests and an enforced contract
-- **Lineage-tracked** — `ref('fct_orders')` wires the metric view into the dbt DAG
-- **CI/CD-deployed** — promoted dev → prod through the same pipeline as every model
+- **Version-controlled** - every definition change is a commit and a PR
+- **Tested** - the underlying mart carries dbt tests and an enforced contract
+- **Lineage-tracked** - `ref('fct_orders')` wires the metric view into the dbt DAG
+- **CI/CD-deployed** - promoted dev → prod through the same pipeline as every model
 
-So the governance story below is no longer dbt *versus* metric views — it's dbt
+So the governance story below is no longer dbt *versus* metric views - it's dbt
 *governing* the metric views the customer already wants. A working example lives
 in `platform/models/metrics/` in this repo.
 
 This matters more after Summit 2026: Unity Catalog Metrics went GA and Databricks
 introduced **Genie Ontology**, a *context layer* that *consumes* the semantic layer
 (UC Metrics/Glossary) to ground Genie. The better those definitions are governed, the
-better Genie performs — and dbt is the version-controlled, tested, multi-platform
+better Genie performs - and dbt is the version-controlled, tested, multi-platform
 source those definitions can come from. dbt authors the UC metric views *and* serves
 the same governed definitions to every non-Databricks tool.
 
@@ -120,7 +120,7 @@ the same governed definitions to every non-Databricks tool.
 
 This compares the two **serving surfaces** at their common defaults: a metric
 view hand-authored in the catalog vs a dbt Semantic Layer metric. Keep Part 1.5
-in mind — dbt can now author the left column too, in which case the "version
+in mind - dbt can now author the left column too, in which case the "version
 control", "tests", and "lineage" rows apply to metric views as well. Choose the
 serving surface by *where* the metrics are consumed; govern *both* with dbt
 upstream.
@@ -128,29 +128,29 @@ upstream.
 | Feature | Databricks Metric Views (hand-authored) | dbt Semantic Layer (MetricFlow) |
 |---|---|---|
 | **Definition format** | YAML saved to Unity Catalog | YAML in Git, next to dbt models |
-| **Version control** | No — saved to catalog, no git history | Yes — every change is a commit, every commit is reviewable |
-| **PR review process** | None built-in | Yes — YAML + SQL in same PR, reviewed by data team |
+| **Version control** | No - saved to catalog, no git history | Yes - every change is a commit, every commit is reviewable |
+| **PR review process** | None built-in | Yes - YAML + SQL in same PR, reviewed by data team |
 | **Audit trail** | UC audit log (who modified the object) | `git log` (who changed what, when, why, PR link) |
 | **Human-readable description** | `comment` field (optional) | `description` + `label` fields (fed to Genie) |
 | **Metric types** | Measures only (aggregation expressions) | Simple, derived, ratio, cumulative, conversion |
-| **Derived metrics** | Manual SQL expression | `derived` type — explicit formula referencing other metrics |
-| **Ratio metrics** | Manual SQL division | `ratio` type — numerator/denominator declared separately |
+| **Derived metrics** | Manual SQL expression | `derived` type - explicit formula referencing other metrics |
+| **Ratio metrics** | Manual SQL division | `ratio` type - numerator/denominator declared separately |
 | **Time grain handling** | Manual DATE_TRUNC in expr | MetricFlow handles `time_granularity` natively |
 | **Dimension slicing** | Dimensions in same YAML | Entities + dimensions across semantic models (joins handled) |
-| **Cross-model joins** | Not supported | Entity relationships — MetricFlow resolves joins automatically |
+| **Cross-model joins** | Not supported | Entity relationships - MetricFlow resolves joins automatically |
 | **Data quality tests** | None on metric definitions | dbt tests on underlying marts (`not_null`, `accepted_values`, custom) |
-| **Column contracts** | None | `contract: enforced: true` — schema changes fail CI |
+| **Column contracts** | None | `contract: enforced: true` - schema changes fail CI |
 | **Multi-tool compatibility** | Databricks tools only (Genie, SQL editor) | Any BI tool via Semantic Layer JDBC (Tableau, PowerBI, Looker, Genie) |
-| **AI agent access** | Genie only | dbt MCP server — any AI agent can query metrics by name |
-| **Cross-project (Mesh)** | Not supported | Yes — metrics from platform consumed by all downstream projects |
+| **AI agent access** | Genie only | dbt MCP server - any AI agent can query metrics by name |
+| **Cross-project (Mesh)** | Not supported | Yes - metrics from platform consumed by all downstream projects |
 | **Governance (access control)** | UC permissions on the metric view | `access:` + `groups:` + UC permissions + contracts |
-| **Breaking change detection** | None — metric silently breaks if source changes | `dbt build` fails if contract violated; downstream consumers fail in CI |
-| **Lineage** | UC table-level lineage | dbt Explorer — column-level lineage from source to metric |
+| **Breaking change detection** | None - metric silently breaks if source changes | `dbt build` fails if contract violated; downstream consumers fail in CI |
+| **Lineage** | UC table-level lineage | dbt Explorer - column-level lineage from source to metric |
 | **"Where does this number come from?"** | Read the SQL expression | Explorer → click metric → see full DAG from raw to metric |
 
 ---
 
-## Part 3: The Big Narrative — Why This Distinction Matters
+## Part 3: The Big Narrative - Why This Distinction Matters
 
 ### 3.1 The Genie Trust Problem
 
@@ -171,7 +171,7 @@ trustworthy as the definitions it's given.
 
 Metric Views partially solve this: they give Genie a named metric with a
 `comment` field. But they don't answer the trust question fully because they
-lack the governance layer — version control, PR review, tests, contracts, and
+lack the governance layer - version control, PR review, tests, contracts, and
 traceable lineage from metric to raw source.
 
 The dbt Semantic Layer solves the trust problem end-to-end:
@@ -184,7 +184,7 @@ Raw source → dbt staging (tested) → dbt mart (contracted) → Semantic model
 ```
 
 Every layer is tested, documented, and version-controlled. When a business user
-asks "can I trust this number?", the answer is not "I think so" — it's
+asks "can I trust this number?", the answer is not "I think so" - it's
 "here's the PR that approved the definition, here's the test that validates the
 data, and here's the lineage from raw to metric."
 
@@ -201,8 +201,8 @@ last change?"
 - Check Unity Catalog audit logs → shows the timestamp of the last modification
   and the identity of the modifier
 - No commit message, no PR link, no review record
-- No way to see what changed — only that something changed
-- No way to see why — the business context behind the change is lost
+- No way to see what changed - only that something changed
+- No way to see why - the business context behind the change is lost
 - The `comment` field can be updated without any review process
 
 **dbt Semantic Layer answer:**
@@ -211,7 +211,7 @@ $ git log --oneline platform/models/marts/_marts.yml
 
 a3f7c21  Update revenue definition to exclude returned orders (#47)
 9e2b134  Add return_rate ratio metric (#42)
-6d1a8f0  Initial semantic models — 3 models, 8 metrics (#38)
+6d1a8f0  Initial semantic models - 3 models, 8 metrics (#38)
 ```
 
 - Every change has a commit hash, an author, a date, and a PR number
@@ -228,18 +228,18 @@ investigation path is completely different:
 | Step | Metric Views | dbt Semantic Layer |
 |---|---|---|
 | 1. "What definition did Genie use?" | Read the metric view SQL expression | Click metric in Explorer → see definition + description |
-| 2. "Is this the right definition?" | Ask the person who created the view | Check the PR that approved it — reviewer names are on record |
-| 3. "When did it last change?" | UC audit log — timestamp only | `git log` — timestamp + author + PR + commit message |
+| 2. "Is this the right definition?" | Ask the person who created the view | Check the PR that approved it - reviewer names are on record |
+| 3. "When did it last change?" | UC audit log - timestamp only | `git log` - timestamp + author + PR + commit message |
 | 4. "What changed?" | Compare current view to... nothing (no history) | `git diff` between any two commits |
-| 5. "Where does the data come from?" | Read the `source:` field — one table reference | Explorer column-level lineage → full DAG from raw to metric |
-| 6. "Is the underlying data correct?" | Run a manual query | dbt tests already validated it — check test results in Explorer |
+| 5. "Where does the data come from?" | Read the `source:` field - one table reference | Explorer column-level lineage → full DAG from raw to metric |
+| 6. "Is the underlying data correct?" | Run a manual query | dbt tests already validated it - check test results in Explorer |
 | 7. "Can I prevent this from happening again?" | Add a comment and hope | Add a dbt test, enforce a contract, require PR review |
 
 ### 3.3 The "Where Does Genie's Answer Come From?" Workflow
 
 This is the demo moment that resonates most with governance-conscious customers.
 It answers the question every data leader eventually asks: **"I got a number from
-Genie — show me exactly where it came from."**
+Genie - show me exactly where it came from."**
 
 **Step 1: Genie returns a number**
 
@@ -260,7 +260,7 @@ Measure: total_revenue
 Filter: status = 'completed'
 ```
 
-**Say:** "This is the definition Genie used. It's not a guess — it's a named
+**Say:** "This is the definition Genie used. It's not a guess - it's a named
 metric with an explicit filter. Revenue = completed orders only."
 
 **Step 3: Trace the measure to the mart**
@@ -272,12 +272,12 @@ underlying model: `fct_orders`
 Model: fct_orders
 Access: public
 Contract: enforced
-Column: amount_paid — "Total amount successfully paid for this order (USD).
+Column: amount_paid - "Total amount successfully paid for this order (USD).
          Counts only payments with status = 'success'."
 ```
 
 **Say:** "The measure sums `amount_paid` from `fct_orders`. The column has a
-contract — it must be `decimal(18,2)` and not null. If anyone changes the type,
+contract - it must be `decimal(18,2)` and not null. If anyone changes the type,
 every downstream consumer's build fails."
 
 **Step 4: Trace the mart to the source**
@@ -292,7 +292,7 @@ fct_orders.amount_paid
 ```
 
 **Say:** "Column-level lineage. From the metric all the way to the raw table.
-Every hop is a dbt model — tested, documented, version-controlled. You can see
+Every hop is a dbt model - tested, documented, version-controlled. You can see
 the full path from Genie's answer to the source table."
 
 **Step 5: Verify data quality**
@@ -312,7 +312,7 @@ Tests: 7 passing
 
 **Say:** "Seven tests validated this data on the last run. The custom test
 `assert_positive_revenue` ensures no negative amounts. The `accepted_values`
-test ensures `status` can only be one of four values — the same values the
+test ensures `status` can only be one of four values - the same values the
 metric filter uses. If bad data enters, the tests catch it before Genie sees it."
 
 **Step 6: Audit the definition history**
@@ -326,14 +326,14 @@ a3f7c21  Update revenue definition to exclude returned orders (#47)
 'exclude returned orders.' The diff shows exactly what changed. When the auditor
 asks 'who approved this?', you have a name, a date, and a discussion thread."
 
-**The contrast — try this with Metric Views:**
+**The contrast - try this with Metric Views:**
 
 > "Now try the same workflow with a Metric View. Step 1: Genie returns a number.
 > Step 2: Find the metric view in the catalog, read the SQL expression. Step 3:
 > The `source` field says `fct_orders`. How was `fct_orders` built? Read the
 > notebook. Step 4: What tests validate the data? There are none on the metric
-> view — you'd need to check the notebook's Lakeflow expectations, if they exist.
-> Step 5: Who approved this definition? Check the UC audit log — it shows a
+> view - you'd need to check the notebook's Lakeflow expectations, if they exist.
+> Step 5: Who approved this definition? Check the UC audit log - it shows a
 > timestamp and a user ID, but not the rationale, the discussion, or the review."
 
 ### 3.4 The "Define Once, Serve Everywhere" Principle
@@ -341,7 +341,7 @@ asks 'who approved this?', you have a name, a date, and a discussion thread."
 This is the architectural argument that resonates with engineering leaders.
 
 **Metric Views serve one ecosystem:** Databricks Genie and Databricks SQL.
-If you also use Tableau, PowerBI, Looker, or a Python notebook — each tool
+If you also use Tableau, PowerBI, Looker, or a Python notebook - each tool
 gets its own metric definition. You now have N definitions of "revenue" that
 can drift independently.
 
@@ -367,7 +367,7 @@ One YAML file. One PR review. One definition. Every tool gets the same number.
 | Finance asks Genie: "total revenue?" | Returns $127,450 (from metric view) | Returns $127,450 (from Semantic Layer) |
 | Analyst queries Tableau: "total revenue?" | Returns $131,200 (from Tableau's own calculation) | Returns $127,450 (same definition via JDBC) |
 | DS team queries Python: "total revenue?" | Returns $129,800 (from notebook SQL) | Returns $127,450 (same definition via `dbt-sl-sdk`) |
-| **CFO sees three different numbers** | "Which one is right?" | Doesn't happen — all three are the same |
+| **CFO sees three different numbers** | "Which one is right?" | Doesn't happen - all three are the same |
 
 This is the **single source of truth** problem. Metric Views solve it for
 Databricks tools. The dbt Semantic Layer solves it for the entire stack.
@@ -379,7 +379,7 @@ a governance stack that Metric Views don't have:
 
 ```
 Layer 6: Named Metrics         → "total_recognised_revenue" queryable by name
-Layer 5: Semantic Models       → Entities, dimensions, measures — grain declared
+Layer 5: Semantic Models       → Entities, dimensions, measures - grain declared
 Layer 4: Column Contracts      → Schema enforced, types guaranteed, changes fail CI
 Layer 3: dbt Tests             → not_null, unique, accepted_values, relationships, custom
 Layer 2: Documentation         → Column descriptions pushed to UC via persist_docs
@@ -398,20 +398,20 @@ Without Layers 1–5, Layer 6 is a named metric built on ungoverned foundations.
 
 ## Part 4: Where Metric Views Are the Right Serving Surface
 
-Be honest. Unity Catalog metric views are the right serving surface when — and
+Be honest. Unity Catalog metric views are the right serving surface when - and
 remember dbt can still author and govern them via `materialized='metric_view'`
 (Part 1.5), so this is about *where metrics are served*, not whether dbt is
 involved:
 
-1. **Simple, stable metrics** — fewer than 10 metrics, rarely change, no complex
+1. **Simple, stable metrics** - fewer than 10 metrics, rarely change, no complex
    filters or time-grain requirements
-2. **Databricks-only environment** — all BI consumers use Databricks SQL or Genie,
+2. **Databricks-only environment** - all BI consumers use Databricks SQL or Genie,
    no Tableau/PowerBI/Looker integration needed
-3. **Small team, low governance overhead** — one person owns the metrics, manual
+3. **Small team, low governance overhead** - one person owns the metrics, manual
    sync is manageable
-4. **Exploratory / prototype stage** — trying out Genie, not yet in production,
+4. **Exploratory / prototype stage** - trying out Genie, not yet in production,
    governance requirements are not yet defined
-5. **No existing dbt project** — adding dbt just for metrics is not worth it if
+5. **No existing dbt project** - adding dbt just for metrics is not worth it if
    there is no existing dbt transformation layer
 
 ---
@@ -420,26 +420,26 @@ involved:
 
 The dbt Semantic Layer adds decisive value when:
 
-1. **Auditability is required** — regulated industries, SOX compliance, any
+1. **Auditability is required** - regulated industries, SOX compliance, any
    environment where "who approved this definition?" must have a traceable answer
-2. **Multiple BI tools** — same metric must return the same number in Tableau,
+2. **Multiple BI tools** - same metric must return the same number in Tableau,
    Genie, PowerBI, and your AI agents
-3. **Complex metrics** — ratios, derived metrics, filtered measures, cumulative
+3. **Complex metrics** - ratios, derived metrics, filtered measures, cumulative
    metrics, or metrics that span multiple models
-4. **Multiple teams** — more than one team defines or consumes metrics;
+4. **Multiple teams** - more than one team defines or consumes metrics;
    contracts and Mesh prevent breaking changes across team boundaries
-5. **AI infrastructure** — AI agents (Claude, GPT, Copilot) need to query
+5. **AI infrastructure** - AI agents (Claude, GPT, Copilot) need to query
    governed metrics via the dbt MCP server
-6. **Fast-moving definitions** — metric definitions change frequently;
+6. **Fast-moving definitions** - metric definitions change frequently;
    PR-reviewed changes prevent definition drift
-7. **Genie at scale** — dozens of users asking diverse questions; consistent
+7. **Genie at scale** - dozens of users asking diverse questions; consistent
    metric definitions prevent different users getting different answers
-8. **"Where does this number come from?"** — anyone needs to trace a Genie
+8. **"Where does this number come from?"** - anyone needs to trace a Genie
    answer from the metric back to the raw source table with full lineage
 
 ---
 
-## Part 6: Demo — Same Metric, Both Ways
+## Part 6: Demo - Same Metric, Both Ways
 
 This demo uses the `return_rate` metric, defined identically in both systems
 for an apples-to-apples comparison.
@@ -479,7 +479,7 @@ metrics:
 ```
 
 What Genie sees: a named metric with a label, a description, and an explicit
-numerator/denominator — expressed semantically, not as raw SQL.
+numerator/denominator - expressed semantically, not as raw SQL.
 
 ### Same Genie query on both
 
@@ -487,12 +487,12 @@ Ask Genie: *"What is our return rate?"*
 
 | Aspect | Metric Views | dbt Semantic Layer |
 |---|---|---|
-| SQL generated | Evaluates the `expr` — raw SQL | Uses the ratio definition — semantic |
+| SQL generated | Evaluates the `expr` - raw SQL | Uses the ratio definition - semantic |
 | Genie explanation | "return_rate from the metric view" | "Return rate = returned orders / total orders x 100" |
-| Can Genie explain the denominator? | No — it's buried in the SQL expression | Yes — `order_count` is a separate, named measure |
+| Can Genie explain the denominator? | No - it's buried in the SQL expression | Yes - `order_count` is a separate, named measure |
 | Auditability | UC audit log (timestamp + user ID) | `git log _marts.yml` (commit + PR + author + rationale) |
-| Definition drift possible? | Yes — anyone with UC permissions can edit | No — PR required, review enforced by Git workflow |
-| Downstream impact visibility | None — no contract, no consumers tracked | Explorer shows every model and metric that depends on this |
+| Definition drift possible? | Yes - anyone with UC permissions can edit | No - PR required, review enforced by Git workflow |
+| Downstream impact visibility | None - no contract, no consumers tracked | Explorer shows every model and metric that depends on this |
 
 ### The auditability check
 
@@ -504,9 +504,9 @@ principal ID. You won't find the reason, the discussion, or the review approval.
 **dbt Semantic Layer:**
 ```bash
 $ git log --oneline platform/models/marts/_marts.yml
-a3f7c21  Update revenue to exclude returned orders (#47)  — reviewed by @finance-lead
-9e2b134  Add return_rate ratio metric (#42)                — reviewed by @analytics-eng
-6d1a8f0  Initial semantic models (#38)                     — reviewed by @platform-team
+a3f7c21  Update revenue to exclude returned orders (#47)  - reviewed by @finance-lead
+9e2b134  Add return_rate ratio metric (#42)                - reviewed by @analytics-eng
+6d1a8f0  Initial semantic models (#38)                     - reviewed by @platform-team
 ```
 
 Every change. Every reviewer. Every rationale. Immutable.
@@ -524,7 +524,7 @@ serving surface for Databricks-native tools like Genie and Databricks SQL. The
 - **A metric view authored as a dbt model** (`materialized='metric_view'`) = the
   same Databricks-native object, now version-controlled, tested, and lineage-tracked
 - **The dbt Semantic Layer** = a governed metric contract served to *every* tool
-  (Tableau, Power BI, Looker, Python, AI agents) via one API — for stacks that
+  (Tableau, Power BI, Looker, Python, AI agents) via one API - for stacks that
   reach beyond Databricks
 
 dbt is the authoring and governance layer underneath both serving surfaces. The
@@ -533,11 +533,11 @@ choice is about where metrics are consumed, not whether dbt adds value.
 **The question to ask your customer:**
 
 > "When a CFO gets a revenue number from Genie and asks 'can I trust this?',
-> what do you show them? A SQL expression in a catalog view — or a PR that was
+> what do you show them? A SQL expression in a catalog view - or a PR that was
 > reviewed by the finance lead, tested by 7 automated checks, and traceable
 > from the metric all the way back to the raw source table?"
 
-If the answer matters to them — and in any enterprise it does — the dbt
+If the answer matters to them - and in any enterprise it does - the dbt
 Semantic Layer is not optional. It's the governance foundation that makes
 Genie trustworthy.
 
@@ -566,28 +566,28 @@ compliance, or leadership stakeholders.
 no ticket, no "let me check with the team." The governance is in the code.
 
 **The contrast line:**
-> "Try doing this with a Metric View. Step 1 works — you can read the SQL
+> "Try doing this with a Metric View. Step 1 works - you can read the SQL
 > expression. Steps 2–6 don't exist. There's no PR history, no column lineage,
-> no data health tile, no contract. You can see the metric — but you can't
+> no data health tile, no contract. You can see the metric - but you can't
 > audit it."
 
 ### What "Auditability" Really Means: The Five Questions
 
-Every audit — whether from a CFO, a regulator, or an internal data quality
-review — asks the same five questions. Here's how each system answers:
+Every audit - whether from a CFO, a regulator, or an internal data quality
+review - asks the same five questions. Here's how each system answers:
 
 | Audit Question | Metric Views | dbt Semantic Layer |
 |---|---|---|
 | **What is the definition?** | Read the `expr` SQL in the metric view YAML | Read the metric definition in Explorer (description, type, filter, measure) |
 | **Who approved it?** | UC audit log → principal ID + timestamp | `git log` → author + PR link + reviewer names + merge date |
-| **What was the previous definition?** | Not available (no version history of the content) | `git diff` between any two commits — exact before/after |
+| **What was the previous definition?** | Not available (no version history of the content) | `git diff` between any two commits - exact before/after |
 | **What data feeds it?** | `source:` field → one table name | Explorer column-level lineage → full DAG from metric to raw table |
 | **Is the data correct right now?** | Run a manual query and check | dbt tests → 7+ automated checks, data health tile in Explorer |
 
 ### When to Use This in the Demo
 
 - **Act 4c (Governance):** After showing the contract, run the 60-second audit
-- **Q&A:** When someone asks "how do we audit Genie answers?" — this is the answer
+- **Q&A:** When someone asks "how do we audit Genie answers?" - this is the answer
 - **Regulated industries:** Lead with this before showing anything else
 - **CFO/VP audience:** "Let me show you how you'd answer your board when they
   ask where a number came from. It takes 60 seconds."

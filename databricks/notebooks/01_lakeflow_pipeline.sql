@@ -1,10 +1,10 @@
--- Spark Declarative Pipelines — E-Commerce Platform Pipeline (SQL version)
+-- Spark Declarative Pipelines - E-Commerce Platform Pipeline (SQL version)
 -- Formerly "Delta Live Tables" (DLT) / "Lakeflow Declarative Pipelines".
 -- Rebranded to Spark Declarative Pipelines (SDP) in 2025. SQL syntax unchanged.
 --
 -- What this shows dbt field teams:
 -- - How Databricks solves the same medallion pattern problem natively, in SQL
--- - SDP declarative SQL syntax vs dbt SQL models — similar syntax, different governance
+-- - SDP declarative SQL syntax vs dbt SQL models - similar syntax, different governance
 -- - What SDP has: auto-lineage, auto-retry, expectations (data quality)
 -- - What SDP doesn't have: ref(), version-controlled docs, test suite, contracts, Semantic Layer, CI/CD
 --
@@ -13,11 +13,11 @@
 -- 2. In the dialog: name = ecommerce-lakeflow-demo, catalog = <your_catalog>, schema = <your_schema>_lakeflow → Create
 -- 3. In pipeline settings → Configuration, add: source_catalog = <your_catalog>, source_schema = <your_schema>
 -- 4. On the "Next step" screen → Add existing assets → select this file → Add
--- 5. Click Start — creates all 13 tables (5 bronze + 5 silver + 3 gold)
+-- 5. Click Start - creates all 13 tables (5 bronze + 5 silver + 3 gold)
 
 
 -- =============================================================================
--- BRONZE LAYER — Raw Ingestion
+-- BRONZE LAYER - Raw Ingestion
 --
 -- Bronze tables ingest raw data as-is from source tables.
 -- No transformations, no cleaning.
@@ -25,7 +25,7 @@
 -- dbt equivalent: source() declarations in _sources.yml
 -- Key difference: dbt sources have freshness checks (dbt source freshness),
 -- loaded_at_field tracking, and warn/error thresholds defined in code.
--- DLT has no equivalent — you would need a custom monitoring notebook.
+-- DLT has no equivalent - you would need a custom monitoring notebook.
 -- =============================================================================
 
 CREATE OR REFRESH STREAMING TABLE bronze_customers
@@ -55,14 +55,14 @@ AS SELECT * FROM STREAM(${source_catalog}.${source_schema}.raw_payments);
 
 
 -- =============================================================================
--- SILVER LAYER — Cleaned and Standardised
+-- SILVER LAYER - Cleaned and Standardised
 --
 -- dbt equivalent: staging models with column-level transformations and tests.
 --
 -- Key differences from dbt:
 -- - SDP CONSTRAINT = dbt test, but only 3 options: warn, drop row, or fail pipeline
 -- - dbt has 4 built-in tests + unlimited custom SQL tests + dbt_expectations package
--- - SDP constraints are defined inline — no separate YAML test file, no PR review
+-- - SDP constraints are defined inline - no separate YAML test file, no PR review
 -- - No auto-generated docs from constraints (dbt generates a full docs site)
 -- - See PLATFORM_COMPARISON.md Section 1 for the full comparison
 -- =============================================================================
@@ -141,23 +141,23 @@ FROM STREAM(LIVE.bronze_payments);
 
 
 -- =============================================================================
--- GOLD LAYER — Business Entities
+-- GOLD LAYER - Business Entities
 --
 -- dbt equivalent: mart models (dim_customers, fct_orders, fct_revenue)
 --
 -- Key differences from dbt:
--- - dbt marts have enforced contracts (data_type on every column) — if a column
+-- - dbt marts have enforced contracts (data_type on every column) - if a column
 --   type changes, the build fails before consumers are affected
--- - dbt marts have access: public — only explicitly public models can be
+-- - dbt marts have access: public - only explicitly public models can be
 --   referenced by consumer projects (dbt Mesh)
 -- - dbt docs are auto-generated from YAML, pushed to Unity Catalog via persist_docs
--- - No contract enforcement here — schema changes break consumers silently
+-- - No contract enforcement here - schema changes break consumers silently
 -- =============================================================================
 
 CREATE OR REFRESH MATERIALIZED VIEW gold_dim_customers
 COMMENT "Customer dimension with lifetime value metrics and segmentation.
 customer_segment: high_value >= 500, mid_value >= 100, low_value < 100.
-NOTE: No contract enforcement — if this schema changes, consumer pipelines
+NOTE: No contract enforcement - if this schema changes, consumer pipelines
 break at runtime. In dbt Mesh, a contract violation fails the build immediately."
 TBLPROPERTIES ("quality" = "gold")
 AS
@@ -203,7 +203,7 @@ LEFT JOIN payment_totals pt ON c.customer_id = pt.customer_id;
 CREATE OR REFRESH MATERIALIZED VIEW gold_fct_orders
 COMMENT "Order fact table enriched with item counts and successful payment totals.
 amount_paid: sum of successful payments for this order.
-NOTE: No contract enforcement — schema changes silently break consumer pipelines."
+NOTE: No contract enforcement - schema changes silently break consumer pipelines."
 TBLPROPERTIES ("quality" = "gold")
 AS
 WITH item_metrics AS (

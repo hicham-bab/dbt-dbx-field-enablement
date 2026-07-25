@@ -1,14 +1,14 @@
 version: 2
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fivetran Salesforce source — landed by the Fivetran Managed Data Lake Service
+# Fivetran Salesforce source - landed by the Fivetran Managed Data Lake Service
 # (MDLS) as open Delta/Iceberg tables and registered in Unity Catalog.
 #
 # This is the "ingest" end of the Fivetran + dbt loop (see FIVETRAN_DBT_DATABRICKS.md):
 #   Salesforce ──(Fivetran connector + MDLS)──▶ Unity Catalog ──▶ dbt (here)
 #
 # Columns below are the STANDARD Salesforce objects Fivetran lands. Every Salesforce
-# org has custom fields (e.g. *__c) — verify the exact schema against your connector's
+# org has custom fields (e.g. *__c) - verify the exact schema against your connector's
 # Fivetran ERD / the fivetran/dbt_salesforce_source package before relying on it.
 # Fivetran adds _fivetran_synced (load time) and _fivetran_deleted (soft-delete flag)
 # to every table; staging filters out soft-deleted rows and uses _fivetran_synced for
@@ -22,7 +22,7 @@ sources:
     description: "Fivetran-synced Salesforce objects, landed via MDLS into Unity Catalog."
     tables:
       - name: account
-        description: "Salesforce Account — the company/organization record."
+        description: "Salesforce Account - the company/organization record."
         config:
           loaded_at_field: _fivetran_synced
           freshness:
@@ -44,7 +44,7 @@ sources:
           - name: billing_country
             description: "Billing address country."
           - name: owner_id
-            description: "FK to user — the account owner."
+            description: "FK to user - the account owner."
           - name: created_date
             description: "When the account was created in Salesforce."
           - name: _fivetran_synced
@@ -53,7 +53,7 @@ sources:
             description: "Fivetran soft-delete flag; true if deleted in the source."
 
       - name: contact
-        description: "Salesforce Contact — a person associated with an account."
+        description: "Salesforce Contact - a person associated with an account."
         config:
           loaded_at_field: _fivetran_synced
           freshness:
@@ -73,7 +73,7 @@ sources:
           - name: title
             description: "Job title."
           - name: owner_id
-            description: "FK to user — the contact owner."
+            description: "FK to user - the contact owner."
           - name: created_date
             description: "When the contact was created."
           - name: _fivetran_synced
@@ -82,7 +82,7 @@ sources:
             description: "Fivetran soft-delete flag."
 
       - name: opportunity
-        description: "Salesforce Opportunity — a deal in the sales pipeline."
+        description: "Salesforce Opportunity - a deal in the sales pipeline."
         config:
           loaded_at_field: _fivetran_synced
           freshness:
@@ -112,7 +112,7 @@ sources:
           - name: lead_source
             description: "Originating lead source."
           - name: owner_id
-            description: "FK to user — the opportunity owner (rep)."
+            description: "FK to user - the opportunity owner (rep)."
           - name: created_date
             description: "When the opportunity was created."
           - name: _fivetran_synced
@@ -121,7 +121,7 @@ sources:
             description: "Fivetran soft-delete flag."
 
       - name: user
-        description: "Salesforce User — sales reps / owners."
+        description: "Salesforce User - sales reps / owners."
         config:
           loaded_at_field: _fivetran_synced
           freshness:

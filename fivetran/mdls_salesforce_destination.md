@@ -8,13 +8,13 @@ The front of the loop. A Fivetran Salesforce connector lands data through the
 
 - Standard Salesforce objects (`account`, `contact`, `opportunity`, `user`, …) landed
   as **Delta + Iceberg** over the same Parquet in your object storage.
-- Fivetran manages normalization, compaction, dedup, schema drift — no maintenance jobs.
+- Fivetran manages normalization, compaction, dedup, schema drift - no maintenance jobs.
 - Registered in **Unity Catalog** (BYO catalog) → the `enablement.salesforce` schema the
   dbt sources in `platform/models/staging/salesforce/_salesforce__sources.yml` read.
 
 ## Setup (UI)
 
-1. **Create the destination — Managed Data Lake Service.**
+1. **Create the destination - Managed Data Lake Service.**
    - Connectors → **Add destination** → *Managed Data Lake Service*.
    - Cloud storage: your S3 / ADLS / OneLake bucket.
    - Table format: **Delta and Iceberg** (dual).
@@ -28,7 +28,7 @@ The front of the loop. A Fivetran Salesforce connector lands data through the
    - Sync frequency: e.g. every 15 min.
 3. **Run the initial sync**, then confirm the tables in Unity Catalog:
    `enablement.salesforce.account`, `.opportunity`, etc.
-4. **Point dbt at it** — the sources already resolve to
+4. **Point dbt at it** - the sources already resolve to
    `{{ var('source_catalog','enablement') }}.{{ var('salesforce_schema','salesforce') }}`.
    Then `dbt build --select staging.salesforce+ crm`.
 
@@ -60,6 +60,6 @@ resource "fivetran_connector" "salesforce" {
 }
 ```
 
-> Field names above are representative — confirm against the current Fivetran
+> Field names above are representative - confirm against the current Fivetran
 > Terraform provider / UI. The durable design: MDLS lands dual-format open tables in
 > Unity Catalog, and dbt reads them like any other UC source.

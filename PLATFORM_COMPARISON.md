@@ -15,7 +15,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 - Auto-lineage within a pipeline (visible in the Lakeflow UI)
 - Auto-retry and auto-scaling compute
 - Streaming and batch in the same framework
-- Lakeflow Designer (visual/low-code pipeline builder — confirm current GA/preview status)
+- Lakeflow Designer (visual/low-code pipeline builder - confirm current GA/preview status)
 
 ### What dbt platform offers
 - SQL or Python models (one model per file)

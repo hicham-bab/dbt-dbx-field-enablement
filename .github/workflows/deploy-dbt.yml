@@ -54,7 +54,7 @@ jobs:
             echo "has_secrets=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_secrets=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Databricks deployment — repository secrets (DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET) are not configured. See SETUP.md for instructions."
+            echo "::notice::Skipping Databricks deployment - repository secrets (DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET) are not configured. See SETUP.md for instructions."
           fi
 
   # Step 1: Validate the bundle configuration

@@ -1,7 +1,7 @@
 version: 2
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CRM marts — the "govern" step of the Fivetran + dbt loop.
+# CRM marts - the "govern" step of the Fivetran + dbt loop.
 # Source data: Salesforce, landed by the Fivetran Managed Data Lake Service into
 # Unity Catalog (see models/staging/salesforce/). These public, contracted marts
 # feed Genie (governed pipeline metrics) and Fivetran Activations (Slack alerts).
@@ -60,7 +60,7 @@ models:
 
   - name: fct_opportunities
     description: >
-      PUBLIC. Salesforce opportunity fact — one row per deal, with account name,
+      PUBLIC. Salesforce opportunity fact - one row per deal, with account name,
       owner name, and a weighted amount (amount x probability). The governed
       pipeline definition consumed by Genie and by the Slack activation.
     config:
@@ -145,7 +145,7 @@ models:
         description: "Resolved name of the opportunity owner (rep)."
         data_type: string
       - name: weighted_amount
-        description: "amount x probability / 100 — the probability-weighted deal value."
+        description: "amount x probability / 100 - the probability-weighted deal value."
         data_type: decimal(18,2)
       - name: created_date
         description: "Date the opportunity was created."
@@ -214,7 +214,7 @@ models:
 
   - name: crm_opportunity_alerts
     description: >
-      PUBLIC. Governed activation feed — open opportunities that are high-value
+      PUBLIC. Governed activation feed - open opportunities that are high-value
       (>= $100k) or overdue. This is the exact, version-controlled row set Fivetran
       Activations syncs to Slack. See fivetran/activations_slack.md.
     config:
@@ -242,7 +242,7 @@ models:
         description: "Opportunity name."
         data_type: string
       - name: opportunity_owner
-        description: "Rep who owns the opportunity — used to @mention/route the Slack alert."
+        description: "Rep who owns the opportunity - used to @mention/route the Slack alert."
         data_type: string
       - name: stage_name
         description: "Sales stage."

@@ -5,7 +5,7 @@ models:
     description: >
       Finance revenue fact table. One row per order, enriched with recognised_revenue
       and returned_amount. Cross-project ref from platform.fct_orders.
-      Revenue is recognised only for completed orders — this definition is
+      Revenue is recognised only for completed orders - this definition is
       version-controlled and PR-reviewed.
     config:
       group: finance_analytics

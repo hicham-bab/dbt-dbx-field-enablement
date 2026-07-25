@@ -1,6 +1,6 @@
 -- Governed activation feed: the exact rows Fivetran Activations pushes to Slack.
 -- Because it's a dbt model on top of the contracted fct_opportunities mart, the
--- alert logic is version-controlled, tested, and lineage-tracked — the same
+-- alert logic is version-controlled, tested, and lineage-tracked - the same
 -- governed definition Genie uses. See fivetran/activations_slack.md.
 
 with opportunities as (

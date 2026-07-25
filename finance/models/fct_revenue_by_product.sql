@@ -1,5 +1,5 @@
 -- Fusion-conformant: cast() only, no :: syntax
--- Cross-project refs from platform project — demonstrates multi-table Mesh refs
+-- Cross-project refs from platform project - demonstrates multi-table Mesh refs
 
 with orders as (
     select * from {{ ref('platform', 'fct_orders') }}

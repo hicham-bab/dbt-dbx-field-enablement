@@ -70,7 +70,7 @@ models:
         tests:
           - not_null
       - name: line_total
-        description: "quantity * unit_price — pre-computed line revenue."
+        description: "quantity * unit_price - pre-computed line revenue."
 
   - name: stg_products
     description: "Cleaned product catalog. Category lowercased."
