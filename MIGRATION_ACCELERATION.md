@@ -45,9 +45,15 @@ it doesn't fix it, and the tech debt resurfaces the moment someone connects Geni
    (~30x faster parse/compile than dbt Core) — a tight feedback loop instead of
    discovering failures in an overnight batch run.
 
-3. **Databricks Lakeflow lands the raw data.** Lakeflow Declarative Pipelines ingest
-   source data into Unity Catalog; dbt takes it from bronze → governed marts. Native
-   dbt task or the dbt platform task orchestrates the dbt side.
+3. **Fivetran connectors + MDLS land the source data — fast.** Migrating off
+   Informatica/Talend/Matillion means rebuilding the *ingestion*, not just the
+   transforms. Post-merger (Fivetran + dbt), that's one motion: 700+ turnkey Fivetran
+   connectors replace hand-built ETL, and the **Managed Data Lake Service** lands the
+   sources as governed open **Delta/Iceberg** tables in Unity Catalog with automatic
+   schema-drift handling — no ingestion pipeline to hand-build. (Databricks Lakeflow
+   Declarative Pipelines remain the option for streaming/Spark-native sources.) dbt then
+   takes it from raw → governed marts, orchestrated by the native dbt task or the dbt
+   platform task. See `FIVETRAN_DBT_DATABRICKS.md`.
 
 4. **You migrate *into* governance, not just onto a new platform.** Every migrated
    model arrives with dbt tests, an enforced contract, documentation persisted to

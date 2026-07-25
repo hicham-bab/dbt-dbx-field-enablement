@@ -19,6 +19,7 @@ dbt Mesh governance, and an honest Databricks metric views comparison.
 | `BATTLE_CARD.md` | 12 competitive concerns with factual responses and demo proof points |
 | `METRIC_VIEWS_COMPARISON.md` | dbt Semantic Layer + Databricks metric views — complementary, and how dbt authors/governs them |
 | `MIGRATION_ACCELERATION.md` | Legacy → dbt + Databricks migration: how dbt Wizard + Fusion create faster time to value |
+| `FIVETRAN_DBT_DATABRICKS.md` | Fivetran + dbt on Databricks — the complete governed loop (ingest → govern → activate); competitive SA enablement |
 | `FAQ.md` | Objection handling for customers, champions, and Databricks SAs |
 | `SETUP.md` | Full environment setup — DBX workspace + dbt platform + Mesh |
 | `platform/` | Producer dbt project (Fusion-conformant, contracts, semantic layer) |
@@ -94,16 +95,18 @@ Open `DEMO_SCRIPT.md` and follow the 5-act structure.
 ## Architecture
 
 ```
-Raw Delta Tables → dbt platform (Fusion engine) → Tested Marts → Semantic Layer → Genie
-                      ↓               ↓
-               Lakeflow Declarative Pipelines    dbt Mesh Consumers
-               (Bronze/Silver)  (marketing, finance, data_science)
-                                        ↑
-                                  Python models (PySpark)
-                                  on Databricks compute
+Fivetran ingest + MDLS ─▶ Unity Catalog (open Delta/Iceberg) ─▶ dbt platform (Fusion)
+  700+ connectors            Lakeflow (streaming/Spark)          Tested Marts + Mesh
+                                                                 Semantic Layer + metric views
+                                                                        │
+                                                                        ▼
+        operational tools ◀── Fivetran Activations ◀── Databricks AI (Genie / agents)
+        (Salesforce, HubSpot)     (reverse ETL)         consume the governed layer
 ```
 
-See `docs/architecture.md` for the full ASCII + Mermaid diagrams.
+The complete governed loop — ingest → govern → activate — on the Databricks lakehouse.
+See `docs/architecture.md` for the full ASCII + Mermaid diagrams and
+`FIVETRAN_DBT_DATABRICKS.md` for the Fivetran + dbt positioning.
 
 ---
 
@@ -137,9 +140,16 @@ databricks bundle run -t dev platform_dbt_job
 
 **dbt and Databricks are AND, not OR.**
 
-- Databricks: compute, storage, orchestration, Lakeflow for ingestion
-- dbt: governance layer — tested, documented, version-controlled business logic
-- Together: Genie answers that are accurate, consistent, and auditable
+- Databricks: compute, storage, orchestration, and AI (Genie, agents) on the lakehouse
+- Fivetran + dbt (one company since 2026-06-01): the governed data layer — ingestion +
+  Managed Data Lake Service, then tested, documented, version-controlled business logic,
+  then activation (reverse ETL) back to operational tools
+- Together: Genie answers that are accurate, consistent, and auditable — and governed
+  data that reaches the tools the business works in
+
+For competitive SA enablement — where Fivetran + dbt win the data layer on faster
+time-to-value and a better-governed layer for Databricks AI — see
+`FIVETRAN_DBT_DATABRICKS.md`.
 
 The demo proves this by showing Genie quality improving at each stage:
 1. Raw tables → ambiguous, unauditable answers

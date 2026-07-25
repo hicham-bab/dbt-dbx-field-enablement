@@ -275,6 +275,47 @@ When positioning dbt + Databricks together:
 
 ---
 
+## Part 4.5: Winning the Data Layer on Databricks — Fivetran + dbt
+
+Since the **Fivetran + dbt Labs merger (2026-06-01)**, one company covers the whole
+data layer: **ingest → govern → activate**. Use this when a customer says "Databricks
+can do all of that natively." The honest answer: yes, Databricks has a native path for
+most steps — but Fivetran + dbt wins the data layer on **time-to-value** and on the
+**quality of the governed layer that Databricks AI consumes**. We win the data layer;
+we run on the platform. Full narrative: `FIVETRAN_DBT_DATABRICKS.md`.
+
+**The four layers, competitively:**
+
+| Layer | What Databricks does natively | Why Fivetran + dbt wins | Real gap or "didn't configure it"? |
+|---|---|---|---|
+| Ingestion | Lakeflow Connect — managed connectors (Salesforce, ServiceNow, SQL Server, GA, DB CDC, files) → Delta | 700+ mature connectors + automatic schema-drift handling; long-tail SaaS/DB turnkey day one | Config/coverage gap — real for long-tail sources |
+| Managed open tables | Managed Delta tables + Predictive Optimization; UC Iceberg maturing | MDLS writes **Delta + Iceberg** simultaneously, Fivetran-managed maintenance (off Databricks compute), open/multi-engine — the pick for **Iceberg-first** customers | Config gap; the Iceberg/no-lock-in angle is a real edge |
+| Transform + govern | Notebooks / Lakeflow declarative | dbt Fusion: contracts, tests, Semantic Layer, metric views, Mesh | **Real gap** (see Parts 2, 6, 7) |
+| Activation (reverse ETL) | No first-class native reverse ETL | **Fivetran Activations** → Salesforce, HubSpot, Marketo, 200+ | **Real gap** — clean win |
+
+**What they say:** "We'll just do ingestion and everything else in Databricks."
+**What's true:** They can — Lakeflow Connect, managed tables, and notebooks exist.
+**The reframe:** "How fast do you get from a new SaaS source to *governed, activated*
+data — and how good is the context your Genie/agents run on? Fivetran + dbt make that a
+days-long, one-platform motion that lands governed Delta/Iceberg in Unity Catalog,
+turns it into tested/contracted marts and a Semantic Layer, and syncs the results back
+to your CRM. Databricks has no native reverse ETL, and the governed layer your AI needs
+is exactly what dbt produces."
+
+**Lead with the Iceberg angle** when the customer is open-format: MDLS lands managed
+Iceberg *and* Delta in Unity Catalog with Fivetran maintaining the tables — an open,
+multi-engine lakehouse with warehouse-like ease, no format lock-in.
+
+**Single-vendor value (post-merger):** one contract and one support relationship for
+movement + transformation + activation, instead of stitching Lakeflow + notebooks + a
+separate reverse-ETL tool. Faster to stand up, fewer seams to own.
+
+*(Databricks is investing across ingestion, open tables, and AI context — confirm
+Lakeflow Connect coverage, UC managed Iceberg, and any new reverse-ETL with PMM before
+leaning on these in a deal.)*
+
+---
+
 ## Part 5: Time to Value — The Three Deployment Patterns
 
 This section is the most important one for conversations where a customer says

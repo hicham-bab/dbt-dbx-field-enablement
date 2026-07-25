@@ -10,6 +10,7 @@
 
 | Act | Title | Time | What you show |
 |-----|-------|------|---------------|
+| 0 | Ingestion: Fivetran + MDLS *(optional — data-movement / Iceberg audiences)* | +4 min | Fivetran lands governed Delta/Iceberg tables in Unity Catalog, fast |
 | 1 | The Problem: Genie on Raw Data | 3 min | Genie Space on raw tables — ambiguity |
 | 2 | The Architecture | 5 min | How Raw → dbt Fusion → Semantic Layer → Genie works |
 | 3 | Lakeflow Gold: Better But Not Enough | 5 min | Genie on Lakeflow gold — closer but still manual |
@@ -17,7 +18,12 @@
 | 4e | Fusion LSP + State-Aware Orchestration *(optional — technical audiences)* | +5 min | Live IDE intelligence + selective rebuilds vs Lakeflow |
 | 4f | Data Science + Python Models *(optional — DS/ML audiences)* | +5 min | dbt Mesh for DS, Python models, single source of truth |
 | 4g | dbt platform vs Native dbt Task *(optional — "we'll self-host" objection)* | +5 min | Live comparison: native Databricks dbt task vs dbt platform |
+| 4h | Activation: Reverse ETL *(optional — full-loop / activation audiences)* | +4 min | Fivetran Activations syncs a governed mart to a SaaS tool — the last mile |
 | 5 | Business Close | 3 min | The "AND not OR" message + next steps |
+
+> **Optional loop bookends (Act 0 + Act 4h)** turn the 5-act dbt-on-Databricks demo
+> into the complete **ingest → govern → activate** loop for the Fivetran + dbt story.
+> See `FIVETRAN_DBT_DATABRICKS.md`.
 
 ---
 
@@ -36,6 +42,42 @@ Complete at least 30 minutes before the demo:
 - [ ] Databricks App is deployed and showing all 4 tabs
 - [ ] Browser tabs open: Genie Spaces (all 3), dbt platform IDE with `_semantic_models.yml`, dbt platform lineage graph
 - [ ] Fallback: `genie_demo_queries.md` open as backup if Genie is slow
+- [ ] *(Optional — Act 0/4h)* Fivetran account with a configured connector + Managed
+      Data Lake Service destination, and a Fivetran Activations sync to a sandbox SaaS
+      tool (Salesforce/HubSpot dev org). If live access isn't available, use screenshots.
+
+---
+
+## Act 0: Ingestion — Fivetran + Managed Data Lake Service *(optional, +4 min)*
+
+**Goal:** Show how fast Fivetran lands *governed, open* source data in Unity Catalog —
+the front of the loop. Best for data-movement, open-format/Iceberg, or "we'll just use
+Lakeflow Connect" audiences.
+
+**When to use this act:** Customer has SaaS/DB sources to bring in, is Iceberg/open-format,
+or is weighing native ingestion. Run it before Act 1 so the rest of the demo sits on
+Fivetran-landed data.
+
+**Say:** "Before Genie can answer anything, the data has to arrive — governed. Here's a
+Fivetran connector for [Salesforce/Stripe/Postgres]. The Managed Data Lake Service lands
+it in Unity Catalog as open tables — Delta *and* Iceberg over the same Parquet — and
+Fivetran maintains those tables for me. No pipeline to hand-build, no compute of mine
+burned on compaction."
+
+**Show:**
+1. A Fivetran connector sync (or its dashboard) → rows flowing to the MDLS destination.
+2. The landed tables in **Unity Catalog** — point out they're open Delta/Iceberg and
+   governed by UC like any other table.
+3. **Say:** "This is the same `enablement.ecommerce` raw layer the rest of the demo uses
+   — except Fivetran landed it, governed, in minutes. If this customer is Iceberg-first,
+   this is the moment: open, multi-engine, no format lock-in, and dbt transforms it next."
+
+**Contrast line (vs Lakeflow Connect):** "Lakeflow Connect covers a focused set of
+connectors to Delta. Fivetran brings 700+ with automatic schema-drift handling and dual
+Delta/Iceberg output — faster time-to-value on the long tail, and open by default."
+
+**Transition to Act 1:** "Now the data's landed. Let's see what Genie does with it raw —
+before we govern it."
 
 ---
 
@@ -819,6 +861,42 @@ platform job right from the Databricks Jobs UI."
 > It costs you 2-3 weeks of rebuild in week 6 when you need the Semantic Layer.
 > If Databricks must be the orchestrator, use the dbt platform task and get both.
 > The question is when you want to pay — not whether."
+
+---
+
+## Act 4h: Activation — Reverse ETL with Fivetran Activations *(optional, +4 min)*
+
+**Goal:** Close the loop. Governance only pays off when the trusted data reaches the
+tools the business works in. Best for full-loop, RevOps/marketing, or "what do we
+actually *do* with this?" audiences.
+
+**When to use this act:** After Act 4, when the audience has seen the governed marts and
+Semantic Layer and you want to land the business value — or whenever activation/CRM sync
+is a stated need.
+
+**Say:** "We've got governed, tested, auditable marts and metrics. But the CFO isn't the
+only consumer — sales and marketing live in Salesforce and HubSpot. Databricks has no
+native reverse ETL. With Fivetran Activations, the same governed definitions flow back to
+those tools."
+
+**Show:**
+1. A **Fivetran Activations** sync reading a governed mart — e.g.
+   `marketing.mart_customer_segments` (or the RFM/churn features from `data_science`) —
+   from Databricks.
+2. The mapping to a destination object (Salesforce Account / HubSpot Contact).
+3. **Say:** "The customer segment in Salesforce now comes from the *same* dbt definition
+   Genie uses and the dashboard shows. One governed source, activated everywhere — no
+   drift between the CRM number and the boardroom number."
+
+**The loop line:**
+> "That's the full loop: Fivetran landed the data, dbt governed it, Databricks AI reads
+> it, and Fivetran Activations pushes it back to where the business acts. One platform,
+> ingest to activation, on Databricks — and the last mile is one Databricks can't do
+> natively."
+
+**Business value framing:** activation is where governance turns into revenue motion —
+consistent audiences, scoring, and metrics in the operational tools, sourced from the
+one definition your data team owns.
 
 ---
 

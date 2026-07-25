@@ -361,6 +361,55 @@ is genuinely good. See `PLATFORM_COMPARISON.md` Section 8.
 
 ---
 
+## Fivetran + dbt Questions (Data Movement & Activation)
+
+**Q: dbt Labs merged with Fivetran — what does that mean for a Databricks account?**
+
+Since 2026-06-01, one company covers the whole data layer: **ingestion → transformation
+→ governance → activation**. For a Databricks customer that means a single vendor for
+Fivetran connectors + the Managed Data Lake Service (landing open Delta/Iceberg tables
+in Unity Catalog), dbt (Fusion transform, contracts, Semantic Layer, Mesh), and
+Fivetran Activations (reverse ETL back to operational tools) — all running on
+Databricks. See `FIVETRAN_DBT_DATABRICKS.md` for the full loop and positioning.
+
+---
+
+**Q: Databricks has Lakeflow Connect and managed tables — why bring in Fivetran?**
+
+Faster time-to-value and open-format flexibility. Lakeflow Connect is a focused
+managed-connector set (Salesforce, ServiceNow, SQL Server, Google Analytics, DB CDC,
+files) writing Delta; Fivetran has 700+ mature connectors with automatic schema-drift
+handling, so long-tail SaaS/DB sources are turnkey day one. And the **Managed Data Lake
+Service** writes **Delta *and* Iceberg** simultaneously, maintains the tables for you
+(off Databricks compute), and registers them in Unity Catalog — an open, multi-engine
+lakehouse without format lock-in. Position it **complementary**: Fivetran for
+SaaS/long-tail + managed open tables, Lakeflow for streaming/Spark-native.
+
+---
+
+**Q: The customer is Iceberg-first. Why Fivetran MDLS?**
+
+MDLS is the standout here. It lands your sources as **managed Iceberg *and* Delta**
+tables over the same Parquet, governed in Unity Catalog, with Fivetran handling
+compaction/maintenance — so you get an open, multi-engine lake (Databricks, Trino,
+Snowflake, Flink can all read it) with warehouse-like ease, and dbt transforms it like
+any other UC table. (Databricks UC Iceberg support is maturing — confirm current state
+with PMM; the durable edge is dual-format + managed maintenance + turnkey-from-source.)
+
+---
+
+**Q: What is activation / reverse ETL, and does Databricks have it?**
+
+Activation is the "last mile" — syncing governed data back to the operational tools the
+business works in (Salesforce, HubSpot, Marketo, ad platforms). Databricks has no
+first-class native reverse ETL. **Fivetran Activations** (from the Census acquisition)
+does exactly this from Databricks, so the customer segments/metrics your dbt models
+define show up in the CRM matching what Genie and the dashboards show — one governed
+source, activated everywhere. It's usage-based (Monthly Active Rows) on the same
+platform as ingestion.
+
+---
+
 ## Competitive Questions
 
 **Q: Databricks now has Metric Views — is the dbt Semantic Layer still relevant?**
