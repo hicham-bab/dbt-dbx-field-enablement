@@ -2,10 +2,10 @@
 dbt + Databricks Field Enablement Dashboard
 =============================================
 A Streamlit app that runs inside Databricks Apps, demonstrating:
-  - Tab 1: Executive Dashboard — clean revenue KPIs from dbt marts
-  - Tab 2: Semantic Layer Explorer — pick a metric, see MetricFlow-style query + results
-  - Tab 3: Metric Views vs dbt SL — same query, both systems, side-by-side comparison
-  - Tab 4: Governance — contract status, test results, model audit trail
+  - Tab 1: Executive Dashboard - clean revenue KPIs from dbt marts
+  - Tab 2: Semantic Layer Explorer - pick a metric, see MetricFlow-style query + results
+  - Tab 3: Metric Views vs dbt SL - same query, both systems, side-by-side comparison
+  - Tab 4: Governance - contract status, test results, model audit trail
 
 Authentication is handled automatically by Databricks Apps service principal.
 """
@@ -75,12 +75,12 @@ tab_exec, tab_sl, tab_compare, tab_gov = st.tabs([
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 1 — EXECUTIVE DASHBOARD
-# Clean revenue KPIs from dbt marts — no comparison, just the numbers
+# TAB 1 - EXECUTIVE DASHBOARD
+# Clean revenue KPIs from dbt marts - no comparison, just the numbers
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_exec:
     st.subheader("Executive Dashboard")
-    st.caption(f"Source: `{CATALOG}.{SCHEMA}` — dbt platform project, all tests passing")
+    st.caption(f"Source: `{CATALOG}.{SCHEMA}` - dbt platform project, all tests passing")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -96,7 +96,7 @@ with tab_exec:
 
     if not kpis.empty:
         col1.metric("Total Revenue (USD)",  f"${kpis['total_revenue'][0]:,.2f}",
-                    help="Completed orders only — canonical definition from dbt semantic layer")
+                    help="Completed orders only - canonical definition from dbt semantic layer")
         col2.metric("Total Orders",         f"{int(kpis['total_orders'][0]):,}")
         col3.metric("Completed Orders",     f"{int(kpis['completed_orders'][0]):,}")
         col4.metric("Return Rate",          f"{kpis['return_rate'][0]:.1f}%")
@@ -164,7 +164,7 @@ with tab_exec:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 2 — SEMANTIC LAYER EXPLORER
+# TAB 2 - SEMANTIC LAYER EXPLORER
 # Pick a metric + dimension, see the MetricFlow-style query and results
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_sl:
@@ -242,7 +242,7 @@ with tab_sl:
                     'return_rate' AS metric_name,
                     COUNT(DISTINCT CASE WHEN status = 'returned' THEN order_id END)
                         / CAST(COUNT(DISTINCT order_id) AS DECIMAL(10,4)) * 100 AS value,
-                    'Defined in _semantic_models.yml: ratio metric — returned/total orders' AS definition
+                    'Defined in _semantic_models.yml: ratio metric - returned/total orders' AS definition
                 FROM {CATALOG}.{SCHEMA}.fct_orders
             """,
             "breakdown_sql": {
@@ -344,12 +344,12 @@ with tab_sl:
     st.info(
         "These queries translate named MetricFlow metrics into SQL. "
         "Each metric is defined once in `_semantic_models.yml` and reused across "
-        "Genie, BI tools, and this app. Change the definition in one place — it updates everywhere."
+        "Genie, BI tools, and this app. Change the definition in one place - it updates everywhere."
     )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 3 — METRIC VIEWS vs dbt SL
+# TAB 3 - METRIC VIEWS vs dbt SL
 # Same query against Metric Views and dbt, side-by-side results + metadata comparison
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_compare:
@@ -360,7 +360,7 @@ with tab_compare:
     )
 
     st.info(
-        "Both systems compute the same numbers — the difference is in auditability, "
+        "Both systems compute the same numbers - the difference is in auditability, "
         "governance, and what Genie can reason about."
     )
 
@@ -370,11 +370,11 @@ with tab_compare:
     with col_mv:
         st.markdown("### Databricks Metric Views")
         st.caption(
-            "Defined in `02_metric_views.sql` — SQL views in Unity Catalog.\n\n"
+            "Defined in `02_metric_views.sql` - SQL views in Unity Catalog.\n\n"
             "- Simple SQL views, easy to create\n"
             "- No version control of the metric definition\n"
             "- No test coverage on the underlying data\n"
-            "- Genie reads column names — no descriptions available"
+            "- Genie reads column names - no descriptions available"
         )
         mv_metrics = safe_query(f"SELECT * FROM {CATALOG}.{MV_SCHEMA}.all_metrics")
         if not mv_metrics.empty:
@@ -391,11 +391,11 @@ with tab_compare:
     with col_dbt:
         st.markdown("### dbt Semantic Layer")
         st.caption(
-            "Defined in `_semantic_models.yml` — version-controlled YAML.\n\n"
+            "Defined in `_semantic_models.yml` - version-controlled YAML.\n\n"
             "- Named metrics with human-readable descriptions\n"
-            "- PR-reviewed definitions — full Git audit trail\n"
+            "- PR-reviewed definitions - full Git audit trail\n"
             "- Underlying data tested with dbt (not_null, accepted_values, etc.)\n"
-            "- Column descriptions pushed to Unity Catalog — Genie reads them natively"
+            "- Column descriptions pushed to Unity Catalog - Genie reads them natively"
         )
         dbt_kpis = safe_query("""
             SELECT
@@ -441,7 +441,7 @@ with tab_compare:
             "SQL views in Unity Catalog",
             "Manual (not automatic)",
             "None built-in",
-            "No — column names only",
+            "No - column names only",
             "None on metric views",
             "View DDL history only",
             "Databricks tools only",
@@ -449,15 +449,15 @@ with tab_compare:
             "Not supported",
         ],
         "dbt Semantic Layer (MetricFlow)": [
-            "YAML in `_semantic_models.yml` — next to the model",
-            "Git — every change is a commit",
-            "PR workflow — reviewer approved",
-            "Yes — persisted to UC via dbt-databricks adapter",
+            "YAML in `_semantic_models.yml` - next to the model",
+            "Git - every change is a commit",
+            "PR workflow - reviewer approved",
+            "Yes - persisted to UC via dbt-databricks adapter",
             "dbt tests on underlying marts (not_null, accepted_values, etc.)",
-            "git log on the YAML file — exact definition history",
+            "git log on the YAML file - exact definition history",
             "Any BI tool via semantic layer API + Genie + dbt Cloud",
             "Contracts (enforced: true) + access: public/protected + groups",
-            "Yes — cross-project refs via dbt Mesh",
+            "Yes - cross-project refs via dbt Mesh",
         ],
     })
 
@@ -490,7 +490,7 @@ with tab_compare:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 4 — GOVERNANCE
+# TAB 4 - GOVERNANCE
 # Contract status, test summary, model freshness, audit trail demo
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_gov:
@@ -528,7 +528,7 @@ with tab_gov:
         "Consumer Project": ["marketing", "marketing", "finance", "finance"],
         "Refs Platform Model": ["dim_customers", "fct_orders", "fct_orders", "dim_products"],
         "Consumer Model": ["mart_customer_segments", "mart_country_performance", "fct_revenue", "fct_revenue_by_product"],
-        "Contract Protection": ["Yes — breaking changes blocked", "Yes", "Yes", "Yes"],
+        "Contract Protection": ["Yes - breaking changes blocked", "Yes", "Yes", "Yes"],
     })
     st.dataframe(mesh_df, use_container_width=True)
 
@@ -545,7 +545,7 @@ with tab_gov:
 | Ownership | `groups:` with `owner.email` in YAML | UC owner metadata |
 | Change review | PR workflow on YAML + SQL | No built-in review for DLT code |
 | Audit trail | `git log models/marts/_marts.yml` | UC audit logs (access events) |
-| Cross-project governance | dbt Mesh — `dependencies.yml` + public/private | Not supported |
+| Cross-project governance | dbt Mesh - `dependencies.yml` + public/private | Not supported |
     """)
 
     st.divider()

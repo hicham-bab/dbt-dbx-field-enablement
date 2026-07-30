@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Lakeflow — Data Science Team Consumer Pipeline
+# MAGIC # Lakeflow - Data Science Team Consumer Pipeline
 # MAGIC
 # MAGIC This is what the **DS team** would need to build and maintain in Lakeflow
 # MAGIC to produce the same RFM features and churn features that the dbt `data_science`
@@ -25,7 +25,7 @@
 # MAGIC   the Lakeflow pipeline fails at runtime, after processing has started.
 # MAGIC   dbt Mesh fails at compile time, before anything runs.
 # MAGIC - **No single source of truth.** The "completed orders only" revenue filter,
-# MAGIC   the "$500 high-value" threshold — all duplicated here. When platform changes
+# MAGIC   the "$500 high-value" threshold - all duplicated here. When platform changes
 # MAGIC   these thresholds, DS models silently drift. Wrong predictions ship to production.
 # MAGIC - **No lineage.** dbt Cloud Explorer shows DS depends on platform → you see the
 # MAGIC   full DAG. In Lakeflow, the DS pipeline is a separate, disconnected pipeline.
@@ -41,7 +41,7 @@ import dlt
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-# Source catalog/schema for upstream gold tables — set via DLT pipeline configuration.
+# Source catalog/schema for upstream gold tables - set via DLT pipeline configuration.
 SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
 SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow")
 
@@ -72,7 +72,7 @@ SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow"
     table_properties={"quality": "gold", "team": "data_science"}
 )
 def ds_rfm_customer_features():
-    # Hardcoded — no compile-time validation, no contract enforcement
+    # Hardcoded - no compile-time validation, no contract enforcement
     # dbt Mesh equivalent: dbt.ref("platform", "dim_customers")
     customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
     orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
@@ -88,7 +88,7 @@ def ds_rfm_customer_features():
         .withColumn("recency_days", F.datediff(F.current_date(), F.col("last_order_date")))
     )
 
-    # Frequency — DUPLICATION: "completed" filter also in gold_fct_revenue
+    # Frequency - DUPLICATION: "completed" filter also in gold_fct_revenue
     frequency = (
         orders
         .filter(F.col("status") == "completed")
@@ -99,7 +99,7 @@ def ds_rfm_customer_features():
         )
     )
 
-    # Monetary — DUPLICATION: same "completed" filter
+    # Monetary - DUPLICATION: same "completed" filter
     monetary = (
         orders
         .filter(F.col("status") == "completed")
@@ -120,7 +120,7 @@ def ds_rfm_customer_features():
                            "avg_order_value", "total_items_purchased"])
     )
 
-    # Quintile scoring — same as dbt Python model
+    # Quintile scoring - same as dbt Python model
     recency_q = rfm.approxQuantile("recency_days", [0.2, 0.4, 0.6, 0.8], 0.05)
     frequency_q = rfm.approxQuantile("frequency", [0.2, 0.4, 0.6, 0.8], 0.05)
     monetary_q = rfm.approxQuantile("monetary_value", [0.2, 0.4, 0.6, 0.8], 0.05)
@@ -235,7 +235,7 @@ def ds_customer_churn_features():
             F.when(F.col("total_orders") > 0, F.round(F.col("returned_orders") / F.col("total_orders"), 4))
             .otherwise(0)
         )
-        # DUPLICATION: 90-day threshold — also in marketing_customer_segments (180 days for "at_risk")
+        # DUPLICATION: 90-day threshold - also in marketing_customer_segments (180 days for "at_risk")
         # No single definition. No enforcement. Just hope everyone uses the same number.
         .withColumn("is_churned", F.when(F.col("days_since_last_order") > 90, True).otherwise(False))
         .fillna(0, subset=[

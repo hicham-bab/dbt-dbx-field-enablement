@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # E-Commerce Demo — Raw Data Setup
+# MAGIC # E-Commerce Demo - Raw Data Setup
 # MAGIC
 # MAGIC Run this notebook once to create the `<your_catalog>.<your_schema>` catalog/schema
 # MAGIC and load all raw Delta tables used by both the dbt platform project
@@ -29,7 +29,7 @@
 # MAGIC | raw_orders | Yes (30 min schedule) | error after 6 hours |
 # MAGIC | raw_order_items | Yes (30 min schedule) | error after 6 hours |
 # MAGIC | raw_products | No (static catalog) | error after 7 days |
-# MAGIC | raw_payments | **No — simulates stale payment feed** | **error after 2 days** |
+# MAGIC | raw_payments | **No - simulates stale payment feed** | **error after 2 days** |
 # MAGIC | raw_reviews | No (static for demo) | error after 7 days |
 
 # COMMAND ----------
@@ -146,7 +146,7 @@ print(f"  source_schema  = {SCHEMA}")
 # MAGIC ) USING DELTA;
 # MAGIC
 # MAGIC INSERT INTO ${catalog}.${schema}.raw_orders VALUES
-# MAGIC   -- Q4 2024 (Oct–Dec) — original seed data, dates shifted forward
+# MAGIC   -- Q4 2024 (Oct–Dec) - original seed data, dates shifted forward
 # MAGIC   (1001,  1,  '2024-10-01', 'completed',  120.50, 'credit_card',   CURRENT_TIMESTAMP()),
 # MAGIC   (1002,  2,  '2024-10-03', 'completed',   45.00, 'paypal',        CURRENT_TIMESTAMP()),
 # MAGIC   (1003,  3,  '2024-10-05', 'shipped',    310.00, 'credit_card',   CURRENT_TIMESTAMP()),
@@ -209,7 +209,7 @@ print(f"  source_schema  = {SCHEMA}")
 # MAGIC   (1055,  2,  '2026-01-15', 'returned',    45.00, 'bank_transfer', CURRENT_TIMESTAMP()),
 # MAGIC   (1056,  5,  '2026-01-22', 'completed',  320.00, 'credit_card',   CURRENT_TIMESTAMP()),
 # MAGIC   (1057, 10,  '2026-01-28', 'shipped',    145.00, 'credit_card',   CURRENT_TIMESTAMP()),
-# MAGIC   -- February 2026 (last month — key for Genie demo)
+# MAGIC   -- February 2026 (last month - key for Genie demo)
 # MAGIC   (1058,  1,  '2026-02-02', 'completed',  520.00, 'credit_card',   CURRENT_TIMESTAMP()),
 # MAGIC   (1059, 13,  '2026-02-05', 'completed',   88.50, 'paypal',        CURRENT_TIMESTAMP()),
 # MAGIC   (1060,  7,  '2026-02-08', 'completed',  250.00, 'credit_card',   CURRENT_TIMESTAMP()),
@@ -218,7 +218,7 @@ print(f"  source_schema  = {SCHEMA}")
 # MAGIC   (1063,  6,  '2026-02-18', 'completed',  199.00, 'paypal',        CURRENT_TIMESTAMP()),
 # MAGIC   (1064, 15,  '2026-02-22', 'completed',  340.00, 'credit_card',   CURRENT_TIMESTAMP()),
 # MAGIC   (1065,  9,  '2026-02-26', 'completed',   89.99, 'credit_card',   CURRENT_TIMESTAMP()),
-# MAGIC   -- March 2026 (current month — partial)
+# MAGIC   -- March 2026 (current month - partial)
 # MAGIC   (1066,  5,  '2026-03-01', 'completed',  410.00, 'credit_card',   CURRENT_TIMESTAMP()),
 # MAGIC   (1067, 20,  '2026-03-05', 'placed',     199.00, 'paypal',        CURRENT_TIMESTAMP()),
 # MAGIC   (1068,  8,  '2026-03-10', 'completed',  145.00, 'credit_card',   CURRENT_TIMESTAMP()),
@@ -404,7 +404,7 @@ print(f"  source_schema  = {SCHEMA}")
 # MAGIC   (2055, 1055, 'bank_transfer',  45.00, 'success', '2026-01-15', CURRENT_TIMESTAMP()),
 # MAGIC   (2056, 1056, 'credit_card',   320.00, 'success', '2026-01-22', CURRENT_TIMESTAMP()),
 # MAGIC   (2057, 1057, 'credit_card',   145.00, 'success', '2026-01-28', CURRENT_TIMESTAMP()),
-# MAGIC   -- February 2026 payments (last month — key for Genie demo)
+# MAGIC   -- February 2026 payments (last month - key for Genie demo)
 # MAGIC   (2058, 1058, 'credit_card',   520.00, 'success', '2026-02-02', CURRENT_TIMESTAMP()),
 # MAGIC   (2059, 1059, 'paypal',         88.50, 'success', '2026-02-05', CURRENT_TIMESTAMP()),
 # MAGIC   (2060, 1060, 'credit_card',   250.00, 'success', '2026-02-08', CURRENT_TIMESTAMP()),
@@ -413,7 +413,7 @@ print(f"  source_schema  = {SCHEMA}")
 # MAGIC   (2063, 1063, 'paypal',        199.00, 'success', '2026-02-18', CURRENT_TIMESTAMP()),
 # MAGIC   (2064, 1064, 'credit_card',   340.00, 'success', '2026-02-22', CURRENT_TIMESTAMP()),
 # MAGIC   (2065, 1065, 'credit_card',    89.99, 'success', '2026-02-26', CURRENT_TIMESTAMP()),
-# MAGIC   -- March 2026 payments (current month — partial)
+# MAGIC   -- March 2026 payments (current month - partial)
 # MAGIC   (2066, 1066, 'credit_card',   410.00, 'success', '2026-03-01', CURRENT_TIMESTAMP()),
 # MAGIC   (2067, 1067, 'paypal',        199.00, 'pending', '2026-03-05', CURRENT_TIMESTAMP()),
 # MAGIC   (2068, 1068, 'credit_card',   145.00, 'success', '2026-03-10', CURRENT_TIMESTAMP()),
@@ -507,7 +507,7 @@ print(f"  source_schema  = {SCHEMA}")
 # MAGIC - 15 products across 5 categories
 # MAGIC - 71 orders spanning October 2024 → March 2026
 # MAGIC - 76 order items
-# MAGIC - 71 payments (seeded, not updated by generator — simulates stale payment feed)
+# MAGIC - 71 payments (seeded, not updated by generator - simulates stale payment feed)
 # MAGIC - 35 product reviews (rating 1–5)
 # MAGIC
 # MAGIC **Key revenue figures for demo validation:**
@@ -519,8 +519,8 @@ print(f"  source_schema  = {SCHEMA}")
 # MAGIC 1. Run `01_lakeflow_pipeline.py` to create the DLT medallion pipeline
 # MAGIC 2. Run `02_metric_views.sql` in SQL Editor to create Databricks Metric Views
 # MAGIC 3. Import `03_data_generator.py` and schedule it as a Databricks Workflow (30-min trigger)
-# MAGIC    — keeps raw_customers, raw_orders, and raw_order_items fresh
-# MAGIC    — raw_payments is deliberately excluded to simulate a stale payment feed
+# MAGIC    - keeps raw_customers, raw_orders, and raw_order_items fresh
+# MAGIC    - raw_payments is deliberately excluded to simulate a stale payment feed
 # MAGIC 4. Run `dbt build` from `platform/` to build all mart tables
 # MAGIC 5. After 2+ days without running the demo setup again, run `dbt source freshness`
 # MAGIC    to see raw_payments flagged as stale while all other sources remain fresh

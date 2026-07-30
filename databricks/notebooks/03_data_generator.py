@@ -7,14 +7,14 @@
 # MAGIC
 # MAGIC | Source | Updated | Freshness threshold |
 # MAGIC |---|---|---|
-# MAGIC | raw_customers | Yes — ~1 new customer per hour | error after 6 hours |
-# MAGIC | raw_orders | Yes — 2–4 new orders per run | error after 6 hours |
-# MAGIC | raw_order_items | Yes — 1–3 items per new order | error after 6 hours |
-# MAGIC | raw_products | No — static catalog | error after 7 days |
-# MAGIC | **raw_payments** | **No — intentionally excluded** | **error after 2 days** |
+# MAGIC | raw_customers | Yes - ~1 new customer per hour | error after 6 hours |
+# MAGIC | raw_orders | Yes - 2–4 new orders per run | error after 6 hours |
+# MAGIC | raw_order_items | Yes - 1–3 items per new order | error after 6 hours |
+# MAGIC | raw_products | No - static catalog | error after 7 days |
+# MAGIC | **raw_payments** | **No - intentionally excluded** | **error after 2 days** |
 # MAGIC
 # MAGIC After 2 days, `dbt source freshness` will flag `raw_payments` as stale.
-# MAGIC This simulates a payment processor integration that has gone silent —
+# MAGIC This simulates a payment processor integration that has gone silent -
 # MAGIC a real-world scenario where orders are coming in but payments aren't being recorded.
 # MAGIC
 # MAGIC ## How to schedule this notebook
@@ -74,7 +74,7 @@ FIRST_NAMES  = ["Lena", "Omar", "Priya", "Lucas", "Mei", "Tariq", "Sofia", "Aide
 LAST_NAMES   = ["Kovac", "Adeyemi", "Sharma", "Becker", "Zhang", "Hassan", "Reyes",
                 "Novak", "Tanaka", "Mendez", "Okonkwo", "Walsh", "Diallo", "Park"]
 COUNTRIES    = ["US", "CA", "GB", "DE", "FR", "IT", "ES", "NL", "AU", "JP", "KR", "BR", "IN", "MX"]
-# Only 'placed' and 'shipped' — the order management system cannot mark orders 'completed'
+# Only 'placed' and 'shipped' - the order management system cannot mark orders 'completed'
 # or 'returned' without a corresponding payment record. 'completed' is set by the payment
 # processor (raw_payments), which is intentionally excluded from this generator to simulate
 # a stale feed. Generating 'completed' without a payment causes assert_positive_revenue to fail.
@@ -199,9 +199,9 @@ items_df = spark.createDataFrame(
 items_df.write.mode("append").saveAsTable(tbl("raw_order_items"))
 print(f"  Inserted {item_counter} order items across {len(new_order_ids)} orders.")
 
-# ── Step 4: raw_payments — intentionally skipped ──────────────────────────────
+# ── Step 4: raw_payments - intentionally skipped ──────────────────────────────
 
-print("\nStep 4: raw_payments — SKIPPED (intentional).")
+print("\nStep 4: raw_payments - SKIPPED (intentional).")
 print("  raw_payments simulates a third-party payment processor feed.")
 print("  It is not updated by this generator.")
 print("  dbt source freshness will flag it as WARN after 1 day, ERROR after 2 days.")

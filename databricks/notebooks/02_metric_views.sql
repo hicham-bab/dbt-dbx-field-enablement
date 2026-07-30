@@ -1,5 +1,5 @@
 -- =============================================================================
--- Databricks Metric Views — Verification Queries
+-- Databricks Metric Views - Verification Queries
 -- =============================================================================
 --
 -- Metric Views are defined in YAML, not SQL DDL.
@@ -10,7 +10,7 @@
 -- HOW TO CREATE A METRIC VIEW:
 --   1. In Databricks: New → Metric view (or Catalog → Create → Metric view)
 --   2. Paste the YAML from 02a_metric_view_orders.yml into the definition editor
---   3. Save — Databricks stores the definition and registers it in Unity Catalog
+--   3. Save - Databricks stores the definition and registers it in Unity Catalog
 --   4. Repeat for 02b_metric_view_customers.yml
 --
 -- Run the queries below AFTER creating both metric views to verify they work.

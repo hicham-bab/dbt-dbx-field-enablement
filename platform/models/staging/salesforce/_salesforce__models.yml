@@ -1,0 +1,66 @@
+version: 2
+
+models:
+  - name: stg_salesforce__accounts
+    description: "Cleaned Salesforce accounts (soft-deleted rows removed)."
+    columns:
+      - name: account_id
+        description: "Salesforce Account Id. Primary key."
+        tests:
+          - not_null
+          - unique
+      - name: account_name
+        description: "Account (company) name."
+      - name: account_type
+        description: "Account type (Customer, Prospect, Partner, ...)."
+      - name: industry
+        description: "Industry classification."
+      - name: annual_revenue
+        description: "Reported annual revenue (USD)."
+      - name: billing_country
+        description: "Uppercased billing country."
+      - name: owner_id
+        description: "FK to stg_salesforce__users."
+
+  - name: stg_salesforce__contacts
+    description: "Cleaned Salesforce contacts (soft-deleted rows removed)."
+    columns:
+      - name: contact_id
+        description: "Salesforce Contact Id. Primary key."
+        tests:
+          - not_null
+          - unique
+      - name: account_id
+        description: "FK to stg_salesforce__accounts."
+      - name: email
+        description: "Lowercased contact email."
+
+  - name: stg_salesforce__opportunities
+    description: "Cleaned Salesforce opportunities (soft-deleted rows removed)."
+    columns:
+      - name: opportunity_id
+        description: "Salesforce Opportunity Id. Primary key."
+        tests:
+          - not_null
+          - unique
+      - name: account_id
+        description: "FK to stg_salesforce__accounts."
+      - name: stage_name
+        description: "Sales stage."
+      - name: amount
+        description: "Deal amount (USD)."
+      - name: is_won
+        description: "True if Closed Won."
+      - name: owner_id
+        description: "FK to stg_salesforce__users (the rep)."
+
+  - name: stg_salesforce__users
+    description: "Cleaned Salesforce users / reps (soft-deleted rows removed)."
+    columns:
+      - name: user_id
+        description: "Salesforce User Id. Primary key."
+        tests:
+          - not_null
+          - unique
+      - name: email
+        description: "Lowercased user email."

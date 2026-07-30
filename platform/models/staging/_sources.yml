@@ -74,7 +74,7 @@ sources:
             description: "Timestamp when this row was loaded into the raw table. Used by dbt source freshness."
 
       - name: raw_products
-        description: "Product catalog. Updated infrequently — changes expected at most once per week."
+        description: "Product catalog. Updated infrequently - changes expected at most once per week."
         config:
           loaded_at_field: _loaded_at
           freshness:
@@ -97,7 +97,7 @@ sources:
       - name: raw_payments
         description: >
           Payment transaction records. Fed by the payment processor integration.
-          NOTE: This source is NOT updated by the data generator — it represents a
+          NOTE: This source is NOT updated by the data generator - it represents a
           third-party payment feed. If the payment processor stops sending data,
           this source goes stale within 2 days. Run dbt source freshness to detect this.
         config:

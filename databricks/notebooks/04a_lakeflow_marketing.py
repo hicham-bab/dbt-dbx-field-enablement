@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Lakeflow — Marketing Team Consumer Pipeline
+# MAGIC # Lakeflow - Marketing Team Consumer Pipeline
 # MAGIC
 # MAGIC This is what the **marketing team** would need to build and maintain in Lakeflow
 # MAGIC to get their own governed dataset on top of the platform gold tables.
@@ -13,15 +13,15 @@
 # MAGIC ```
 # MAGIC
 # MAGIC In Lakeflow, this team needs **their own pipeline** reading from the platform output
-# MAGIC via hardcoded table strings — no validation, no contract enforcement, no inherited metadata.
+# MAGIC via hardcoded table strings - no validation, no contract enforcement, no inherited metadata.
 # MAGIC
-# MAGIC **Run `01_lakeflow_pipeline.py` first** — this notebook reads from its gold tables.
+# MAGIC **Run `01_lakeflow_pipeline.py` first** - this notebook reads from its gold tables.
 # MAGIC
 # MAGIC ## Pipeline configuration:
 # MAGIC 1. **Jobs & Pipelines** → **Create** → **ETL pipeline**
 # MAGIC 2. In the dialog: name = `ecommerce-lakeflow-marketing`, catalog = `enablement`, schema = `ecommerce_lakeflow_marketing` → **Create**
 # MAGIC 3. On the "Next step" screen → **Add existing assets** → select this notebook → **Add**
-# MAGIC 4. Click **Start** — creates 2 tables: `marketing_customer_segments`, `marketing_country_performance`
+# MAGIC 4. Click **Start** - creates 2 tables: `marketing_customer_segments`, `marketing_country_performance`
 
 # COMMAND ----------
 
@@ -32,7 +32,7 @@ from pyspark.sql.functions import (
     max as _max
 )
 
-# Source catalog/schema for upstream gold tables — set via DLT pipeline configuration.
+# Source catalog/schema for upstream gold tables - set via DLT pipeline configuration.
 # Each user should set: source_catalog, source_lakeflow_schema in pipeline settings.
 SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
 SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow")
@@ -48,7 +48,7 @@ SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow"
 # MAGIC select * from {{ ref('platform', 'fct_orders') }}
 # MAGIC ```
 # MAGIC If `dim_customers` is renamed or a column is removed, the dbt Cloud job fails
-# MAGIC **before any SQL runs**. Below, these are hardcoded strings — failure happens
+# MAGIC **before any SQL runs**. Below, these are hardcoded strings - failure happens
 # MAGIC at runtime, silently, after data has already been processed.
 
 # COMMAND ----------
@@ -69,7 +69,7 @@ SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow"
     table_properties={"quality": "gold", "team": "marketing"}
 )
 def marketing_customer_segments():
-    # Hardcoded string — no compile-time validation, no access control.
+    # Hardcoded string - no compile-time validation, no access control.
     # dbt Mesh equivalent: {{ ref('platform', 'dim_customers') }}
     customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
     orders    = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
@@ -122,7 +122,7 @@ def marketing_customer_segments():
         Revenue and customer metrics by country for the marketing team.
 
         NOTE: The 'completed orders only' revenue filter is also defined in
-        gold_fct_revenue in the platform pipeline. Two independent definitions —
+        gold_fct_revenue in the platform pipeline. Two independent definitions -
         if the platform team changes revenue recognition, this must be updated separately.
 
         dbt Mesh equivalent: marketing.mart_country_performance (validated ref)

@@ -1,12 +1,12 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Lakeflow — Cross-Team Consumer Pipelines
+# MAGIC # Lakeflow - Cross-Team Consumer Pipelines
 # MAGIC # (The Mesh Equivalent You'd Have To Build Manually)
 # MAGIC
 # MAGIC ## What this notebook is for
 # MAGIC
 # MAGIC In **dbt Mesh**, the `marketing` and `finance` teams each have their own dbt Cloud project.
-# MAGIC They consume platform models using `{{ ref('platform', 'fct_orders') }}` —
+# MAGIC They consume platform models using `{{ ref('platform', 'fct_orders') }}` -
 # MAGIC a compile-time-validated cross-project reference that enforces access tiers and contracts.
 # MAGIC
 # MAGIC **In Lakeflow, there is no equivalent of this.** To give the marketing and finance teams
@@ -14,14 +14,14 @@
 # MAGIC build a separate DLT pipeline for each team, where:
 # MAGIC
 # MAGIC - Each team reads from the shared gold tables using **hardcoded table strings** (`spark.read.table(...)`)
-# MAGIC   with no compile-time validation — if the upstream table is renamed or a column is dropped,
+# MAGIC   with no compile-time validation - if the upstream table is renamed or a column is dropped,
 # MAGIC   this fails at **runtime**, not at build time
 # MAGIC - Business logic (e.g. customer segmentation thresholds) is **re-defined** in each team's pipeline
-# MAGIC   because there is no `access: protected` concept — any team can read any table, but they
+# MAGIC   because there is no `access: protected` concept - any team can read any table, but they
 # MAGIC   cannot inherit or enforce a shared definition
 # MAGIC - Column metadata (comments) must be **manually repeated** in each pipeline's `@dlt.table(comment=...)`
-# MAGIC   — there is no `persist_docs` that automatically propagates from a central definition
-# MAGIC - There is no **contract enforcement** — if the platform team changes `gold_dim_customers`
+# MAGIC   - there is no `persist_docs` that automatically propagates from a central definition
+# MAGIC - There is no **contract enforcement** - if the platform team changes `gold_dim_customers`
 # MAGIC   to rename `customer_segment` to `segment_tier`, this pipeline breaks silently at next run
 # MAGIC
 # MAGIC ## Side-by-side comparison
@@ -29,25 +29,25 @@
 # MAGIC | | dbt Mesh | Lakeflow equivalent (this notebook) |
 # MAGIC |---|---|---|
 # MAGIC | How marketing reads platform data | `{{ ref('platform', 'fct_orders') }}` | `spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")` |
-# MAGIC | Validation of that reference | Compile-time — job fails before SQL runs | Runtime — pipeline fails when it executes |
-# MAGIC | Who can consume platform models | Only teams that ref `public` models | Any team — no access tier enforcement |
-# MAGIC | Breaking change detection | Contract enforced at build — `ERROR: column removed` | Silent until next pipeline run |
+# MAGIC | Validation of that reference | Compile-time - job fails before SQL runs | Runtime - pipeline fails when it executes |
+# MAGIC | Who can consume platform models | Only teams that ref `public` models | Any team - no access tier enforcement |
+# MAGIC | Breaking change detection | Contract enforced at build - `ERROR: column removed` | Silent until next pipeline run |
 # MAGIC | Customer segmentation logic | Defined once in `platform/dim_customers.sql`, inherited | Re-defined in each team's pipeline (see below) |
 # MAGIC | Column metadata | Auto-pushed by `persist_docs` | Manually written per table per pipeline |
-# MAGIC | Shared metric definitions | `_semantic_models.yml` — one source of truth | Duplicated SQL in each team's gold table |
+# MAGIC | Shared metric definitions | `_semantic_models.yml` - one source of truth | Duplicated SQL in each team's gold table |
 # MAGIC
 # MAGIC ## How to run this notebook
 # MAGIC
-# MAGIC This requires two separate DLT pipelines — one per consumer team.
-# MAGIC **Run `01_lakeflow_pipeline.py` first** — this notebook reads from its gold output.
+# MAGIC This requires two separate DLT pipelines - one per consumer team.
+# MAGIC **Run `01_lakeflow_pipeline.py` first** - this notebook reads from its gold output.
 # MAGIC
-# MAGIC **Pipeline 1 — Marketing:**
+# MAGIC **Pipeline 1 - Marketing:**
 # MAGIC 1. Workflows → Delta Live Tables → Create Pipeline
 # MAGIC 2. Name: `ecommerce-lakeflow-marketing`
 # MAGIC 3. Source: this notebook (section: Marketing Pipeline)
 # MAGIC 4. Target catalog: `enablement`, Target schema: `ecommerce_lakeflow_marketing`
 # MAGIC
-# MAGIC **Pipeline 2 — Finance:**
+# MAGIC **Pipeline 2 - Finance:**
 # MAGIC Same steps, name: `ecommerce-lakeflow-finance`, schema: `ecommerce_lakeflow_finance`
 # MAGIC
 # MAGIC In practice you would split these into two notebooks. They are combined here
@@ -65,7 +65,7 @@
 # MAGIC
 # MAGIC **Notice:** the customer segmentation thresholds (`>= 500`, `>= 100`) are
 # MAGIC copy-pasted from `01_lakeflow_pipeline.py` → `gold_dim_customers`. There is
-# MAGIC no mechanism to reference the platform definition — it must be duplicated.
+# MAGIC no mechanism to reference the platform definition - it must be duplicated.
 # MAGIC If the platform team changes the threshold, this pipeline will silently compute
 # MAGIC different segments until someone notices the discrepancy.
 
@@ -78,7 +78,7 @@ from pyspark.sql.functions import (
     max as _max
 )
 
-# Source catalog/schema for upstream gold tables — set via DLT pipeline configuration.
+# Source catalog/schema for upstream gold tables - set via DLT pipeline configuration.
 SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
 SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow")
 
@@ -122,11 +122,11 @@ SOURCE_LF_SCHEMA = spark.conf.get("source_lakeflow_schema", "ecommerce_lakeflow"
 )
 def marketing_customer_segments():
     # Read from the platform pipeline's gold output via hardcoded table path.
-    # There is no ref() — no compile-time validation, no access control.
+    # There is no ref() - no compile-time validation, no access control.
     customers = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_dim_customers")
     orders    = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
-    # Latest order date per customer — needed for recency calculation
+    # Latest order date per customer - needed for recency calculation
     recency = (
         orders
         .groupBy("customer_id")
@@ -138,7 +138,7 @@ def marketing_customer_segments():
     # DUPLICATION ALERT: these thresholds are also defined in gold_dim_customers.
     # high_value = total_lifetime_value >= 500
     # mid_value  = total_lifetime_value >= 100
-    # There is no single source of truth — both places must be kept in sync manually.
+    # There is no single source of truth - both places must be kept in sync manually.
     return (
         enriched
         .withColumn(
@@ -168,7 +168,7 @@ def marketing_customer_segments():
             "last_name",
             "email",
             "country",
-            "customer_segment",     # from platform — duplicated definition
+            "customer_segment",     # from platform - duplicated definition
             "total_lifetime_value",
             "number_of_orders",
             "last_order_date",
@@ -263,7 +263,7 @@ def marketing_country_performance():
     table_properties={"quality": "gold", "team": "finance"}
 )
 def finance_fct_revenue():
-    # Hardcoded ref — no validation, no access tier, no contract.
+    # Hardcoded ref - no validation, no access tier, no contract.
     orders = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
 
     return (
@@ -292,7 +292,7 @@ def finance_fct_revenue():
     comment="""
         Revenue broken down by product category for the finance team.
 
-        NOTE: Product join logic is duplicated — the platform pipeline does not
+        NOTE: Product join logic is duplicated - the platform pipeline does not
         expose a product-enriched orders table as a public model (it would be
         marked access: protected in dbt). The finance team must join themselves,
         re-implementing logic the platform team may also have internally.
@@ -302,14 +302,14 @@ def finance_fct_revenue():
 
         dbt Mesh equivalent: finance.fct_revenue_by_product
         reads from: enablement.ecommerce_lakeflow.gold_fct_orders (hardcoded)
-                    enablement.ecommerce_lakeflow.silver_products (hardcoded — accessing silver directly!)
+                    enablement.ecommerce_lakeflow.silver_products (hardcoded - accessing silver directly!)
     """,
     table_properties={"quality": "gold", "team": "finance"}
 )
 def finance_fct_revenue_by_product():
     orders   = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.gold_fct_orders")
     # No product-level gold table exists in the platform pipeline,
-    # so finance must reach into silver — bypassing any gold-layer curation.
+    # so finance must reach into silver - bypassing any gold-layer curation.
     # In dbt Mesh, staging models are access: protected and cannot be referenced
     # by consumer projects. In Lakeflow, there is no such restriction.
     products = spark.read.table(f"{SOURCE_CATALOG}.{SOURCE_LF_SCHEMA}.silver_products")
@@ -332,7 +332,7 @@ def finance_fct_revenue_by_product():
 
 # MAGIC %md
 # MAGIC ---
-# MAGIC ## What you just built — and why it matters for the demo
+# MAGIC ## What you just built - and why it matters for the demo
 # MAGIC
 # MAGIC This notebook creates **6 tables** across 2 schemas (`ecommerce_lakeflow_marketing`,
 # MAGIC `ecommerce_lakeflow_finance`) that are the Lakeflow equivalent of the 4 models
@@ -344,22 +344,22 @@ def finance_fct_revenue_by_product():
 # MAGIC    Search this file for "DUPLICATION". The customer segmentation thresholds
 # MAGIC    (`>= 500` for high_value) appear in both `01_lakeflow_pipeline.py` and here.
 # MAGIC    The revenue recognition rule (`status = 'completed'`) appears in both the
-# MAGIC    platform pipeline and `finance_fct_revenue`. Two teams, two definitions —
+# MAGIC    platform pipeline and `finance_fct_revenue`. Two teams, two definitions -
 # MAGIC    one incident away from diverging.
 # MAGIC
-# MAGIC 2. **Hardcoded table references — no compile-time safety**
+# MAGIC 2. **Hardcoded table references - no compile-time safety**
 # MAGIC    Every `spark.read.table(...)` call is a string. If the platform team renames
 # MAGIC    a table or removes a column, these pipelines fail at runtime. In dbt Cloud,
 # MAGIC    the `platform - full build` job would fail immediately when the contract is
-# MAGIC    violated — before any consumer is affected.
+# MAGIC    violated - before any consumer is affected.
 # MAGIC
-# MAGIC 3. **No access tiers — consumer bypasses protected layers**
+# MAGIC 3. **No access tiers - consumer bypasses protected layers**
 # MAGIC    `finance_fct_revenue_by_product` reads from `silver_products` directly
 # MAGIC    because no product-level gold table exists. In dbt Mesh, silver is
-# MAGIC    `access: protected` — the finance project literally cannot compile a ref to it.
+# MAGIC    `access: protected` - the finance project literally cannot compile a ref to it.
 # MAGIC    In Lakeflow, there is no enforcement: any team can read any table.
 # MAGIC
-# MAGIC 4. **Metadata is not inherited — it must be repeated**
+# MAGIC 4. **Metadata is not inherited - it must be repeated**
 # MAGIC    Every `@dlt.table(comment=...)` above had to be manually written for this team's
 # MAGIC    tables. In dbt Mesh, `persist_docs` runs on every job and automatically
 # MAGIC    propagates the platform's column descriptions into Unity Catalog.
@@ -367,7 +367,7 @@ def finance_fct_revenue_by_product():
 # MAGIC
 # MAGIC 5. **Two pipelines to maintain instead of two projects**
 # MAGIC    The marketing and finance teams each own a pipeline that depends on the main
-# MAGIC    pipeline having run first — but there is no formal dependency declaration.
+# MAGIC    pipeline having run first - but there is no formal dependency declaration.
 # MAGIC    If the platform pipeline fails or is delayed, the consumer pipelines will
 # MAGIC    either fail or silently read stale data. In dbt Cloud, project dependencies
 # MAGIC    are declared in `dependencies.yml` and enforced by the scheduler.

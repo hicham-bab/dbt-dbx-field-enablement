@@ -1,11 +1,11 @@
-# dbt Mesh — AE-Friendly Explainer
+# dbt Mesh - AE-Friendly Explainer
 
 ## What is dbt Mesh? (30-second version)
 
 dbt Mesh is a way to split a large dbt project into multiple smaller projects
 that can safely reference each other. A central "platform" team owns the clean
 data (customers, orders, products). Domain teams (finance, marketing, product)
-build their own models on top — safely, with governance.
+build their own models on top - safely, with governance.
 
 Think of it like an API contract between teams. The platform team publishes a
 stable interface. Consumer teams build on it. If the platform team changes
@@ -23,20 +23,20 @@ Marketing breaks. Nobody knows until a dashboard shows wrong numbers.
 
 ### What Mesh does
 
-1. **Platform team** owns `dim_customers`, `fct_orders` — the core entities.
+1. **Platform team** owns `dim_customers`, `fct_orders` - the core entities.
    They declare these models as `public` with a `contract`.
 
 2. **Finance team** has their own dbt project. They reference the platform's
    `fct_orders` with `{{ ref('platform', 'fct_orders') }}`.
 
 3. **If the platform team changes `fct_orders`** (removes a column, changes a type),
-   the finance team's `dbt build` fails immediately — in CI, not in production.
+   the finance team's `dbt build` fails immediately - in CI, not in production.
 
 ### What this sounds like to a VP of Data
 
 > "We have 8 data teams. They used to step on each other constantly.
 > With dbt Mesh, the platform team owns the core models and the finance team
-> owns their own models — but they're still connected. If the platform team
+> owns their own models - but they're still connected. If the platform team
 > breaks something, we catch it in CI before it reaches Tableau."
 
 ---
@@ -133,15 +133,15 @@ standard dbt with `access: protected` is sufficient.
 **Q: Does Mesh require dbt platform?**
 
 Yes, for cross-project refs. The `{{ ref('platform', 'fct_orders') }}` calls in the
-consumer projects are resolved via dbt platform's metadata service — which reads the
+consumer projects are resolved via dbt platform's metadata service - which reads the
 `platform` project's published manifest and enforces access tiers at compile time.
 The `dependencies.yml` in `marketing/` and `finance/` declares this dependency.
 Local CLI runs cannot resolve cross-project refs without the dbt platform metadata service.
 
 **Q: How does Mesh relate to Unity Catalog data sharing?**
 
-They solve different problems. Unity Catalog handles access control — who can
-read which tables. dbt Mesh handles change management — when can the platform
+They solve different problems. Unity Catalog handles access control - who can
+read which tables. dbt Mesh handles change management - when can the platform
 team make breaking changes. You need both: UC for data access security,
 Mesh for development governance.
 

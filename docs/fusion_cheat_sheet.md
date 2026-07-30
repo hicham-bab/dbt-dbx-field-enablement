@@ -1,8 +1,8 @@
-# dbt Fusion — Syntax Rules and Reference
+# dbt Fusion - Syntax Rules and Reference
 
 ## What is dbt Fusion?
 
-dbt Fusion is dbt Labs' Rust-based engine for dbt — a ground-up rewrite of the parser,
+dbt Fusion is dbt Labs' Rust-based engine for dbt - a ground-up rewrite of the parser,
 compiler, and runtime. It is **not** a feature of a particular dbt version; it is a new
 engine that is now **generally available, including the Databricks adapter**. You can run
 Fusion three ways: the free `dbt` CLI, the dbt VS Code extension (real-time compilation
@@ -21,10 +21,10 @@ why the SQL and YAML in this repo look the way they do.
 
 ## Fusion Syntax Rules
 
-### 1. No `::` casting — use `cast()`
+### 1. No `::` casting - use `cast()`
 
 ```sql
--- WRONG (PostgreSQL syntax — Fusion rejects this)
+-- WRONG (PostgreSQL syntax - Fusion rejects this)
 select is_active::boolean from raw_products
 
 -- CORRECT
@@ -97,7 +97,7 @@ dbt build
 | Command | When to use |
 |---|---|
 | `dbt build --select dim_customers+` | Rebuild one model and its dependents |
-| `dbt build --select state:modified+` | Slim CI — only rebuild what changed |
+| `dbt build --select state:modified+` | Slim CI - only rebuild what changed |
 | `dbt test` | Run tests without re-running models |
 | `dbt source freshness` | Check staleness of all 5 raw sources |
 | `dbt docs generate` | Regenerate the docs site artifact |
@@ -112,7 +112,7 @@ metadata service. For this to work:
 1. The `platform` project's Production environment must have **Generate docs on run** enabled
 2. The `marketing` and `finance` projects must declare `platform` as a dependency:
    - Project settings → **Project dependencies** → Add → `platform`
-3. Run `platform` first — the consumer jobs will fail if platform's published state is missing
+3. Run `platform` first - the consumer jobs will fail if platform's published state is missing
 
 The `dependencies.yml` in each consumer project declares this in code:
 ```yaml

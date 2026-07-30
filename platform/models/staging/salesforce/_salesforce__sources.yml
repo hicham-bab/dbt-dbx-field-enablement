@@ -1,0 +1,142 @@
+version: 2
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fivetran Salesforce source - landed by the Fivetran Managed Data Lake Service
+# (MDLS) as open Delta/Iceberg tables and registered in Unity Catalog.
+#
+# This is the "ingest" end of the Fivetran + dbt loop (see FIVETRAN_DBT_DATABRICKS.md):
+#   Salesforce ──(Fivetran connector + MDLS)──▶ Unity Catalog ──▶ dbt (here)
+#
+# Columns below are the STANDARD Salesforce objects Fivetran lands. Every Salesforce
+# org has custom fields (e.g. *__c) - verify the exact schema against your connector's
+# Fivetran ERD / the fivetran/dbt_salesforce_source package before relying on it.
+# Fivetran adds _fivetran_synced (load time) and _fivetran_deleted (soft-delete flag)
+# to every table; staging filters out soft-deleted rows and uses _fivetran_synced for
+# source freshness.
+# ─────────────────────────────────────────────────────────────────────────────
+
+sources:
+  - name: salesforce
+    catalog: "{{ var('source_catalog', 'enablement') }}"
+    schema: "{{ var('salesforce_schema', 'salesforce') }}"
+    description: "Fivetran-synced Salesforce objects, landed via MDLS into Unity Catalog."
+    tables:
+      - name: account
+        description: "Salesforce Account - the company/organization record."
+        config:
+          loaded_at_field: _fivetran_synced
+          freshness:
+            warn_after:  {count: 6, period: hour}
+            error_after: {count: 24, period: hour}
+        columns:
+          - name: id
+            description: "Salesforce Account Id (18-char). Primary key."
+          - name: name
+            description: "Account (company) name."
+          - name: type
+            description: "Account type (e.g. Customer, Prospect, Partner)."
+          - name: industry
+            description: "Industry classification."
+          - name: annual_revenue
+            description: "Reported annual revenue."
+          - name: number_of_employees
+            description: "Employee count."
+          - name: billing_country
+            description: "Billing address country."
+          - name: owner_id
+            description: "FK to user - the account owner."
+          - name: created_date
+            description: "When the account was created in Salesforce."
+          - name: _fivetran_synced
+            description: "Fivetran load timestamp. Used for source freshness."
+          - name: _fivetran_deleted
+            description: "Fivetran soft-delete flag; true if deleted in the source."
+
+      - name: contact
+        description: "Salesforce Contact - a person associated with an account."
+        config:
+          loaded_at_field: _fivetran_synced
+          freshness:
+            warn_after:  {count: 6, period: hour}
+            error_after: {count: 24, period: hour}
+        columns:
+          - name: id
+            description: "Salesforce Contact Id. Primary key."
+          - name: account_id
+            description: "FK to account."
+          - name: first_name
+            description: "Contact first name."
+          - name: last_name
+            description: "Contact last name."
+          - name: email
+            description: "Contact email address."
+          - name: title
+            description: "Job title."
+          - name: owner_id
+            description: "FK to user - the contact owner."
+          - name: created_date
+            description: "When the contact was created."
+          - name: _fivetran_synced
+            description: "Fivetran load timestamp."
+          - name: _fivetran_deleted
+            description: "Fivetran soft-delete flag."
+
+      - name: opportunity
+        description: "Salesforce Opportunity - a deal in the sales pipeline."
+        config:
+          loaded_at_field: _fivetran_synced
+          freshness:
+            warn_after:  {count: 6, period: hour}
+            error_after: {count: 24, period: hour}
+        columns:
+          - name: id
+            description: "Salesforce Opportunity Id. Primary key."
+          - name: account_id
+            description: "FK to account."
+          - name: name
+            description: "Opportunity name."
+          - name: stage_name
+            description: "Sales stage (e.g. Prospecting, Negotiation, Closed Won)."
+          - name: amount
+            description: "Deal amount."
+          - name: close_date
+            description: "Expected or actual close date."
+          - name: probability
+            description: "Win probability (0-100) for the stage."
+          - name: is_closed
+            description: "True if the opportunity is in a closed stage."
+          - name: is_won
+            description: "True if the opportunity is Closed Won."
+          - name: type
+            description: "Opportunity type (e.g. New Business, Existing Business)."
+          - name: lead_source
+            description: "Originating lead source."
+          - name: owner_id
+            description: "FK to user - the opportunity owner (rep)."
+          - name: created_date
+            description: "When the opportunity was created."
+          - name: _fivetran_synced
+            description: "Fivetran load timestamp."
+          - name: _fivetran_deleted
+            description: "Fivetran soft-delete flag."
+
+      - name: user
+        description: "Salesforce User - sales reps / owners."
+        config:
+          loaded_at_field: _fivetran_synced
+          freshness:
+            warn_after:  {count: 1, period: day}
+            error_after: {count: 3, period: day}
+        columns:
+          - name: id
+            description: "Salesforce User Id. Primary key."
+          - name: name
+            description: "User full name."
+          - name: email
+            description: "User email."
+          - name: is_active
+            description: "Whether the user is active."
+          - name: _fivetran_synced
+            description: "Fivetran load timestamp."
+          - name: _fivetran_deleted
+            description: "Fivetran soft-delete flag."

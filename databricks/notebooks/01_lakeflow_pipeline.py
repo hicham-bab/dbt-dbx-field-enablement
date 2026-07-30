@@ -1,10 +1,10 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Spark Declarative Pipelines — E-Commerce Pipeline
+# MAGIC # Spark Declarative Pipelines - E-Commerce Pipeline
 # MAGIC
 # MAGIC Formerly "Delta Live Tables" (DLT) / "Lakeflow Declarative Pipelines".
 # MAGIC Databricks rebranded to **Spark Declarative Pipelines (SDP)** in 2025.
-# MAGIC The Python API still uses `import dlt` — the code is unchanged.
+# MAGIC The Python API still uses `import dlt` - the code is unchanged.
 # MAGIC
 # MAGIC ## What this shows dbt field teams:
 # MAGIC - How Databricks solves the same medallion pattern problem natively
@@ -16,12 +16,12 @@
 # MAGIC 1. **Jobs & Pipelines** → **Create** → **ETL pipeline**
 # MAGIC 2. In the dialog: name = `ecommerce-lakeflow-demo`, catalog = `enablement`, schema = `ecommerce_lakeflow` → **Create**
 # MAGIC 3. On the "Next step" screen → **Add existing assets** → select this notebook
-# MAGIC 4. Click **Start** — creates all 13 tables (5 bronze + 5 silver + 3 gold)
+# MAGIC 4. Click **Start** - creates all 13 tables (5 bronze + 5 silver + 3 gold)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Bronze Layer — Raw Ingestion
+# MAGIC ## Bronze Layer - Raw Ingestion
 # MAGIC
 # MAGIC Bronze tables ingest raw data as-is from source tables. No transformations, no cleaning.
 # MAGIC
@@ -38,7 +38,7 @@ from pyspark.sql.functions import (
     date_format, round as _round
 )
 
-# Source catalog/schema — set via pipeline configuration or override here.
+# Source catalog/schema - set via pipeline configuration or override here.
 # To avoid collisions, each user should set these in the SDP pipeline settings:
 #   Configuration → Add: source_catalog = your_catalog, source_schema = your_schema
 SOURCE_CATALOG = spark.conf.get("source_catalog", "enablement")
@@ -97,7 +97,7 @@ def bronze_payments():
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Silver Layer — Cleaned and Standardized
+# MAGIC ## Silver Layer - Cleaned and Standardized
 # MAGIC
 # MAGIC **dbt equivalent:** staging models. SDP Expectations are similar to dbt tests, **BUT**:
 # MAGIC they live in Python code, not YAML. There is no auto-generated docs site. There are
@@ -214,15 +214,15 @@ def silver_payments():
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Gold Layer — Business Entities
+# MAGIC ## Gold Layer - Business Entities
 # MAGIC
 # MAGIC **dbt equivalent:** marts models. Key differences:
 # MAGIC - In dbt, a business analyst can read the SQL directly
 # MAGIC - In SDP, they need to understand PySpark
 # MAGIC - dbt's `ref()` creates explicit, compile-time-validated lineage
 # MAGIC - SDP infers lineage from `dlt.read()` calls at runtime
-# MAGIC - **No contracts** — SDP has no mechanism to enforce a schema across pipelines
-# MAGIC - **No Semantic Layer** — SDP cannot serve named metrics via JDBC
+# MAGIC - **No contracts** - SDP has no mechanism to enforce a schema across pipelines
+# MAGIC - **No Semantic Layer** - SDP cannot serve named metrics via JDBC
 
 # COMMAND ----------
 

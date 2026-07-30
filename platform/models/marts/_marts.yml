@@ -1,7 +1,7 @@
 version: 2
 
 # ─────────────────────────────────────────────────────────────────────────────
-# dbt Mesh — Public interface of the platform project (Fusion-conformant).
+# dbt Mesh - Public interface of the platform project (Fusion-conformant).
 #
 # Fusion enforcement:
 #  - contract: enforced: true on ALL public models (required for Mesh)
@@ -14,7 +14,7 @@ models:
 
   - name: dim_customers
     description: >
-      PUBLIC model. Customer dimension with LTV metrics and segmentation. Consumed by: marketing (segmentation), finance (revenue attribution). Contract enforced — column changes are a breaking change for all consumers. Column descriptions are persisted to Unity Catalog via dbt-databricks adapter, making them available to Genie without manual copy-paste.
+      PUBLIC model. Customer dimension with LTV metrics and segmentation. Consumed by: marketing (segmentation), finance (revenue attribution). Contract enforced - column changes are a breaking change for all consumers. Column descriptions are persisted to Unity Catalog via dbt-databricks adapter, making them available to Genie without manual copy-paste.
        Semantic model built on dim_customers. One row per customer. Defines the customer grain, segmentation dimensions, and value measures. This is the authoritative definition of a "customer" for all BI and Genie queries.
     config:
       group: platform_core
@@ -84,7 +84,7 @@ models:
         description: >
           Derived value tier based on total_lifetime_value.
           high_value: >= $500 | mid_value: $100–$499 | low_value: < $100.
-          Tested with accepted_values — only these three values can exist.
+          Tested with accepted_values - only these three values can exist.
         data_type: string
         tests:
           - accepted_values:
@@ -194,8 +194,8 @@ models:
         expr: unit_price
   - name: fct_orders
     description: >
-      PUBLIC model. Order fact table enriched with item counts and payment totals. Consumed by: finance (revenue), marketing (customer activity). Contract enforced — this is the canonical order grain for all downstream consumers.
-       Semantic model built on fct_orders. One row per order. Defines order-level revenue, count, and status dimensions. Revenue here = amount_paid for orders with status = 'completed'. This definition is version-controlled — any change goes through a PR.
+      PUBLIC model. Order fact table enriched with item counts and payment totals. Consumed by: finance (revenue), marketing (customer activity). Contract enforced - this is the canonical order grain for all downstream consumers.
+       Semantic model built on fct_orders. One row per order. Defines order-level revenue, count, and status dimensions. Revenue here = amount_paid for orders with status = 'completed'. This definition is version-controlled - any change goes through a PR.
     config:
       group: platform_core
       access: public
@@ -269,7 +269,7 @@ models:
         description: >
           Total amount successfully paid for this order (USD).
           Counts only payments with status = 'success'.
-          This is NOT the same as order amount — returns and failed payments are excluded.
+          This is NOT the same as order amount - returns and failed payments are excluded.
         data_type: decimal(18,2)
         tests:
           - not_null

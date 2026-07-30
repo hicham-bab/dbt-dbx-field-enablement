@@ -7,7 +7,7 @@ dbt Mesh governance, and an honest Databricks metric views comparison.
 > **Naming note (2026):** This repo uses **dbt platform** (the managed product,
 > formerly dbt Cloud) and the current **Lakeflow** names (Lakeflow Jobs, Lakeflow
 > Declarative Pipelines). The AI assistant is **dbt Wizard**. Product naming is
-> still in transition — confirm the latest terms with PMM before external use.
+> still in transition - confirm the latest terms with PMM before external use.
 
 ---
 
@@ -17,20 +17,22 @@ dbt Mesh governance, and an honest Databricks metric views comparison.
 |---|---|
 | `DEMO_SCRIPT.md` | 5-act, 20–25 min demo script with timing, talking points, Q&A anchors |
 | `BATTLE_CARD.md` | 12 competitive concerns with factual responses and demo proof points |
-| `METRIC_VIEWS_COMPARISON.md` | dbt Semantic Layer + Databricks metric views — complementary, and how dbt authors/governs them |
+| `METRIC_VIEWS_COMPARISON.md` | dbt Semantic Layer + Databricks metric views - complementary, and how dbt authors/governs them |
 | `MIGRATION_ACCELERATION.md` | Legacy → dbt + Databricks migration: how dbt Wizard + Fusion create faster time to value |
+| `FIVETRAN_DBT_DATABRICKS.md` | Fivetran + dbt on Databricks - the complete governed loop (ingest → govern → activate); competitive SA enablement |
 | `FAQ.md` | Objection handling for customers, champions, and Databricks SAs |
-| `SETUP.md` | Full environment setup — DBX workspace + dbt platform + Mesh |
+| `SETUP.md` | Full environment setup - DBX workspace + dbt platform + Mesh |
 | `platform/` | Producer dbt project (Fusion-conformant, contracts, semantic layer) |
-| `marketing/` | Consumer dbt project — cross-project refs from platform |
-| `finance/` | Consumer dbt project — cross-project refs from platform |
-| `data_science/` | Consumer dbt project — Python models, DS features via Mesh |
+| `marketing/` | Consumer dbt project - cross-project refs from platform |
+| `finance/` | Consumer dbt project - cross-project refs from platform |
+| `data_science/` | Consumer dbt project - Python models, DS features via Mesh |
 | `databricks/notebooks/` | Setup + Lakeflow pipeline + Metric Views SQL + data generator + Mesh equivalent demo |
 | `databricks/genie/` | Genie Space configs + demo queries for all 3 acts |
 | `databricks/app/` | Streamlit app (4 tabs) for the Databricks App deployment |
 | `docs/` | Architecture diagrams, Mesh explainer, Fusion cheat sheet, DABs CI/CD guide |
 | `databricks.yml` | Declarative Asset Bundle configuration (IaC for Databricks Jobs) |
 | `resources/` | Bundle resource definitions (dbt job YAML) |
+| `fivetran/` | Fivetran config for the full-loop example - MDLS (Salesforce → Unity Catalog) ingest + Activations (governed alerts → Slack) |
 | `dbt_profiles/` | dbt profiles for Asset Bundle deployments (OAuth M2M) |
 | `.github/workflows/` | CI/CD pipeline (GitHub Actions: validate -> deploy -> run) |
 
@@ -60,7 +62,7 @@ Expected: 13 tables created (5 bronze + 5 silver + 3 gold).
 
 In dbt platform:
 1. Create a Databricks connection (host, HTTP path, token)
-2. Create 4 projects: `platform`, `marketing`, `finance`, `data_science` — each pointing to the corresponding subdirectory (or separate repos)
+2. Create 4 projects: `platform`, `marketing`, `finance`, `data_science` - each pointing to the corresponding subdirectory (or separate repos)
 3. Set project dependencies: `marketing`, `finance`, and `data_science` all depend on `platform`
 4. Run the `platform - full build` job first, then consumer jobs
 
@@ -81,9 +83,9 @@ Metric Views are YAML definitions, not SQL DDL. Create them in the Databricks UI
 ### Step 5: Create Genie Spaces
 
 Follow the instructions in `databricks/genie/`:
-- `genie_raw_instructions.md` — Act 1 space
-- `genie_lakeflow_instructions.md` — Act 3 space
-- `genie_dbt_instructions.md` — Act 4 space
+- `genie_raw_instructions.md` - Act 1 space
+- `genie_lakeflow_instructions.md` - Act 3 space
+- `genie_dbt_instructions.md` - Act 4 space
 
 ### Step 6: Run the demo
 
@@ -94,16 +96,18 @@ Open `DEMO_SCRIPT.md` and follow the 5-act structure.
 ## Architecture
 
 ```
-Raw Delta Tables → dbt platform (Fusion engine) → Tested Marts → Semantic Layer → Genie
-                      ↓               ↓
-               Lakeflow Declarative Pipelines    dbt Mesh Consumers
-               (Bronze/Silver)  (marketing, finance, data_science)
-                                        ↑
-                                  Python models (PySpark)
-                                  on Databricks compute
+Fivetran ingest + MDLS ─▶ Unity Catalog (open Delta/Iceberg) ─▶ dbt platform (Fusion)
+  700+ connectors            Lakeflow (streaming/Spark)          Tested Marts + Mesh
+                                                                 Semantic Layer + metric views
+                                                                        │
+                                                                        ▼
+        operational tools ◀── Fivetran Activations ◀── Databricks AI (Genie / agents)
+        (Salesforce, HubSpot)     (reverse ETL)         consume the governed layer
 ```
 
-See `docs/architecture.md` for the full ASCII + Mermaid diagrams.
+The complete governed loop - ingest → govern → activate - on the Databricks lakehouse.
+See `docs/architecture.md` for the full ASCII + Mermaid diagrams and
+`FIVETRAN_DBT_DATABRICKS.md` for the Fivetran + dbt positioning.
 
 ---
 
@@ -137,9 +141,16 @@ databricks bundle run -t dev platform_dbt_job
 
 **dbt and Databricks are AND, not OR.**
 
-- Databricks: compute, storage, orchestration, Lakeflow for ingestion
-- dbt: governance layer — tested, documented, version-controlled business logic
-- Together: Genie answers that are accurate, consistent, and auditable
+- Databricks: compute, storage, orchestration, and AI (Genie, agents) on the lakehouse
+- Fivetran + dbt (one company since 2026-06-01): the governed data layer - ingestion +
+  Managed Data Lake Service, then tested, documented, version-controlled business logic,
+  then activation (reverse ETL) back to operational tools
+- Together: Genie answers that are accurate, consistent, and auditable - and governed
+  data that reaches the tools the business works in
+
+For competitive SA enablement - where Fivetran + dbt win the data layer on faster
+time-to-value and a better-governed layer for Databricks AI - see
+`FIVETRAN_DBT_DATABRICKS.md`.
 
 The demo proves this by showing Genie quality improving at each stage:
 1. Raw tables → ambiguous, unauditable answers
@@ -207,13 +218,13 @@ dbt-dbx-field-enablement/
 ├── databricks/
 │   ├── notebooks/
 │   │   ├── 00_setup_raw_data.py
-│   │   ├── 01_lakeflow_pipeline.sql        (platform pipeline — SQL)
+│   │   ├── 01_lakeflow_pipeline.sql        (platform pipeline - SQL)
 │   │   ├── 02_metric_views.sql
 │   │   ├── 03_data_generator.py
-│   │   ├── 04_lakeflow_mesh_equivalent.py  (reference — combined Python view)
-│   │   ├── 04a_lakeflow_marketing.sql      (marketing team pipeline — SQL)
-│   │   ├── 04b_lakeflow_finance.sql        (finance team pipeline — SQL)
-│   │   └── 05a_lakeflow_data_science.py   (DS team pipeline — duplication contrast)
+│   │   ├── 04_lakeflow_mesh_equivalent.py  (reference - combined Python view)
+│   │   ├── 04a_lakeflow_marketing.sql      (marketing team pipeline - SQL)
+│   │   ├── 04b_lakeflow_finance.sql        (finance team pipeline - SQL)
+│   │   └── 05a_lakeflow_data_science.py   (DS team pipeline - duplication contrast)
 │   ├── genie/
 │   │   ├── genie_raw_instructions.md
 │   │   ├── genie_lakeflow_instructions.md
@@ -250,8 +261,8 @@ dbt-dbx-field-enablement/
 
 ## Related Repos
 
-- `dbt-databricks-enablement/` — original single-project enablement demo
-- `dbt-mesh-fusion/` — original Mesh + Fusion demo
+- `dbt-databricks-enablement/` - original single-project enablement demo
+- `dbt-mesh-fusion/` - original Mesh + Fusion demo
 
 This repo consolidates both with a focus on the Genie / Semantic Layer story
 and a structured 5-act demo format.

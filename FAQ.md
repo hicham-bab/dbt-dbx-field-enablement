@@ -1,4 +1,4 @@
-# FAQ — dbt + Databricks Field Enablement
+# FAQ - dbt + Databricks Field Enablement
 
 Common questions from customers, champions, and Databricks SAs.
 Each answer is designed to be honest, concise, and demo-backed.
@@ -17,7 +17,7 @@ They solve different problems. The customers who have both get: Databricks for d
 movement and Lakeflow for ingestion; dbt for the business logic layer that non-engineers
 can review and audit.
 
-**Demo anchor:** Act 1 vs Act 4 — show what Genie answers look like before and after dbt.
+**Demo anchor:** Act 1 vs Act 4 - show what Genie answers look like before and after dbt.
 
 ---
 
@@ -29,7 +29,7 @@ models. Three accelerators:
   natural language, generating tests and docs and validating each change against the
   warehouse before you see the diff.
 - **Fusion** catches SQL-dialect differences (Oracle/Teradata → Databricks SQL) at
-  compile time, in real time — where lift-and-shift projects usually stall.
+  compile time, in real time - where lift-and-shift projects usually stall.
 - **Lakeflow** lands the raw data in Unity Catalog; dbt takes it to governed marts.
 
 The key point: you migrate *into* governance (tests, contracts, docs, Semantic Layer /
@@ -41,20 +41,20 @@ later. See `MIGRATION_ACCELERATION.md` for the full narrative and demo flow.
 **Q: Is dbt competing with Databricks Spark Declarative Pipelines (formerly Delta Live Tables)?**
 
 No. Spark Declarative Pipelines (SDP) are a pipeline orchestration tool for
-bronze/silver layers — ingestion, streaming, auto-lineage, Python-native transforms.
-dbt operates on the gold/marts layer — SQL-based business logic, documentation,
+bronze/silver layers - ingestion, streaming, auto-lineage, Python-native transforms.
+dbt operates on the gold/marts layer - SQL-based business logic, documentation,
 testing, and the semantic layer. They are complementary by design.
 
 The reference architecture: SDP Bronze/Silver → dbt Gold/Marts → Semantic Layer → Genie.
 
-**Demo anchor:** Act 2 — architecture slide showing both in the same stack.
+**Demo anchor:** Act 2 - architecture slide showing both in the same stack.
 
 ---
 
 **Q: Does dbt work natively with Databricks?**
 
 Yes. The `dbt-databricks` adapter is maintained by Databricks, and the dbt Fusion
-engine is generally available for Databricks — with native OAuth, ADBC connectivity,
+engine is generally available for Databricks - with native OAuth, ADBC connectivity,
 and parse/compile up to ~30x faster than dbt Core. Key integrations:
 - `persist_docs` pushes column descriptions to Unity Catalog column metadata
 - dbt models run as Databricks SQL queries
@@ -68,7 +68,7 @@ and parse/compile up to ~30x faster than dbt Core. Key integrations:
 
 **Q: What is dbt Fusion and how is it different from dbt Core?**
 
-dbt Fusion is a ground-up rewrite of the dbt engine in Rust — a separate engine,
+dbt Fusion is a ground-up rewrite of the dbt engine in Rust - a separate engine,
 not a feature of a specific dbt version. It is generally available (including the
 Databricks adapter), parses and compiles up to ~30x faster on Databricks, eliminates
 the Python runtime bottleneck, and enforces stricter SQL syntax (no `::` casting,
@@ -77,7 +77,7 @@ builds on.
 
 Fusion runs three ways: the free `dbt` CLI, the dbt VS Code extension (real-time
 compilation and LSP), or the dbt platform. The models and YAML in this repo are
-Fusion-conformant — see `docs/fusion_cheat_sheet.md` for the syntax rules that make
+Fusion-conformant - see `docs/fusion_cheat_sheet.md` for the syntax rules that make
 this code Fusion-compatible.
 
 ---
@@ -88,13 +88,13 @@ dbt Wizard is dbt's terminal-native AI agent for analytics engineering (public b
 available to dbt platform *and* self-hosted users). It replaces the older inline dbt
 Copilot experience. What makes it different from a generic coding assistant is that it
 is **grounded in the dbt project's compiled state, lineage graph, and semantic
-definitions** from the first prompt — it knows which models are healthy, what depends
+definitions** from the first prompt - it knows which models are healthy, what depends
 on what, and where tests/docs are missing before it writes anything. It builds and
 refactors from natural language, shows a reviewable diff, and **validates its own
 changes against the warehouse** before you see them. It can also connect to MCP servers,
 including the dbt MCP server, for Semantic Layer metadata and cross-project context.
 
-**Bring your own model (BYOK).** The Wizard CLI supports BYOK — configure your own model
+**Bring your own model (BYOK).** The Wizard CLI supports BYOK - configure your own model
 provider with `wizard providers configure <provider>` (or env vars for headless CI):
 OpenAI, Anthropic, Azure OpenAI, AWS Bedrock, Google Gemini, Snowflake Cortex (preview),
 and the **Databricks Unity Catalog AI Gateway** (beta). Usage is billed to your provider
@@ -102,14 +102,14 @@ account, not dbt Labs. The Databricks option is the standout for this audience: 
 connects through the **Unity Catalog AI Gateway** to model-serving endpoints in the
 customer's *own* Databricks workspace (workspace URL + serving endpoint + Databricks PAT).
 So the coding agent's LLM access, spend, and policy stay under the same Unity Catalog
-governance that governs their data and Genie — one governed AI surface, not a separate
+governance that governs their data and Genie - one governed AI surface, not a separate
 vendor bill. (BYOK is a CLI capability; the platform-managed Wizard experience uses
 dbt-provided models.)
 
-Why this matters on Databricks: Summit 2026 was an agentic story — Agent Bricks (with
+Why this matters on Databricks: Summit 2026 was an agentic story - Agent Bricks (with
 the Claude Code SDK), the Unity AI Gateway, and Genie Ontology. dbt Wizard is the
 governed-development counterpart: agents that *build* trusted data models on the same
-project state that Genie and Databricks agents *consume*. It's AND, not OR — governed
+project state that Genie and Databricks agents *consume*. It's AND, not OR - governed
 authoring (dbt Wizard) feeding governed consumption (Genie).
 
 ---
@@ -118,7 +118,7 @@ authoring (dbt Wizard) feeding governed consumption (Genie).
 
 dbt Mesh is a multi-project architecture where a "platform" project exposes
 public models (with contracts) that downstream "consumer" projects reference.
-Breaking changes in the platform project cause consumer builds to fail — governance
+Breaking changes in the platform project cause consumer builds to fail - governance
 enforced by the build system, not by process.
 
 For Databricks customers: this replaces or complements cross-catalog data sharing
@@ -177,17 +177,17 @@ project references this model with `{{ ref('platform', 'fct_orders') }}`,
 dbt validates that the actual schema matches the declared contract at build time.
 
 If the platform team removes a column or changes a data type, the consumer
-project's `dbt build` fails — before the change reaches production.
+project's `dbt build` fails - before the change reaches production.
 This is the mechanism that makes dbt Mesh's governance real.
 
 ---
 
-**Q: How does this demo run — dbt platform or local CLI?**
+**Q: How does this demo run - dbt platform or local CLI?**
 
 This demo runs on **dbt platform**. Four dbt platform projects (`platform`,
 `marketing`, `finance`, `data_science`) are connected to the Databricks workspace.
 Each has its own deploy job. The Fusion engine (Rust-based) runs on every job
-execution — you do not need a local dbt installation.
+execution - you do not need a local dbt installation.
 
 dbt platform adds on top of the Fusion engine:
 - Orchestration and scheduled jobs
@@ -213,7 +213,7 @@ for the complete guide.
 Asset Bundles handle the deployment/execution layer: defining dbt jobs as
 infrastructure-as-code, deploying to dev/prod targets, and triggering builds
 from CI/CD. The dbt job runs the dbt CLI on Databricks compute (you can use the
-Fusion engine here — it is free and open source). What Asset Bundles alone do
+Fusion engine here - it is free and open source). What Asset Bundles alone do
 **not** give you are the dbt platform services layered on top: the hosted
 Semantic Layer API, Explorer, hosted Mesh metadata for cross-project refs, and
 managed orchestration with slim CI.
@@ -226,14 +226,14 @@ governance layer. See `docs/dabs_cicd_guide.md` Part 8.
 
 **Q: The customer wants Databricks to be the orchestrator. Do they lose dbt governance?**
 
-No — this is a false trade-off in 2026. Lakeflow Jobs has two native dbt integrations:
+No - this is a false trade-off in 2026. Lakeflow Jobs has two native dbt integrations:
 
-- **dbt task** — runs dbt Core on Databricks compute (serverless by default). Good
+- **dbt task** - runs dbt Core on Databricks compute (serverless by default). Good
   for a single project with no Semantic Layer or Mesh needs.
-- **dbt platform task** — triggers and monitors an existing **governed dbt platform
+- **dbt platform task** - triggers and monitors an existing **governed dbt platform
   job** from Lakeflow Jobs via the dbt platform API. The customer keeps Databricks
   as the single pane of glass *and* gets the Semantic Layer, Explorer, Mesh, slim
-  CI, and Fusion. (Continuous triggers aren't supported for this task — schedule or
+  CI, and Fusion. (Continuous triggers aren't supported for this task - schedule or
   event-trigger it.)
 
 So "we orchestrate everything in Databricks" and "we want dbt governance" are no
@@ -268,8 +268,8 @@ Databricks has solid git integration via **Repos (Git Folders)**:
 - Non-notebook files (YAML, configs) are visible and editable
 
 **Where it gets friction-y:**
-- Merge conflicts in notebooks can be painful — notebook cell markers create noisy diffs
-- No built-in PR-triggered CI — you need GitHub Actions + Asset Bundles (1-2 days setup)
+- Merge conflicts in notebooks can be painful - notebook cell markers create noisy diffs
+- No built-in PR-triggered CI - you need GitHub Actions + Asset Bundles (1-2 days setup)
 - No inline test results or lineage preview in the editor (dbt platform IDE has this)
 
 **dbt platform comparison:** dbt platform IDE gives you a purpose-built editor with lineage preview,
@@ -285,19 +285,19 @@ than dbt platform's built-in flow. See `PLATFORM_COMPARISON.md` Section 2.
 **Q: Where do you see production code in Databricks? Is it mixed with exploratory work?**
 
 Production code lives in the **Git repo** (GitHub/GitLab). In Databricks, you see it in:
-1. **Repos/Git Folders** — clone the production branch into any workspace
-2. **Jobs** — each production job references a specific repo + branch + commit
-3. **Asset Bundles** — `databricks bundle deploy -t prod` deploys from repo to workspace
+1. **Repos/Git Folders** - clone the production branch into any workspace
+2. **Jobs** - each production job references a specific repo + branch + commit
+3. **Asset Bundles** - `databricks bundle deploy -t prod` deploys from repo to workspace
 
 **The separation question:** By default, Databricks workspaces mix exploratory notebooks
 with production pipelines in the same file tree. This is a **configuration gap**, not a
 platform gap. Solutions (in order of effort):
-- Folder naming conventions (`/Production/` vs `/Exploratory/`) — low effort, discipline-dependent
-- Separate UC catalogs (`prod` vs `dev`) — medium effort, good data isolation
-- Separate workspaces — higher effort, full isolation (common in enterprises)
-- Asset Bundle targets (`dev` vs `prod`) — medium effort, code-driven
+- Folder naming conventions (`/Production/` vs `/Exploratory/`) - low effort, discipline-dependent
+- Separate UC catalogs (`prod` vs `dev`) - medium effort, good data isolation
+- Separate workspaces - higher effort, full isolation (common in enterprises)
+- Asset Bundle targets (`dev` vs `prod`) - medium effort, code-driven
 
-**dbt platform comparison:** dbt platform separates environments by default — dev, staging, prod
+**dbt platform comparison:** dbt platform separates environments by default - dev, staging, prod
 each with their own schema and credentials. Production code is inspectable in Explorer
 with one click. No configuration needed.
 
@@ -310,12 +310,12 @@ intentional setup. dbt platform has it by default. See `PLATFORM_COMPARISON.md` 
 
 Yes, via two mechanisms:
 
-**1. Delta Sharing** — share tables across workspaces, even across clouds (AWS, Azure, GCP).
+**1. Delta Sharing** - share tables across workspaces, even across clouds (AWS, Azure, GCP).
 The provider controls what's shared; the recipient queries shared tables as if local.
 Works cross-cloud and even with non-Databricks recipients (any client that supports
 the Delta Sharing protocol).
 
-**2. Shared Unity Catalog metastore** — a single UC metastore can serve multiple workspaces.
+**2. Shared Unity Catalog metastore** - a single UC metastore can serve multiple workspaces.
 All workspaces see the same catalogs, schemas, and tables. This is the simpler option
 when workspaces are in the same cloud region.
 
@@ -323,7 +323,7 @@ when workspaces are in the same cloud region.
 Shared metastore is lower effort but requires workspaces in the same region.
 
 **dbt comparison:** dbt Mesh allows cross-project refs with contract enforcement
-(`ref('other_project', 'model')`). This is a different layer — Delta Sharing shares
+(`ref('other_project', 'model')`). This is a different layer - Delta Sharing shares
 data, dbt Mesh shares governance. Both are needed in enterprise deployments.
 
 **Verdict:** Cross-instance communication is **not a gap**. See `PLATFORM_COMPARISON.md` Section 8.
@@ -361,9 +361,58 @@ is genuinely good. See `PLATFORM_COMPARISON.md` Section 8.
 
 ---
 
+## Fivetran + dbt Questions (Data Movement & Activation)
+
+**Q: dbt Labs merged with Fivetran - what does that mean for a Databricks account?**
+
+Since 2026-06-01, one company covers the whole data layer: **ingestion → transformation
+→ governance → activation**. For a Databricks customer that means a single vendor for
+Fivetran connectors + the Managed Data Lake Service (landing open Delta/Iceberg tables
+in Unity Catalog), dbt (Fusion transform, contracts, Semantic Layer, Mesh), and
+Fivetran Activations (reverse ETL back to operational tools) - all running on
+Databricks. See `FIVETRAN_DBT_DATABRICKS.md` for the full loop and positioning.
+
+---
+
+**Q: Databricks has Lakeflow Connect and managed tables - why bring in Fivetran?**
+
+Faster time-to-value and open-format flexibility. Lakeflow Connect is a focused
+managed-connector set (Salesforce, ServiceNow, SQL Server, Google Analytics, DB CDC,
+files) writing Delta; Fivetran has 700+ mature connectors with automatic schema-drift
+handling, so long-tail SaaS/DB sources are turnkey day one. And the **Managed Data Lake
+Service** writes **Delta *and* Iceberg** simultaneously, maintains the tables for you
+(off Databricks compute), and registers them in Unity Catalog - an open, multi-engine
+lakehouse without format lock-in. Position it **complementary**: Fivetran for
+SaaS/long-tail + managed open tables, Lakeflow for streaming/Spark-native.
+
+---
+
+**Q: The customer is Iceberg-first. Why Fivetran MDLS?**
+
+MDLS is the standout here. It lands your sources as **managed Iceberg *and* Delta**
+tables over the same Parquet, governed in Unity Catalog, with Fivetran handling
+compaction/maintenance - so you get an open, multi-engine lake (Databricks, Trino,
+Snowflake, Flink can all read it) with warehouse-like ease, and dbt transforms it like
+any other UC table. (Databricks UC Iceberg support is maturing - confirm current state
+with PMM; the durable edge is dual-format + managed maintenance + turnkey-from-source.)
+
+---
+
+**Q: What is activation / reverse ETL, and does Databricks have it?**
+
+Activation is the "last mile" - syncing governed data back to the operational tools the
+business works in (Salesforce, HubSpot, Marketo, ad platforms). Databricks has no
+first-class native reverse ETL. **Fivetran Activations** (from the Census acquisition)
+does exactly this from Databricks, so the customer segments/metrics your dbt models
+define show up in the CRM matching what Genie and the dashboards show - one governed
+source, activated everywhere. It's usage-based (Monthly Active Rows) on the same
+platform as ingestion.
+
+---
+
 ## Competitive Questions
 
-**Q: Databricks now has Metric Views — is the dbt Semantic Layer still relevant?**
+**Q: Databricks now has Metric Views - is the dbt Semantic Layer still relevant?**
 
 Yes. See `METRIC_VIEWS_COMPARISON.md` for the full analysis. Short version:
 
@@ -382,17 +431,17 @@ what do you point to?" With hand-authored metric views: the view DDL. With dbt: 
 
 **Q: At Summit 2026 Databricks shipped Unity Catalog Metrics (GA), a Business Glossary, Domains, and Genie Ontology. Doesn't that replace the dbt Semantic Layer?**
 
-No — those are complementary, and dbt is the governed source of truth that feeds them.
+No - those are complementary, and dbt is the governed source of truth that feeds them.
 Databricks' own framing is useful here: **Genie Ontology is a *context layer* that
 *consumes* a semantic layer** (Unity Catalog Metrics/Glossary) and enriches it with
 relationships and usage signals. dbt sits underneath that:
 
-- **dbt authors and governs UC Metrics** (`materialized='metric_view'`) — version control,
-  tests, contracts, lineage, PR review — instead of hand-authoring them in the catalog.
+- **dbt authors and governs UC Metrics** (`materialized='metric_view'`) - version control,
+  tests, contracts, lineage, PR review - instead of hand-authoring them in the catalog.
 - **The dbt Semantic Layer** provides the same governed definitions across the *whole*
   stack (Tableau, Power BI, Looker, Python, AI agents), not just Databricks tools.
   Databricks acknowledges the context an agent needs "also lives in dbt, Snowflake,
-  Tableau…" — dbt is a first-class source of that governed context.
+  Tableau…" - dbt is a first-class source of that governed context.
 - **UC Glossary + Domains** capture business terms and organization; dbt's descriptions,
   groups, and `access:` tiers map cleanly to them and can be the reviewed, versioned
   origin of those definitions.
@@ -406,7 +455,7 @@ to the context layer. (Confirm the latest joint messaging with PMM.)
 **Q: Can we use dbt with Databricks without dbt platform?**
 
 Yes. The dbt Fusion CLI is free and open source. The `profiles.yml` files in each
-project subdirectory support local execution — set `DBX_HOST`, `DBX_HTTP_PATH`,
+project subdirectory support local execution - set `DBX_HOST`, `DBX_HTTP_PATH`,
 and `DBX_TOKEN` as environment variables and run `dbt build --profiles-dir .`
 from the project directory.
 
@@ -421,8 +470,8 @@ For demos where Mesh is the central story, dbt platform is required.
 
 See `SETUP.md` for the full walkthrough. Short version:
 
-1. Run `00_setup_raw_data.py` in Databricks — 6 raw Delta tables (5 min)
-2. Run `01_lakeflow_pipeline.py` as a Spark Declarative Pipeline — 13 tables (10 min)
+1. Run `00_setup_raw_data.py` in Databricks - 6 raw Delta tables (5 min)
+2. Run `01_lakeflow_pipeline.py` as a Spark Declarative Pipeline - 13 tables (10 min)
 3. Connect dbt platform to Databricks, create 3 projects, run jobs (20 min)
 4. Create 3 Genie Spaces (10 min)
 5. Run the 5-act demo (25 min)
@@ -431,13 +480,13 @@ Total: ~55 minutes from zero to live demo.
 
 ---
 
-**Q: Our customer is Databricks-native — they've never used dbt. Is this demo relevant?**
+**Q: Our customer is Databricks-native - they've never used dbt. Is this demo relevant?**
 
-Yes — this is the most relevant demo for that customer. Show them:
+Yes - this is the most relevant demo for that customer. Show them:
 - Act 1: what their current Genie experience probably looks like on raw/Lakeflow tables
 - Act 4: what it looks like with dbt metadata
 - The governance moment: `git log _marts.yml` (metric + contract history in one file)
 
-The ask is not "replace Databricks with dbt" — it's "add the governance layer
+The ask is not "replace Databricks with dbt" - it's "add the governance layer
 that makes Databricks more valuable." Databricks-native customers have the most
 to gain because they're building from scratch.
