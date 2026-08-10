@@ -1,4 +1,4 @@
-# Databricks Metric View — E-Commerce Orders
+# Databricks Metric View - E-Commerce Orders
 #
 # HOW TO CREATE THIS IN DATABRICKS:
 # 1. Go to Catalog → [your catalog] → [schema] → Create → Metric view
@@ -61,7 +61,7 @@ measures:
     display_name: Total Revenue
     comment: >
       Sum of amount_paid for completed orders only.
-      NOTE: No equivalent of dbt contract enforcement — if the upstream table changes
+      NOTE: No equivalent of dbt contract enforcement - if the upstream table changes
       its schema, this metric silently breaks at query time.
     format:
       type: currency

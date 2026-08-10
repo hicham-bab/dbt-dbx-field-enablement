@@ -1,8 +1,15 @@
-# Genie Space: Lakeflow Gold Tables (Act 3 — Better But Still Ambiguous)
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
+# Genie Agent: Lakeflow Gold Tables (Act 3 - Better But Still Ambiguous)
 
 ## Purpose
 
-This Genie Space sits on the Lakeflow gold layer — cleaner than raw, but still
+This Genie Agent sits on the Lakeflow gold layer - cleaner than raw, but still
 lacking column-level documentation. Use this in Act 3 to show that Lakeflow alone
 doesn't fully solve the Genie quality problem.
 
@@ -19,8 +26,8 @@ The Lakeflow pipeline must have run successfully:
 
 ## Tables to Add
 
-1. AI/BI → Genie → Create Genie Space
-2. Name: `E-Commerce (Lakeflow Gold — Act 3)`
+1. AI/BI → Genie → Create Genie Agent
+2. Name: `E-Commerce (Lakeflow Gold - Act 3)`
 3. Add these tables only:
    - `enablement.ecommerce_lakeflow.gold_dim_customers`
    - `enablement.ecommerce_lakeflow.gold_fct_orders`
@@ -28,7 +35,7 @@ The Lakeflow pipeline must have run successfully:
 
 ---
 
-## Instructions (paste into Genie Space Instructions field)
+## Instructions (paste into Genie Agent Instructions field)
 
 ```
 E-commerce data from the Lakeflow gold layer.
@@ -54,21 +61,21 @@ the Lakeflow pipeline code manually. There is no `schema.yml` to generate them f
 
 ## Demo Script for Act 3
 
-Ask the same questions as Act 1 — note the improvement but highlight remaining gaps.
+Ask the same questions as Act 1 - note the improvement but highlight remaining gaps.
 
 1. **"What was total revenue last month?"**
-   - Expected: Better — Genie finds `daily_revenue` in `gold_fct_revenue`
+   - Expected: Better - Genie finds `daily_revenue` in `gold_fct_revenue`
    - Talking point: "Better. But `daily_revenue` is defined in Python code in the Lakeflow pipeline notebook.
-     The instruction I wrote manually says 'completed orders only' — but I had to write that.
+     The instruction I wrote manually says 'completed orders only' - but I had to write that.
      If the pipeline changes, I need to remember to update these instructions too."
 
 2. **"Show me revenue by customer segment"**
-   - Expected: Works — `customer_segment` exists with documented values
+   - Expected: Works - `customer_segment` exists with documented values
    - Talking point: "This works because I manually documented the segment values in the instructions.
      In the dbt version, this comes automatically from `schema.yml`."
 
 3. **"Which customers are at risk of churning?"**
-   - Expected: Genie makes up a recency threshold — no `days_since_last_order` column
+   - Expected: Genie makes up a recency threshold - no `days_since_last_order` column
    - Talking point: "Lakeflow gold doesn't have a recency column. Genie has to compute it,
      but there's no version-controlled definition of 'at risk'. In dbt, this is in the marketing
      Mesh project with an explicit `days_since_last_order` column and `marketing_segment` tested values."
@@ -82,7 +89,7 @@ Ask the same questions as Act 1 — note the improvement but highlight remaining
 
 ## Key Talking Points
 
-> "Lakeflow gives us cleaner data — the medallion architecture works. But we're still
+> "Lakeflow gives us cleaner data - the medallion architecture works. But we're still
 > writing instructions manually and keeping them in sync manually. The semantic layer
 > is still us, writing text in a UI field, not code in a PR."
 

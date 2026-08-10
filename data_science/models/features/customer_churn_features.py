@@ -2,13 +2,13 @@
 Churn prediction feature engineering.
 
 Builds a feature vector per customer for downstream ML models.
-Consumes platform marts via dbt Mesh — same governed definitions
+Consumes platform marts via dbt Mesh - same governed definitions
 that marketing and finance use.
 
 Key point for the demo: in Databricks without Mesh, the DS team
 would duplicate the "high_value >= $500" threshold, the "completed"
 order filter, and the segmentation logic. When platform changes
-any of these, DS models silently drift — no contract enforcement,
+any of these, DS models silently drift - no contract enforcement,
 no build failure, just wrong predictions shipped to production.
 """
 

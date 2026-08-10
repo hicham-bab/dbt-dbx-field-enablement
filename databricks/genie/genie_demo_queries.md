@@ -1,4 +1,11 @@
-# Genie Demo Queries — All 3 Spaces
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
+# Genie Demo Queries - All 3 Spaces
 
 Use this as your script for running Genie queries across all three spaces.
 Run queries in the order shown. The contrast between spaces is the demo.
@@ -9,8 +16,8 @@ Run queries in the order shown. The contrast between spaces is the demo.
 
 | Space | Expected behavior | Talking point |
 |---|---|---|
-| Raw (Act 1) | Picks `amount` from `raw_orders` OR `raw_payments` — ambiguous | "Which column? Which table? Genie guessed." |
-| Lakeflow (Act 3) | Finds `daily_revenue` in `gold_fct_revenue` — better | "Better, but the definition lives in a Python notebook." |
+| Raw (Act 1) | Picks `amount` from `raw_orders` OR `raw_payments` - ambiguous | "Which column? Which table? Genie guessed." |
+| Lakeflow (Act 3) | Finds `daily_revenue` in `gold_fct_revenue` - better | "Better, but the definition lives in a Python notebook." |
 | dbt (Act 4) | `SUM(amount_paid) WHERE status = 'completed'` | "Exact match to our semantic layer definition. Auditable." |
 
 ---
@@ -19,9 +26,9 @@ Run queries in the order shown. The contrast between spaces is the demo.
 
 | Space | Expected behavior | Talking point |
 |---|---|---|
-| Raw (Act 1) | Error or wrong — no `customer_segment` in raw tables | "Business concepts don't exist in raw data." |
-| Lakeflow (Act 3) | Works — `customer_segment` exists in gold | "Works because I wrote it manually. Not from code." |
-| dbt (Act 4) | Works perfectly — tested values, documented column | "Tested with `accepted_values`. Can't be wrong." |
+| Raw (Act 1) | Error or wrong - no `customer_segment` in raw tables | "Business concepts don't exist in raw data." |
+| Lakeflow (Act 3) | Works - `customer_segment` exists in gold | "Works because I wrote it manually. Not from code." |
+| dbt (Act 4) | Works perfectly - tested values, documented column | "Tested with `accepted_values`. Can't be wrong." |
 
 ---
 
@@ -30,7 +37,7 @@ Run queries in the order shown. The contrast between spaces is the demo.
 | Space | Expected behavior | Talking point |
 |---|---|---|
 | Raw (Act 1) | Genie makes up a threshold | "30 days? 60? 90? Genie guessed." |
-| Lakeflow (Act 3) | Genie computes recency — threshold still guessed | "The threshold isn't defined in Lakeflow metadata." |
+| Lakeflow (Act 3) | Genie computes recency - threshold still guessed | "The threshold isn't defined in Lakeflow metadata." |
 | dbt (Act 4) | Uses `most_recent_order_date`, applies 90-day rule from instructions | "Definition is in our YAML. Same PR as the model." |
 
 ---
@@ -39,7 +46,7 @@ Run queries in the order shown. The contrast between spaces is the demo.
 
 | Space | Expected behavior | Talking point |
 |---|---|---|
-| Raw (Act 1) | Computes something — denominator may be wrong | "Returned / what? All orders? Only completed?" |
+| Raw (Act 1) | Computes something - denominator may be wrong | "Returned / what? All orders? Only completed?" |
 | Lakeflow (Act 3) | Closer but still ambiguous | "No formal definition of the denominator." |
 | dbt (Act 4) | Uses semantic layer `return_rate` metric definition | "Ratio metric: returned_orders / total_orders. Versioned." |
 
@@ -50,8 +57,8 @@ Run queries in the order shown. The contrast between spaces is the demo.
 | Space | Expected behavior | Talking point |
 |---|---|---|
 | Raw (Act 1) | May fail or produce inconsistent results | "Which column is monthly revenue? Genie guesses." |
-| Lakeflow (Act 3) | Works against `gold_fct_revenue.revenue_month` | "Better — but revenue definition still in Python." |
-| dbt (Act 4) | Uses semantic layer time granularity — consistent | "MetricFlow handles the time grain. Same definition every time." |
+| Lakeflow (Act 3) | Works against `gold_fct_revenue.revenue_month` | "Better - but revenue definition still in Python." |
+| dbt (Act 4) | Uses semantic layer time granularity - consistent | "MetricFlow handles the time grain. Same definition every time." |
 
 ---
 
@@ -59,9 +66,9 @@ Run queries in the order shown. The contrast between spaces is the demo.
 
 | Space | Expected behavior | Talking point |
 |---|---|---|
-| Raw (Act 1) | Requires joining 3 tables — may produce wrong results | "Revenue from raw_orders or raw_payments? Join to items how?" |
+| Raw (Act 1) | Requires joining 3 tables - may produce wrong results | "Revenue from raw_orders or raw_payments? Join to items how?" |
 | Lakeflow (Act 3) | Better but no product-level revenue in gold layer | "Gold layer doesn't have product-level aggregation." |
-| dbt (Act 4) | Uses `dim_products` + `fct_orders` — correct with tested FKs | "Foreign key contract validated. Join is guaranteed safe." |
+| dbt (Act 4) | Uses `dim_products` + `fct_orders` - correct with tested FKs | "Foreign key contract validated. Join is guaranteed safe." |
 
 ---
 

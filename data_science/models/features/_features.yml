@@ -35,7 +35,7 @@ models:
       Churn prediction feature vector. One row per customer with behavioral,
       temporal, and spend features. The is_churned label uses a 90-day
       inactivity threshold. Python model on Databricks via PySpark.
-      Consumes platform marts through dbt Mesh — same governed definitions
+      Consumes platform marts through dbt Mesh - same governed definitions
       used by marketing and finance.
     config:
       group: data_science_team

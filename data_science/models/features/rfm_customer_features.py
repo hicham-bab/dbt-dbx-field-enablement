@@ -4,7 +4,7 @@ RFM (Recency, Frequency, Monetary) feature engineering for customer scoring.
 This Python model runs on Databricks via PySpark.
 It consumes the platform project's governed marts through dbt Mesh,
 ensuring the DS team uses the same customer and order definitions
-as marketing and finance — no duplication, single source of truth.
+as marketing and finance - no duplication, single source of truth.
 
 Lakeflow equivalent: see databricks/notebooks/05a_lakeflow_data_science.py
 In Lakeflow, this logic is duplicated, thresholds drift, and there is no
@@ -15,7 +15,7 @@ contract enforcement when the platform team changes dim_customers.
 def model(dbt, session):
     from pyspark.sql import functions as F
 
-    # Cross-project ref — validated at compile time by dbt Mesh.
+    # Cross-project ref - validated at compile time by dbt Mesh.
     # If platform renames dim_customers, this build fails immediately.
     customers = dbt.ref("platform", "dim_customers")
     orders = dbt.ref("platform", "fct_orders")

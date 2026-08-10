@@ -5,10 +5,10 @@
 -- metric-view YAML in the model body; the adapter deploys it to Unity Catalog.
 --
 -- Why this matters (see METRIC_VIEWS_COMPARISON.md Part 1.5):
---   * version-controlled  — this definition is in Git and PR-reviewed
---   * tested + contracted  — source ref('fct_orders') is a public, contracted mart
---   * lineage-tracked      — ref() wires the metric view into the dbt DAG
---   * CI/CD-deployed       — promoted dev -> prod like every other model
+--   * version-controlled  - this definition is in Git and PR-reviewed
+--   * tested + contracted  - source ref('fct_orders') is a public, contracted mart
+--   * lineage-tracked      - ref() wires the metric view into the dbt DAG
+--   * CI/CD-deployed       - promoted dev -> prod like every other model
 --
 -- It intentionally mirrors databricks/notebooks/02a_metric_view_orders.yml (the
 -- hand-authored version) and the dbt Semantic Layer metrics in

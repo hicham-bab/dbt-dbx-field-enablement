@@ -1,3 +1,11 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+reverify: quarterly
+---
+
 # dbt platform vs Databricks Native: Fair Platform Comparison
 
 **Purpose:** Honest, structured comparison for field teams. For each topic, we state what Databricks does, what dbt platform does, what's a **real platform gap** vs what's just **"we didn't configure it"**, and where the two are complementary.
@@ -6,16 +14,16 @@
 
 ---
 
-## 1. Spark Declarative Pipelines (SDP) vs dbt Models
+## 1. Lakeflow pipelines vs dbt Models
 
 ### What Databricks offers
-Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative way to define data pipelines in SQL or Python. Key features:
+Lakeflow pipelines (formerly Delta Live Tables) provide a declarative way to define data pipelines in SQL or Python. Key features:
 - `CREATE OR REFRESH MATERIALIZED VIEW` / `CREATE OR REFRESH STREAMING TABLE` syntax
 - Expectations (data quality constraints): `EXPECT`, `EXPECT OR DROP`, `EXPECT OR FAIL`
 - Auto-lineage within a pipeline (visible in the Lakeflow UI)
 - Auto-retry and auto-scaling compute
 - Streaming and batch in the same framework
-- Lakeflow Designer (visual/low-code pipeline builder — confirm current GA/preview status)
+- Lakeflow Designer (visual/low-code pipeline builder - confirm current GA/preview status)
 
 ### What dbt platform offers
 - SQL or Python models (one model per file)
@@ -25,28 +33,28 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 - Contracts (`enforced: true`) guarantee schema at compile time
 - Semantic Layer (MetricFlow) serves named metrics via JDBC
 - CI/CD with isolated PR environments
-- Explorer with column-level lineage
+- Catalog with column-level lineage
 
 ### The honest comparison
 
-| Dimension | SDP | dbt | Verdict |
+| Dimension | Lakeflow pipelines | dbt | Verdict |
 |---|---|---|---|
-| Streaming ingestion | **Strong** -- native streaming tables, auto-retry | Not designed for streaming | SDP wins for ingestion |
+| Streaming ingestion | **Strong** -- native streaming tables, auto-retry | Not designed for streaming | Lakeflow wins for ingestion |
 | Batch transformations | Works, but verbose in Python | **Strong** -- SQL-first, concise | dbt wins for business logic |
 | Data quality checks | 3 expectation types (warn, drop, fail) | 4+ built-in tests, custom SQL, packages | dbt wins on depth and flexibility |
 | Documentation | Inline comments in code only | YAML co-located with models, auto-generated docs site | dbt wins |
-| Lineage | Within a single pipeline only | Across all projects (Explorer, column-level) | dbt wins on cross-project |
+| Lineage | Pipeline UI covers one pipeline; UC adds column-level lineage across the metastore[^uc-column-level-lineage] | Across all projects (Catalog, column-level), derived from code | dbt wins on cross-project and on lineage that exists before a run |
 | Schema enforcement | None -- schema changes propagate silently | Contracts fail the build if schema changes | dbt wins |
-| Python/PySpark support | **Native** -- first-class PySpark | Supported via Python models with `dbt.ref()` | Both work; SDP more natural for heavy PySpark |
+| Python/PySpark support | **Native** -- first-class PySpark | Supported via Python models with `dbt.ref()` | Both work; Lakeflow more natural for heavy PySpark |
 | Metric definitions | Not supported | Semantic Layer (MetricFlow) | dbt only |
 | Reusability across teams | Read via `spark.read.table()` (runtime) | `ref('project', 'model')` (compile-time, governed) | dbt wins on governance |
 
 ### Real gap vs didn't configure it
 
-- **SDP lacks contracts** -- this is a **real platform gap**. There is no mechanism in SDP to enforce a schema across pipelines.
-- **SDP lacks a Semantic Layer** -- **real gap**. No equivalent of MetricFlow JDBC.
-- **SDP column descriptions** -- you CAN add them via `COMMENT` clauses or `ALTER TABLE`. This is a **configuration gap**, not a platform gap. But they're not version-controlled or PR-reviewed.
-- **SDP lineage is limited to one pipeline** -- **real gap**. Cross-pipeline lineage exists in Unity Catalog but doesn't show transformation logic.
+- **Lakeflow pipelines lack contracts** -- this is a **real platform gap**. There is no mechanism in Lakeflow pipelines to enforce a schema across pipelines.
+- **Lakeflow pipelines lack a Semantic Layer** -- **real gap**. No equivalent of MetricFlow JDBC.
+- **Lakeflow pipeline column descriptions** -- you CAN add them via `COMMENT` clauses or `ALTER TABLE`. This is a **configuration gap**, not a platform gap. But they're not version-controlled or PR-reviewed.
+- **Lakeflow pipeline lineage is limited to one pipeline** -- **real gap**. Cross-pipeline lineage exists in Unity Catalog but doesn't show transformation logic.
 
 ---
 
@@ -57,11 +65,11 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 - **Branching:** Create/switch branches, commit, push, pull -- all from the UI.
 - **Notebook editing:** Edit `.py`/`.sql` files directly in the workspace IDE. Notebooks saved as source files (not `.ipynb`).
 - **Files in Repos:** Non-notebook files (YAML, configs) are visible and editable.
-- **CI/CD:** Git changes can trigger Asset Bundle deployments via GitHub Actions or similar.
+- **CI/CD:** Git changes can trigger Declarative Automation Bundle deployments via GitHub Actions or similar.
 
 ### What dbt platform offers
 - **Native Git integration:** Connect GitHub/GitLab/Azure DevOps. Every project is a repo.
-- **Cloud IDE:** Full development environment with file tree, SQL editor, lineage preview, `dbt build` in one click.
+- **Studio IDE:** Full development environment with file tree, SQL editor, lineage preview, `dbt build` in one click.
 - **PR-based CI:** Every pull request automatically triggers a CI build in an isolated schema (`dbt_pr_123_*`).
 - **Slim CI:** Only builds models affected by the PR (`state:modified+`).
 
@@ -70,7 +78,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 | Dimension | Databricks | dbt platform | Verdict |
 |---|---|---|---|
 | Git clone and branch | Yes (Repos UI) | Yes (IDE + CLI) | Parity |
-| Edit code in browser | Yes (workspace IDE) | Yes (Cloud IDE with lineage) | dbt platform IDE is more purpose-built |
+| Edit code in browser | Yes (workspace IDE) | Yes (Studio IDE with lineage) | Studio IDE is more purpose-built |
 | Commit, push, pull | Yes (basic UI, no merge/rebase) | Yes (full git operations) | dbt platform slightly better |
 | PR triggers CI build | **Must configure yourself** (GitHub Actions + DABs) | **Built-in** (automatic) | dbt platform wins |
 | Code review workflow | Use GitHub/GitLab natively | Use GitHub/GitLab natively | Parity |
@@ -91,7 +99,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 **The short answer:** Production code lives in the Git repo (GitHub/GitLab). In Databricks, you see it in:
 1. **Git Folders (Repos):** Each workspace user can clone the repo. Production branch is visible.
 2. **Databricks Jobs:** Production jobs reference the repo + branch directly. The job definition shows which branch/commit is deployed.
-3. **Asset Bundles:** If using DABs, `databricks bundle deploy -t prod` deploys from the repo to the production workspace path.
+3. **Declarative Automation Bundles:** If using DABs, `databricks bundle deploy -t prod` deploys from the repo to the production workspace path.
 4. **Unity Catalog:** Production tables are in the production schema/catalog. You can inspect the data, but not the code that produced it, from the catalog.
 
 **Can you inspect production code?**
@@ -109,19 +117,19 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 | **Workspace folders + naming conventions** | Moderate -- `/Production/` vs `/Exploratory/` folders | Low effort, discipline-dependent |
 | **Separate catalogs** (`prod` vs `dev`) | Good -- Unity Catalog isolates data | Medium effort |
 | **Separate workspaces** (`prod-workspace` vs `dev-workspace`) | Best -- full isolation | Higher effort, typical for enterprises |
-| **Asset Bundles with targets** | Good -- `dev` and `prod` targets with different paths | Medium effort, code-driven |
+| **Declarative Automation Bundles with targets** | Good -- `dev` and `prod` targets with different paths | Medium effort, code-driven |
 
 ### What dbt platform offers
 - **Environments are built-in:** Dev, Staging, Prod -- each with its own schema, credentials, and job configuration.
 - **Dev environment:** Each developer gets `dbt_<username>` schema automatically. No collision.
 - **Production is code:** The production job runs from the main branch. You see exactly what's deployed in the Git repo.
-- **Explorer:** Browse production models, their status, test results, and lineage. Production code is always inspectable.
+- **Catalog:** Browse production models, their status, test results, and lineage. Production code is always inspectable.
 
 ### Real gap vs didn't configure it
 
-- **Databricks CAN separate production from exploratory** -- this is a **configuration gap**. With separate catalogs, workspaces, or Asset Bundle targets, you get clean separation. But it requires intentional setup.
+- **Databricks CAN separate production from exploratory** -- this is a **configuration gap**. With separate catalogs, workspaces, or Declarative Automation Bundle targets, you get clean separation. But it requires intentional setup.
 - **dbt platform has separation by default** -- this is a genuine advantage. No configuration needed.
-- **"Where is the production code?" is harder in Databricks** -- **real friction**. You need to know which repo, branch, and commit a job uses. dbt platform's Explorer makes this one-click.
+- **"Where is the production code?" is harder in Databricks** -- **real friction**. You need to know which repo, branch, and commit a job uses. dbt platform's Catalog makes this one-click.
 
 ---
 
@@ -138,7 +146,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 | **Shared notebooks in Repos** | Import functions from `.py` files in the same repo. | Works within one repo. No cross-repo dependency management. |
 | **Lakeflow pipeline composition** | A Lakeflow pipeline can include multiple notebooks. Each notebook contributes tables. | Within one pipeline only. No cross-pipeline reuse. |
 | **Unity Catalog functions** | Register Python/SQL UDFs in UC. Callable from any notebook or query. | Good for scalar functions. Not for full transformations. |
-| **Databricks Asset Bundles** | Define pipeline configurations in YAML. Parameterize with variables. | Infrastructure reuse, not logic reuse. |
+| **Declarative Automation Bundles** | Define pipeline configurations in YAML. Parameterize with variables. | Infrastructure reuse, not logic reuse. |
 
 ### What dbt offers
 
@@ -163,11 +171,11 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 
 ---
 
-## 5. CI/CD with Asset Bundles
+## 5. CI/CD with Declarative Automation Bundles
 
 **The question:** Is it a heavy lift to configure?
 
-### What Databricks Asset Bundles (DABs) give you
+### What Declarative Automation Bundles (DABs) give you
 - **Infrastructure as Code:** Define jobs, pipelines, clusters, and permissions in YAML.
 - **Multi-target deployment:** `dev`, `staging`, `prod` targets with different configs.
 - **CLI-driven:** `databricks bundle validate`, `deploy`, `run`.
@@ -195,7 +203,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 | State-aware builds (only changed models) | **Not available** (full pipeline runs) | **Built-in** (`state:modified+`) |
 | Cross-project dependency triggers | **Build it yourself** (job chaining) | **Built-in** (`dependencies.yml`) |
 | Artifact management (manifest passing) | **Build it yourself** | **Built-in** |
-| Dashboard of CI results | GitHub Actions logs | **Built-in** (Explorer, run history) |
+| Dashboard of CI results | GitHub Actions logs | **Built-in** (Catalog, run history) |
 
 ### Real gap vs didn't configure it
 
@@ -203,7 +211,7 @@ Spark Declarative Pipelines (formerly Delta Live Tables) provide a declarative w
 - **DABs does not do PR-isolated schemas** -- **configuration gap** with significant effort. You CAN build this with parameterized schemas, but it's a day of engineering vs dbt platform's zero config.
 - **DABs does not do state-aware builds** -- **real gap**. There is no `state:modified+` equivalent. Every deploy runs the full pipeline.
 - **DABs + dbt platform work together** -- DABs handles infrastructure deployment; dbt platform handles the governance layer. This is the recommended hybrid pattern. See `docs/dabs_cicd_guide.md`.
-- **Orchestrate from Databricks without losing governance** -- Lakeflow Jobs' **dbt platform task** triggers and monitors a governed dbt platform job (Semantic Layer, Explorer, Mesh, state-aware CI) directly from the Databricks Jobs UI. Databricks stays the single pane of glass; dbt platform still owns governance. Use this for Databricks-orchestration-first teams.
+- **Orchestrate from Databricks without losing governance** -- Lakeflow Jobs' **dbt platform task** triggers and monitors a governed dbt platform job (Semantic Layer, Catalog, Mesh, state-aware CI) directly from the Databricks Jobs UI. Databricks stays the single pane of glass; dbt platform still owns governance. Use this for Databricks-orchestration-first teams.
 
 ---
 
@@ -273,10 +281,23 @@ dbt adds a *model-level* access tier:
 | `access: public` | Other projects can `ref()` this model |
 | `access: protected` | Only models in the same project can `ref()` it |
 | `access: private` | Only models in the same group can `ref()` it |
-| `contract: enforced: true` | Schema is guaranteed -- downstream builds fail if it changes |
+| `contract: enforced: true` | Column names and order are enforced -- downstream builds fail if they change. On Databricks specifically, **types are not checked**, see the caveat below |
 | `group:` | Ownership -- who is responsible for this model |
 
 **The distinction:** UC RBAC controls *who can read a table*. dbt access tiers control *who can depend on a model at build time*. Both are needed. UC prevents unauthorized data access. dbt prevents unauthorized dependency coupling.
+
+> **Concede this one before they raise it.** Contracts are weaker on Databricks than
+> on a warehouse with transactions. Because Databricks supports neither transactions
+> nor `create or replace table` with a column schema, dbt creates the table without a
+> schema and then issues `alter` statements. Our own docs are explicit: "the names and
+> order of columns is checked but not their type", and if a constraint fails "the
+> table with the failing data will still exist in the
+> Warehouse".[^contracts-databricks-caveat]
+>
+> Say it first. The argument still holds -- a column rename or reorder breaks the
+> consumer's build in CI, which is exactly the class of failure Lakeflow has no answer
+> to -- and conceding the type limit is what makes a Databricks SA believe the rest of
+> the row.
 
 ### How would you implement a Data Mesh?
 
@@ -295,8 +316,8 @@ dbt adds a *model-level* access tier:
 2. Cross-project dependencies declared in `dependencies.yml`
 3. `ref('platform', 'fct_orders')` -- compile-time validated, contract-enforced
 4. `access: public/protected/private` controls who can reference what
-5. `contract: enforced: true` guarantees schema stability
-6. Explorer shows the full cross-project DAG
+5. `contract: enforced: true` enforces column names and order (not types on Databricks)[^contracts-databricks-caveat]
+6. Catalog shows the full cross-project DAG
 
 **Effort:** 1 day per consumer project to set up. Ongoing maintenance is YAML files.
 
@@ -364,7 +385,7 @@ SELECT * FROM snowflake_data.schema.table;
 dbt doesn't directly query across platforms in a single project. Instead:
 - Each project targets one data platform (Databricks, Snowflake, etc.)
 - Cross-platform data movement happens at the infrastructure layer (Lakehouse Federation, Fivetran, etc.)
-- dbt platform Explorer shows lineage within and across dbt projects, but not external sources
+- dbt Catalog shows lineage within and across dbt projects, but not external sources
 
 ### Real gap vs didn't configure it
 
@@ -393,11 +414,12 @@ dbt doesn't directly query across platforms in a single project. Instead:
 | Cross-instance data sharing | **Strong** (Delta Sharing) | N/A | Databricks | Good feature |
 | Cross-platform queries | **Strong** (Lakehouse Federation) | N/A | Databricks | Good feature |
 | Documentation & metadata | Manual (UC comments) | **Strong** (YAML, persist_docs) | dbt | Governance difference |
-| Lineage (within project) | Good (Lakeflow UI) | **Strong** (Explorer, column-level) | dbt | Depth difference |
-| Lineage (cross-project) | Basic (UC catalog-level) | **Strong** (Explorer, Mesh) | dbt | Real gap |
+| Lineage (within project) | **Strong** -- UC captures column-level lineage[^uc-column-level-lineage] | **Strong** (Catalog, column-level) | Tie | Not a gap. Don't claim UC is table-level only |
+| Lineage (durability) | Runtime-observed: only what ran, breaks on rename, 1-year rolling window in system tables[^uc-lineage-retention] | Static, from code: exists before the first run and survives renames | dbt | Real gap, and this is the one to argue |
+| Lineage (cross-project) | Basic (UC catalog-level) | **Strong** (Catalog, Mesh) | dbt | Real gap |
 | Modular reuse (within project) | Good (%run, packages) | **Strong** (ref, macros, packages) | dbt | Governed reuse |
 | Modular reuse (cross-project) | Runtime only (spark.read.table) | **Strong** (Mesh refs, contracts) | dbt | Real gap |
-| Production visibility | Requires navigation to Jobs/Git | **Strong** (Explorer, one-click) | dbt platform | Friction difference |
+| Production visibility | Requires navigation to Jobs/Git | **Strong** (Catalog, one-click) | dbt platform | Friction difference |
 | DABs / IaC | **Strong** | N/A (uses DABs for infra) | Databricks | DABs is good |
 
 ### The pattern
@@ -428,15 +450,15 @@ dbt doesn't directly query across platforms in a single project. Instead:
 When running the demo, use these to address each question naturally:
 
 **"Show me git integration"**
-> Open Databricks Repos. Clone the repo, switch branches, show the file tree. Then show: "Now look at dbt platform IDE -- same repo, but with lineage preview, inline test results, and one-click `dbt build`. Both have git. dbt platform has governance on top."
+> Open Databricks Repos. Clone the repo, switch branches, show the file tree. Then show: "Now look at Studio IDE -- same repo, but with lineage preview, inline test results, and one-click `dbt build`. Both have git. dbt platform has governance on top."
 
 **"Where is production code?"**
-> "In Git -- same as any software project. In Databricks, production code runs via Jobs referencing the main branch. In dbt platform, production is visible in Explorer: every model, its status, its test results, its lineage. The difference is discoverability."
+> "In Git -- same as any software project. In Databricks, production code runs via Jobs referencing the main branch. In dbt platform, production is visible in Catalog: every model, its status, its test results, its lineage. The difference is discoverability."
 
 **"Can you build modular pipelines?"**
 > "In Databricks: yes -- use Python packages, `%run`, or UC functions for shared utilities. In dbt: `ref()` for governed dependencies, macros for shared logic, packages for community libraries. The gap is not 'can you reuse code' -- it's 'can you govern the reuse.' `spark.read.table()` works but doesn't validate. `ref()` validates at compile time."
 
-**"How heavy is CI with Asset Bundles?"**
+**"How heavy is CI with Declarative Automation Bundles?"**
 > "Initial setup: 2-3 days. Ongoing: editing YAML. It's real IaC -- genuinely good. But it doesn't give you PR-isolated schemas or state-aware builds. Those require dbt platform or custom engineering."
 
 **"How does RBAC work? Can you do Data Mesh?"**
@@ -444,3 +466,17 @@ When running the demo, use these to address each question naturally:
 
 **"Can Databricks talk to Snowflake?"**
 > "Yes. Lakehouse Federation lets you query Snowflake (and Postgres, BigQuery, Redshift, etc.) as if it were a local table. `SELECT * FROM snowflake_catalog.schema.table`. Production-ready, low setup effort."
+
+---
+
+<!-- BEGIN GENERATED SOURCES - edit sources.yml, then run scripts/build_citations.py -->
+
+## Sources
+
+Generated from `sources.yml`. Every claim about a competitor's capabilities cites one of these. Do not edit by hand.
+
+[^contracts-databricks-caveat]: https://docs.getdbt.com/reference/resource-properties/constraints (retrieved 2026-08-11)
+[^uc-column-level-lineage]: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage (retrieved 2026-08-10)
+[^uc-lineage-retention]: https://docs.databricks.com/aws/en/admin/system-tables/lineage (retrieved 2026-08-10)
+
+<!-- END GENERATED SOURCES -->

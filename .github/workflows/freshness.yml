@@ -1,0 +1,81 @@
+name: source freshness
+
+# Weekly check that every URL in sources.yml still resolves to the same path.
+# Databricks moved /dlt -> /ldp and /business-semantics/metric-views ->
+# /uc-semantics/metric-views inside a year; this catches the next one the week
+# it happens instead of mid-call.
+#
+# Opens (or updates) a single tracking issue rather than spamming one per URL.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1" # Mondays 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check every cited URL
+        id: check
+        run: |
+          set +e
+          python3 scripts/check_sources.py > result.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat result.txt
+
+      - name: Open or update tracking issue
+        if: steps.check.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = [
+              'The weekly source freshness check found cited documentation URLs that',
+              'are dead or now redirect elsewhere.',
+              '',
+              'For each one: update `url` in `sources.yml`, confirm the new page still',
+              'supports the claim, bump `retrieved`, then run',
+              '`python3 scripts/build_citations.py`.',
+              '',
+              '```',
+              fs.readFileSync('result.txt', 'utf8').trim(),
+              '```',
+              '',
+              `_Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}_`,
+            ].join('\n');
+
+            const title = 'Source freshness: cited docs have moved or 404';
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'source-freshness',
+            });
+
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['source-freshness'],
+              });
+            }

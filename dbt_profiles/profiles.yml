@@ -1,4 +1,4 @@
-# dbt profiles for Databricks Asset Bundle deployment
+# dbt profiles for Declarative Automation Bundle deployment
 # This file is used by the dbt task in the Databricks Job (not by dbt Cloud)
 #
 # The dbt_task in resources/dbt_job.yml sets warehouse_id, catalog, and schema

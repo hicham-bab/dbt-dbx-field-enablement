@@ -1,4 +1,4 @@
--- Lakeflow — Marketing Team Consumer Pipeline (SQL version)
+-- Lakeflow - Marketing Team Consumer Pipeline (SQL version)
 --
 -- This is what the marketing team would need to build and maintain in Lakeflow
 -- to get their own governed dataset on top of the platform gold tables.
@@ -10,7 +10,7 @@
 -- Here, those refs are hardcoded table strings. Same SQL language, completely
 -- different safety net.
 --
--- Run 01_lakeflow_pipeline.py first — this reads from its gold output.
+-- Run 01_lakeflow_pipeline.py first - this reads from its gold output.
 --
 -- Pipeline configuration:
 --   Jobs & Pipelines → Create → ETL pipeline
@@ -38,7 +38,7 @@ never_purchased, other.
 
 NOTE: Segment thresholds duplicated from gold_dim_customers in the platform pipeline.
 dbt Mesh equivalent: marketing.mart_customer_segments (validated ref, contract enforced)
-Reads from: ${source_catalog}.${source_lakeflow_schema}.gold_dim_customers (hardcoded — no validation)"
+Reads from: ${source_catalog}.${source_lakeflow_schema}.gold_dim_customers (hardcoded - no validation)"
 AS
 WITH order_recency AS (
   -- Hardcoded table path. In dbt Mesh: {{ ref('platform', 'fct_orders') }}
@@ -95,7 +95,7 @@ Revenue = amount_paid on completed orders only.
 
 NOTE: Revenue recognition rule (status = 'completed') duplicated from platform pipeline.
 dbt Mesh equivalent: marketing.mart_country_performance (validated ref, contract enforced)
-Reads from: ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders (hardcoded — no validation)"
+Reads from: ${source_catalog}.${source_lakeflow_schema}.gold_fct_orders (hardcoded - no validation)"
 AS
 WITH completed_orders AS (
   -- DUPLICATION: 'completed' filter also in gold_fct_revenue (platform pipeline).
