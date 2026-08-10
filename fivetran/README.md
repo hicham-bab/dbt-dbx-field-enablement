@@ -1,3 +1,10 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
 # Fivetran config - the ingest and activate ends of the loop
 
 This directory holds the **Fivetran** configuration for the full-loop example:

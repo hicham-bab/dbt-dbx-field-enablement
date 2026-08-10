@@ -1,8 +1,15 @@
-# Genie Space: Lakeflow Gold Tables (Act 3 - Better But Still Ambiguous)
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
+# Genie Agent: Lakeflow Gold Tables (Act 3 - Better But Still Ambiguous)
 
 ## Purpose
 
-This Genie Space sits on the Lakeflow gold layer - cleaner than raw, but still
+This Genie Agent sits on the Lakeflow gold layer - cleaner than raw, but still
 lacking column-level documentation. Use this in Act 3 to show that Lakeflow alone
 doesn't fully solve the Genie quality problem.
 
@@ -19,7 +26,7 @@ The Lakeflow pipeline must have run successfully:
 
 ## Tables to Add
 
-1. AI/BI → Genie → Create Genie Space
+1. AI/BI → Genie → Create Genie Agent
 2. Name: `E-Commerce (Lakeflow Gold - Act 3)`
 3. Add these tables only:
    - `enablement.ecommerce_lakeflow.gold_dim_customers`
@@ -28,7 +35,7 @@ The Lakeflow pipeline must have run successfully:
 
 ---
 
-## Instructions (paste into Genie Space Instructions field)
+## Instructions (paste into Genie Agent Instructions field)
 
 ```
 E-commerce data from the Lakeflow gold layer.

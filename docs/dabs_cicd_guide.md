@@ -1,4 +1,11 @@
-# Deploying dbt on Databricks with Asset Bundles and CI/CD
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
+# Deploying dbt on Databricks with Declarative Automation Bundles and CI/CD
 
 A practical guide to deploying dbt transformations on Databricks using
 infrastructure-as-code and automated CI/CD pipelines.
@@ -13,15 +20,15 @@ infrastructure-as-code and automated CI/CD pipelines.
 Moving from manual deployments to automated, production-grade workflows is the
 difference between a demo and a real data platform. This guide covers the integration
 points and CI/CD implementation for deploying dbt projects on Databricks using
-Databricks Asset Bundles (now called **Declarative Asset Bundles**) as the
-infrastructure-as-code layer.
+**Declarative Automation Bundles** (formerly Databricks Asset Bundles) as the
+infrastructure-as-code layer.[^declarative-automation-bundles-name]
 
 The reference architecture from this repo:
 
 ```
 Raw Delta Tables  ->  dbt Fusion  ->  Tested Marts  ->  Semantic Layer  ->  Genie
                         |               |
-                 Lakeflow Declarative Pipelines    dbt Mesh Consumers
+                 Lakeflow pipelines    dbt Mesh Consumers
                  (Bronze/Silver)  (marketing, finance, data_science)
 ```
 
@@ -44,11 +51,11 @@ Databricks Workspace
 
 ---
 
-## Part 1: Understanding Databricks Asset Bundles
+## Part 1: Understanding Declarative Automation Bundles
 
-### What Are Asset Bundles?
+### What Are Declarative Automation Bundles?
 
-Databricks Asset Bundles (DABs) are the infrastructure-as-code solution for
+Declarative Automation Bundles (DABs) are the infrastructure-as-code solution for
 Databricks. Think "Terraform for Databricks resources" -- but purpose-built
 for the Databricks platform, with native understanding of Jobs, Pipelines,
 SQL Warehouses, and dbt tasks.
@@ -58,13 +65,18 @@ A bundle defines:
 - **Where** to deploy them (workspace, catalog, schema)
 - **How** to configure them per environment (dev vs prod)
 
-### Declarative Asset Bundles: The Evolution
+### The rename: Databricks Asset Bundles to Declarative Automation Bundles
 
-As of 2025-2026, Databricks has rebranded and evolved Asset Bundles into
-**Declarative Asset Bundles** (still using the `databricks bundle` CLI).
-The key shift is philosophical and practical:
+Databricks renamed **Databricks Asset Bundles (DABs)** to **Declarative Automation
+Bundles** in March 2026. The docs now open with "Declarative Automation Bundles
+(formerly known as Databricks Asset Bundles)".[^declarative-automation-bundles-name]
 
-| Aspect | Classic DABs (pre-2025) | Declarative Asset Bundles (current) |
+This is a rename, not a new product. The `databricks.yml` manifest format and the
+`databricks bundle` CLI are unchanged, which is why every code sample and command
+in this guide still says `bundle`. Use the new name in prose; leave the identifiers
+alone.
+
+| Aspect | Classic DABs (pre-2025) | Declarative Automation Bundles (current) |
 |---|---|---|
 | **Configuration paradigm** | Imperative-leaning -- you specify resources and their exact configuration | Fully declarative -- you declare desired state, the system reconciles |
 | **Resource management** | Manual resource lifecycle tracking | Automatic state tracking and drift detection |
@@ -131,7 +143,7 @@ This file is used by the Databricks dbt task at runtime -- not by dbt platform.
 
 ```yaml
 # dbt_profiles/profiles.yml
-# Used by Databricks Asset Bundle dbt tasks
+# Used by Declarative Automation Bundle dbt tasks
 # Environment variables are injected by the bundle configuration
 
 jaffle_shop:
@@ -185,12 +197,12 @@ task running inside a Databricks Job.
 
 | Deployment method | Profile file | Auth method | When to use |
 |---|---|---|---|
-| dbt platform (recommended for this demo) | Managed by dbt platform | OAuth / PAT | Full governance: Semantic Layer, Explorer, Mesh, CI/CD |
-| Databricks Asset Bundle | `dbt_profiles/profiles.yml` | OAuth M2M | Self-managed deployment without dbt platform |
+| dbt platform (recommended for this demo) | Managed by dbt platform | OAuth / PAT | Full governance: Semantic Layer, Catalog, Mesh, CI/CD |
+| Declarative Automation Bundle | `dbt_profiles/profiles.yml` | OAuth M2M | Self-managed deployment without dbt platform |
 | Local CLI | `platform/profiles.yml` | PAT | Development and testing |
 
-**Important:** Asset Bundles deploy dbt Core on Databricks compute. This means
-you get execution but **not** the Semantic Layer, Explorer, managed CI/CD,
+**Important:** Declarative Automation Bundles deploy dbt Core on Databricks compute. This means
+you get execution but **not** the Semantic Layer, Catalog, managed CI/CD,
 or Fusion engine. See `BATTLE_CARD.md` (Orchestration - the two native dbt tasks) for the full comparison.
 If your customer needs Genie with governed metrics, dbt platform is required.
 
@@ -571,7 +583,7 @@ stages:
 
 ---
 
-## Part 7: Detailed Comparison -- Classic DABs vs Declarative Asset Bundles
+## Part 7: Detailed Comparison -- Classic DABs vs Declarative Automation Bundles
 
 This section provides the side-by-side comparison for field conversations.
 
@@ -579,13 +591,14 @@ This section provides the side-by-side comparison for field conversations.
 
 | Term | What it means |
 |---|---|
-| **Databricks Asset Bundles (DABs)** | The original IaC tool for Databricks, introduced in 2023. Used `databricks.yml` + `databricks bundle` CLI. |
-| **Declarative Asset Bundles** | The current evolution of DABs (2025+). Same CLI, same manifest format, enhanced with state management, drift detection, and richer expressions. Databricks now uses this name to emphasize the declarative paradigm. |
-| **Lakeflow Declarative Pipelines** | A separate concept. This is the declarative syntax for defining Lakeflow Declarative Pipelines pipelines (SQL/Python). Not the same as Declarative Asset Bundles. Do not confuse them. |
+| **Databricks Asset Bundles (DABs)** | The former name. Introduced 2023, retired as a name in March 2026. Only use it in a "formerly" clause. |
+| **Declarative Automation Bundles** | The current name for the same product. Same `databricks.yml`, same `databricks bundle` CLI.[^declarative-automation-bundles-name] |
+| **Lakeflow pipelines** | A separate concept: the declarative pipeline product formerly called Delta Live Tables.[^lakeflow-pipelines-name] Not the same as Declarative Automation Bundles. Do not confuse them. |
+| **Spark Declarative Pipelines** | The Apache Spark open-source framework Lakeflow pipelines extends. Not a Databricks product name.[^spark-declarative-pipelines-oss] |
 
 ### 7.2 Feature Comparison
 
-| Feature | Classic DABs (pre-2025) | Declarative Asset Bundles (current) |
+| Feature | Classic DABs (pre-2025) | Declarative Automation Bundles (current) |
 |---|---|---|
 | **Bundle manifest** | `databricks.yml` | `databricks.yml` (same format, extended) |
 | **CLI** | `databricks bundle deploy/validate/destroy` | Same commands + `bundle summary`, enhanced `bundle run` |
@@ -604,7 +617,7 @@ This section provides the side-by-side comparison for field conversations.
 ### 7.3 What This Means for dbt Deployments
 
 For dbt on Databricks specifically, the evolution from classic DABs to Declarative
-Asset Bundles brings these practical improvements:
+Declarative Automation Bundles brings these practical improvements:
 
 **1. Faster deployments:**
 Incremental sync means only your changed dbt model files are uploaded on each
@@ -635,8 +648,8 @@ the IaC principle: the `databricks.yml` is the source of truth.
 
 ### 7.4 Migration Path
 
-If you have an existing classic DABs setup, the migration to Declarative Asset
-Bundles is straightforward:
+If you have an existing classic DABs setup, there is nothing to migrate - the
+rename to Declarative Automation Bundles left the manifest and CLI unchanged:
 
 1. **Update the Databricks CLI** to the latest version (0.230+)
 2. **Run `bundle validate`** -- it will flag any deprecated syntax
@@ -652,26 +665,26 @@ engine, not in the config syntax.
 
 ## Part 8: Integration with dbt platform -- When to Use Which
 
-This is the critical positioning question. Asset Bundles and dbt platform are
+This is the critical positioning question. Declarative Automation Bundles and dbt platform are
 not competing solutions -- they operate at different layers.
 
 ### The Decision Matrix
 
-| Requirement | Asset Bundles (self-managed) | dbt platform |
+| Requirement | Declarative Automation Bundles (self-managed) | dbt platform |
 |---|---|---|
 | Execute `dbt build` on Databricks | Yes | Yes |
 | Infrastructure-as-code for job definitions | **Yes (native)** | Partial (API/Terraform) |
 | CI/CD pipeline integration | **Yes (bundle deploy in any CI)** | Yes (native CI) |
 | Semantic Layer JDBC endpoint | **No** | **Yes** |
 | Genie queries governed metrics | **No** | **Yes** |
-| dbt Explorer (searchable catalog) | **No** | **Yes** |
+| dbt Catalog (searchable catalog) | **No** | **Yes** |
 | Column-level lineage | **No** | **Yes** |
 | dbt Mesh cross-project refs | **No** | **Yes** |
-| Fusion engine (~30x faster parse/compile) | **No** | **Yes** |
+| Fusion engine (much faster parse/compile; ~30x is a dbt Labs benchmark)[^fusion-speed] | **No** | **Yes** |
 | Managed dev/staging/prod environments | Manual (via targets) | **Yes (native)** |
 | Cost | Free (OSS CLI) + compute | License + compute |
 
-### When Asset Bundles Are the Right Choice
+### When Declarative Automation Bundles Are the Right Choice
 
 - **Single-project deployments** without Mesh consumers
 - **Teams already invested in Lakeflow Jobs** for all orchestration
@@ -693,16 +706,16 @@ not competing solutions -- they operate at different layers.
 Many production deployments use both:
 
 ```
-Asset Bundles                    dbt platform
+Declarative Automation Bundles                    dbt platform
 +-- Job scheduling               +-- Semantic Layer API
-+-- Compute configuration        +-- Explorer + lineage
++-- Compute configuration        +-- Catalog + lineage
 +-- Workspace resource mgmt      +-- Mesh cross-project refs
 +-- CI/CD deployment trigger     +-- Managed environments
 ```
 
-Asset Bundles handle the infrastructure layer (defining and deploying the
+Declarative Automation Bundles handle the infrastructure layer (defining and deploying the
 Databricks Job that triggers `dbt build`). dbt platform handles the governance
-layer (Semantic Layer, Explorer, Mesh). The two coexist -- the Asset Bundle
+layer (Semantic Layer, Catalog, Mesh). The two coexist -- the Declarative Automation Bundle
 job can trigger a dbt platform job via the API, or dbt platform can run
 independently with its own scheduling.
 
@@ -765,10 +778,10 @@ on a job cluster.
 
 ### Limitation 2: Git Source Conflicts
 
-**Issue:** Using `git_source` in job definitions conflicts with Asset Bundles.
+**Issue:** Using `git_source` in job definitions conflicts with Declarative Automation Bundles.
 The bundle deploys files to the workspace; `git_source` pulls from Git directly.
 
-**Solution:** Let Asset Bundles handle deployment. Use relative workspace paths:
+**Solution:** Let Declarative Automation Bundles handle deployment. Use relative workspace paths:
 
 ```yaml
 # Do NOT use git_source with bundles
@@ -782,7 +795,7 @@ dbt_task:
 
 ### Limitation 3: SQL Warehouse Auto-Creation
 
-**Issue:** Asset Bundles don't create SQL Warehouses automatically. The
+**Issue:** Declarative Automation Bundles don't create SQL Warehouses automatically. The
 warehouse must exist before the job runs.
 
 **Workaround:** Create warehouses via CLI in the CI/CD pipeline before deployment:
@@ -796,7 +809,7 @@ databricks sql-warehouses create \
   --auto-stop-mins 10
 ```
 
-Or use Terraform for warehouse management alongside Asset Bundles for job management.
+Or use Terraform for warehouse management alongside Declarative Automation Bundles for job management.
 
 ### Limitation 4: Bundle Size Limits
 
@@ -820,35 +833,35 @@ sync:
 
 ### Limitation 5: No Semantic Layer
 
-**Issue:** Asset Bundles deploy dbt Core, not dbt platform. The Semantic Layer
+**Issue:** Declarative Automation Bundles deploy dbt Core, not dbt platform. The Semantic Layer
 JDBC endpoint is a dbt platform-only feature.
 
 **Impact:** Genie cannot query governed metrics by name. BI tools cannot
 hit a single metric endpoint. AI agents cannot use the dbt MCP server.
 
 **Workaround:** There is no workaround. If you need the Semantic Layer,
-you need dbt platform. Asset Bundles handle execution; dbt platform handles
+you need dbt platform. Declarative Automation Bundles handle execution; dbt platform handles
 governance. See Part 8 for the decision matrix.
 
 ---
 
 ## Part 11: Field Positioning -- The Deployment Conversation
 
-### When a Customer Says "We'll Deploy dbt with Asset Bundles"
+### When a Customer Says "We'll Deploy dbt with Declarative Automation Bundles"
 
 This is a valid choice for execution. Acknowledge it, then qualify:
 
-> "Asset Bundles are excellent for deploying dbt jobs as infrastructure-as-code.
+> "Declarative Automation Bundles are excellent for deploying dbt jobs as infrastructure-as-code.
 > You get version-controlled job definitions, environment-specific configuration,
 > and CI/CD integration. That handles the deployment layer.
 >
 > The question is whether you also need the governance layer: the Semantic Layer
-> for Genie, Explorer for discovery, Mesh for cross-team contracts. If yes,
-> Asset Bundles handle deployment and dbt platform handles governance. They coexist."
+> for Genie, Catalog for discovery, Mesh for cross-team contracts. If yes,
+> Declarative Automation Bundles handle deployment and dbt platform handles governance. They coexist."
 
 ### The Comparison to dbt platform Native CI/CD
 
-| Aspect | Asset Bundles + GitHub Actions | dbt platform Native CI |
+| Aspect | Declarative Automation Bundles + GitHub Actions | dbt platform Native CI |
 |---|---|---|
 | PR environment isolation | Build it yourself (target per PR) | Built in (`dbt_pr_123_*` schemas) |
 | State-aware builds | `state:modified+` requires manifest passing | Built in (deferred to production) |
@@ -862,17 +875,17 @@ This is a valid choice for execution. Acknowledge it, then qualify:
 For this demo project specifically:
 
 - **dbt platform** is the recommended deployment method (see `SETUP.md` Part D).
-  It provides Mesh, Semantic Layer, Explorer, and Fusion -- all critical to
+  It provides Mesh, Semantic Layer, Catalog, and Fusion -- all critical to
   the 5-act demo.
 
-- **Asset Bundles** are the recommended method for customers who:
+- **Declarative Automation Bundles** are the recommended method for customers who:
   - Have a single dbt project without Mesh consumers
   - Already manage all orchestration in Lakeflow Jobs
   - Don't need the Semantic Layer (no Genie, no multi-tool metrics)
   - Want full control over their deployment infrastructure
 
 - **Both together** are for customers who want IaC for infrastructure
-  (Asset Bundles) and governance for business logic (dbt platform).
+  (Declarative Automation Bundles) and governance for business logic (dbt platform).
 
 ---
 
@@ -910,3 +923,18 @@ databricks bundle validate -t prod
 - `docs/architecture.md` -- Reference architecture diagrams
 - `docs/fusion_cheat_sheet.md` -- dbt Fusion syntax rules
 - `DEMO_SCRIPT.md` Act 4g -- dbt platform vs Native dbt Task demo
+
+---
+
+<!-- BEGIN GENERATED SOURCES - edit sources.yml, then run scripts/build_citations.py -->
+
+## Sources
+
+Generated from `sources.yml`. Every claim about a competitor's capabilities cites one of these. Do not edit by hand.
+
+[^declarative-automation-bundles-name]: https://docs.databricks.com/aws/en/dev-tools/bundles/ (retrieved 2026-08-10)
+[^fusion-speed]: https://docs.getdbt.com/docs/fusion/about-fusion (retrieved 2026-08-10)
+[^lakeflow-pipelines-name]: https://docs.databricks.com/aws/en/ldp/concepts/where-is-dlt (retrieved 2026-08-10)
+[^spark-declarative-pipelines-oss]: https://docs.databricks.com/aws/en/ldp/ (retrieved 2026-08-10)
+
+<!-- END GENERATED SOURCES -->

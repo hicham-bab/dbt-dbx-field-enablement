@@ -1,3 +1,10 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
 # Architecture: dbt + Databricks Reference Stack
 
 ## Overview
@@ -8,7 +15,7 @@ complete governed loop - ingest, govern, activate - on the Databricks lakehouse:
 
 1. **Ingestion layer** - Fivetran (700+ connectors) + the **Managed Data Lake
    Service** landing open Delta/Iceberg tables in Unity Catalog, and/or Databricks
-   Lakeflow Declarative Pipelines for streaming/Spark-native sources
+   Lakeflow pipelines for streaming/Spark-native sources
 2. **Business transformation layer** (dbt Fusion) - Gold/Marts, contracts, tests
 3. **Semantic layer** (dbt MetricFlow + UC metric views) - governed metrics → Genie,
    BI, and AI agents
@@ -85,9 +92,9 @@ ingestion (Fivetran/Lakeflow) and activation (Fivetran Activations) ends wrap it
 │  ┌─────────────────────────────────────────────────────────────────────┐  │
 │  │                        GENIE + DASHBOARDS                            │  │
 │  │                                                                      │  │
-│  │  Genie Space (raw)  →  ambiguous answers     (Act 1 demo)           │  │
-│  │  Genie Space (Lakeflow)  →  better but manual     (Act 3 demo)           │  │
-│  │  Genie Space (dbt)  →  accurate + auditable  (Act 4 demo)           │  │
+│  │  Genie Agent (raw)  →  ambiguous answers     (Act 1 demo)           │  │
+│  │  Genie Agent (Lakeflow)  →  better but manual     (Act 3 demo)           │  │
+│  │  Genie Agent (dbt)  →  accurate + auditable  (Act 4 demo)           │  │
 │  │  Databricks App     →  4-tab dashboard                              │  │
 │  └─────────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -107,7 +114,7 @@ flowchart TD
         R5[raw_payments]
     end
 
-    subgraph Lakeflow["Lakeflow Declarative Pipelines - enablement.ecommerce_lakeflow"]
+    subgraph Lakeflow["Lakeflow pipelines - enablement.ecommerce_lakeflow"]
         B[Bronze 5 tables]
         S[Silver 5 tables]
         G[Gold 3 tables]
@@ -129,9 +136,9 @@ flowchart TD
     end
 
     subgraph AI["AI/BI Layer"]
-        G1[Genie Space Raw\nAct 1]
-        G2[Genie Space Lakeflow\nAct 3]
-        G3[Genie Space dbt\nAct 4]
+        G1[Genie Agent Raw\nAct 1]
+        G2[Genie Agent Lakeflow\nAct 3]
+        G3[Genie Agent dbt\nAct 4]
         APP[Databricks App\n4 tabs]
     end
 
@@ -165,7 +172,7 @@ flowchart TD
 
 ## Key Design Decisions
 
-### Why three Genie Spaces?
+### Why three Genie Agents?
 
 The 5-act demo requires showing Genie quality improving at each stage.
 Three spaces allow the audience to compare answers to identical questions.
@@ -183,7 +190,7 @@ This enforces that consumers always use the clean, tested, contract-enforced mar
 The `dbt-databricks` adapter's `persist_docs` feature pushes YAML descriptions into
 Unity Catalog column metadata. This means:
 - Genie reads column descriptions natively without manual copy-paste
-- Data Explorer shows meaningful descriptions to all users
+- Data Catalog shows meaningful descriptions to all users
 - The documentation is always in sync with the code
 
 ### Why both Lakeflow and dbt in the same demo?

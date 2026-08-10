@@ -1,6 +1,16 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+reverify: after every product release
+---
+
 # 5-Act Demo Script: dbt + Databricks Field Enablement
 
-**Total time:** 20–25 minutes
+**Total time:** ~26 minutes for the core acts (1, 2, 3, 4, 5). Each optional act
+adds 4-5 minutes; running all of them takes it to ~49 minutes. Trim Act 2 to about
+2 minutes if you need to land inside 20.
 **Audience:** AEs, SAs, technical champions, or Databricks customers
 **Setup required:** See pre-session checklist below
 
@@ -11,7 +21,7 @@
 | Act | Title | Time | What you show |
 |-----|-------|------|---------------|
 | 0 | Ingestion: Fivetran + MDLS *(optional - data-movement / Iceberg audiences)* | +4 min | Fivetran lands governed Delta/Iceberg tables in Unity Catalog, fast |
-| 1 | The Problem: Genie on Raw Data | 3 min | Genie Space on raw tables - ambiguity |
+| 1 | The Problem: Genie on Raw Data | 3 min | Genie Agent on raw tables - ambiguity |
 | 2 | The Architecture | 5 min | How Raw → dbt Fusion → Semantic Layer → Genie works |
 | 3 | Lakeflow Gold: Better But Not Enough | 5 min | Genie on Lakeflow gold - closer but still manual |
 | 4 | dbt + Semantic Layer: The Solution | 10 min | Genie on dbt marts - accuracy, consistency, governance, auditability, Semantic Layer vs Metric Views |
@@ -38,9 +48,9 @@ Complete at least 30 minutes before the demo:
 - [ ] dbt platform `platform - full build` job is green - all 3 mart tables built, all tests pass
 - [ ] dbt platform `marketing`, `finance`, and `data_science` jobs are green - consumer models built
 - [ ] `02_metric_views.sql` has run - metric views exist in `enablement.ecommerce_metric_views`
-- [ ] All 3 Genie Spaces are created and configured (raw, lakeflow, dbt)
+- [ ] All 3 Genie Agents are created and configured (raw, lakeflow, dbt)
 - [ ] Databricks App is deployed and showing all 4 tabs
-- [ ] Browser tabs open: Genie Spaces (all 3), dbt platform IDE with `_semantic_models.yml`, dbt platform lineage graph
+- [ ] Browser tabs open: Genie Agents (all 3), Studio IDE with `_semantic_models.yml`, dbt platform lineage graph
 - [ ] Fallback: `genie_demo_queries.md` open as backup if Genie is slow
 - [ ] *(Optional - Act 0/4h)* Fivetran account with a Salesforce connector + Managed
       Data Lake Service destination landing `enablement.salesforce.*` in Unity Catalog,
@@ -93,7 +103,7 @@ the e-commerce data - starting with what Genie does with it raw."
 
 **Goal:** Establish why raw data + Genie = unreliable answers.
 
-**Open:** Genie Space `E-Commerce (Raw - Act 1)`
+**Open:** Genie Agent `E-Commerce (Raw - Act 1)`
 
 **Run these queries and let the audience see the ambiguity:**
 
@@ -140,7 +150,7 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
 
 2. **Three layers of context for Genie:**
    - Unity Catalog column metadata pushed by `dbt-databricks` adapter (`persist_docs`)
-   - Genie Space instructions generated from `schema.yml`
+   - Genie Agent instructions generated from `schema.yml`
    - Semantic Layer metrics from `_semantic_models.yml`
 
 3. **Why this matters:**
@@ -159,36 +169,36 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
 
 ---
 
-## Act 3: Spark Declarative Pipelines Gold - Better But Not Enough (5 min)
+## Act 3: Lakeflow Gold - Better But Not Enough (5 min)
 
-**Goal:** Show that Spark Declarative Pipelines (SDP, formerly Delta Live Tables) alone improve Genie but don't solve the governance problem.
+**Goal:** Show that Lakeflow pipelines (formerly Delta Live Tables)[^lakeflow-pipelines-name] alone improve Genie but don't solve the governance problem.
 
-**Open:** Genie Space `E-Commerce (Lakeflow Gold - Act 3)`
+**Open:** Genie Agent `E-Commerce (Lakeflow Gold - Act 3)`
 
 **Run the same questions as Act 1:**
 
 1. *"What was total revenue last month?"*
    - Better - Genie finds `daily_revenue` in `gold_fct_revenue`
    - **Say:** "Better. Lakeflow gold has cleaner structure. But the definition
-     of `daily_revenue` lives in a Python SDP notebook. The instruction I wrote
+     of `daily_revenue` lives in a Python Lakeflow pipeline notebook. The instruction I wrote
      manually says 'completed orders only' - but I had to write that. If the
      pipeline changes, I have to remember to update these instructions too."
 
 2. *"Show me revenue by customer segment"*
    - Works - but only because you wrote the instructions manually
    - **Say:** "This works now. But notice why: I wrote the segment definition
-     manually in the Genie Space instructions. This isn't connected to the code.
-     If a developer changes the segmentation logic in the SDP notebook,
+     manually in the Genie Agent instructions. This isn't connected to the code.
+     If a developer changes the segmentation logic in the Lakeflow notebook,
      these instructions don't update automatically."
 
 3. *"What is our return rate?"*
    - Closer - but ratio definition still manual
    - **Say:** "Still no formal definition of this ratio. Still guessing."
 
-**The key moment - show the Genie Space instructions:**
+**The key moment - show the Genie Agent instructions:**
 
 > "Here is the Genie instruction I wrote manually for Lakeflow. Notice it took me
-> 10 minutes to write. It has no connection to the SDP code. If the code changes,
+> 10 minutes to write. It has no connection to the pipeline code. If the code changes,
 > I have to update this by hand. This is the problem dbt solves - let me show you Act 4."
 
 ---
@@ -197,7 +207,7 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
 
 **Goal:** Show accuracy, consistency, complexity, and governance.
 
-**Open:** Genie Space `E-Commerce Analytics (dbt + Semantic Layer - Act 4)`
+**Open:** Genie Agent `E-Commerce Analytics (dbt + Semantic Layer - Act 4)`
 
 ### Part 4a: Accuracy (2 min)
 
@@ -293,13 +303,19 @@ This is the highest-impact demo moment for governance audiences. Run it immediat
 after the contract walkthrough.
 
 **Setup line:**
-> "A CFO just saw Genie return $127,450 as total revenue. They ask: 'Where did
-> that number come from? Can I trust it?' Let me show you how we answer that -
-> in 60 seconds."
+> "A CFO just saw Genie return $14,364.45 as total recognised revenue. They ask:
+> 'Where did that number come from? Can I trust it?' Let me show you how we answer
+> that - in 60 seconds."
+
+> **Use the real number.** $14,364.45 is what this dataset actually produces (52
+> completed orders). Confirm it on the day with
+> `dbt sl query --metrics total_recognised_revenue` - if you quote a figure Genie
+> then contradicts on screen, you lose the room in the one act where trust is the
+> entire point.
 
 **Step 1 - What definition did Genie use? (10s)**
 
-Open dbt platform Explorer, search `total_recognised_revenue`:
+Open dbt Catalog, search `total_recognised_revenue`:
 
 ```
 Metric: total_recognised_revenue
@@ -315,12 +331,13 @@ Filter: status = 'completed'
 git log --oneline platform/models/marts/_marts.yml
 ```
 
-**Say:** "PR #47. Reviewed by the finance lead. Merged on March 12th.
-That's your audit trail."
+**Say:** "Every line is a real commit: author, date, message. On your repo each
+one also carries the PR number and the reviewer who approved it. That's your audit
+trail - not a timestamp on a catalog object."
 
 **Step 3 - Where does the data come from? (15s)**
 
-In Explorer, click `fct_orders` → column-level lineage → trace `amount_paid`:
+In Catalog, click `fct_orders` → column-level lineage → trace `amount_paid`:
 
 ```
 total_recognised_revenue (metric)
@@ -334,7 +351,7 @@ tested, documented, version-controlled. Four clicks. No investigation ticket."
 
 **Step 4 - Is the data correct? (10s)**
 
-Show the data health tile for `fct_orders` in Explorer:
+Show the data health tile for `fct_orders` in Catalog:
 
 ```
 ✓ 7 tests passing - last run: 2 hours ago
@@ -444,8 +461,8 @@ Claude Code `settings.json`, or Cursor MCP settings) and add:
 {
   "mcpServers": {
     "dbt": {
-      "command": "npx",
-      "args": ["-y", "@dbt-labs/dbt-mcp"],
+      "command": "uvx",
+      "args": ["dbt-mcp"],
       "env": {
         "DBT_HOST": "your-account.us1.dbt.com",
         "DBT_TOKEN": "<your-service-token>",
@@ -456,7 +473,13 @@ Claude Code `settings.json`, or Cursor MCP settings) and add:
 }
 ```
 
-**Say:** "Three environment variables. One `npx` command. No infrastructure.
+> **The dbt MCP server is a Python package, not an npm one.**[^dbt-mcp-python] The
+> documented local install is `uvx dbt-mcp`, which requires `uv` on the machine.
+> An earlier version of this script used `npx -y @dbt-labs/dbt-mcp`; that does not
+> work. Run this once on your own laptop before you run it on stage, and consider
+> having `uv` already installed rather than burning stage time on it.
+
+**Say:** "Three environment variables. One `uvx` command. No infrastructure.
 The MCP server gives your AI agent access to the full dbt platform - semantic
 metrics, model metadata, job runs, test results - through the same governed
 definitions you just saw. The agent doesn't guess SQL. It calls MetricFlow."
@@ -596,11 +619,11 @@ audience asks "what does Fusion actually give us beyond faster parsing?"
 
 **The setup line:**
 > "In Databricks notebooks, you find out a table doesn't exist when the pipeline fails.
-> With Fusion running in dbt platform Studio, you find out while you're typing."
+> With Fusion running in Studio IDE, you find out while you're typing."
 
 **Live demo - introduce a typo:**
 
-1. Open `finance/models/fct_revenue.sql` in dbt platform Studio
+1. Open `finance/models/fct_revenue.sql` in Studio IDE
 2. Change `{{ ref('platform', 'fct_orders') }}` to `{{ ref('platform', 'fct_orderss') }}`
 3. **Point to the red underline that appears immediately - before saving, before running**
 4. **Say:** "That's the Fusion engine running in real time as a Language Server.
@@ -614,7 +637,7 @@ audience asks "what does Fusion actually give us beyond faster parsing?"
 2. Change `data_type: bigint` on `number_of_orders` to `data_type: varchar`
 3. **Immediate warning in the Problems panel**
 4. **Say:** "The contract says this column must be a bigint. I changed it to varchar.
-   Fusion flagged it before I could even save the file. In a Databricks SDP notebook,
+   Fusion flagged it before I could even save the file. In a Lakeflow pipeline notebook,
    this would only fail when a downstream consumer runs and finds the wrong type.
    By then it may be in production."
 5. Revert
@@ -648,7 +671,7 @@ audience asks "what does Fusion actually give us beyond faster parsing?"
 
 **Show the concept with this project:**
 
-Open the dbt platform Studio terminal and run:
+Open the Studio IDE terminal and run:
 
 ```bash
 dbt build --select state:modified+
@@ -732,7 +755,7 @@ orders = dbt.ref("platform", "fct_orders")
 first two lines: `dbt.ref()` instead of `spark.read.table()`. That one change gives you:
 1. Compile-time validation - if the platform changes `dim_customers`, this build fails immediately
 2. Contract enforcement - the DS team knows the column types won't change without a PR
-3. Full lineage - dbt platform Explorer shows DS depends on platform, same graph as marketing and finance
+3. Full lineage - dbt Catalog shows DS depends on platform, same graph as marketing and finance
 4. Single source of truth - the `customer_segment` definition comes from platform, not duplicated"
 
 ### Part 4f-3: Python-Native Use Cases (1 min)
@@ -775,8 +798,12 @@ are mechanically provable."
 > "Ask your team: how many hours per month do they spend on cross-project job
 > wiring, documentation maintenance, metric discrepancy investigations, and
 > CI/CD setup? Those are activities that dbt platform provides as a managed service.
-> The compute savings are meaningful. The engineering savings are usually 10–20x
-> larger."
+> The compute savings are visible on the bill. The engineering time is usually the
+> bigger number - but it's their number, so let's work it out together rather than
+> me quoting one at you."
+
+> **Don't say "10-20x".** There is no source for it. The point lands harder when
+> the customer produces the multiple themselves from their own headcount.
 
 **Say:** "The levers are in `BATTLE_CARD.md` (Business value & cost of delay). We can
 build the case with your numbers in 15 minutes - pull up your SQL Warehouse query
@@ -800,7 +827,7 @@ Databricks Jobs" or "we don't need dbt platform, we can self-host dbt Core."
 **Say:** "Let me be precise about what the native dbt task gives you. It's dbt Core -
 the open-source Python compiler - running on Databricks compute, triggered by a
 Databricks Job. It executes `dbt build`. That's it. Everything else - the IDE,
-Explorer, Semantic Layer, CI/CD environments, Fusion engine - is not included."
+Catalog, Semantic Layer, CI/CD environments, Fusion engine - is not included."
 
 **Show this table (or say it out loud):**
 
@@ -809,11 +836,11 @@ Explorer, Semantic Layer, CI/CD environments, Fusion engine - is not included."
 | Runs `dbt build` | Yes | Yes |
 | Managed IDE with lineage | No | Yes |
 | CI/CD environments (dev/staging/prod) | Manual | Yes |
-| Explorer (searchable model catalog) | No | Yes |
+| Catalog (searchable model catalog) | No | Yes |
 | Column-level lineage | No | Yes |
 | Semantic Layer JDBC | **No** | **Yes** |
 | Genie queries governed metrics | **No** | **Yes** |
-| Fusion engine (~30x faster parse/compile) | No | Yes |
+| Fusion engine (much faster parse/compile; ~30x is a dbt Labs benchmark, not a docs figure)[^fusion-speed] | No | Yes |
 | dbt Wizard / AI features | No | Yes |
 
 ### Part 4g-2: The Week-6 Moment (2 min)
@@ -859,14 +886,15 @@ type - the **dbt platform task** - that triggers and monitors a governed dbt
 platform job right from the Databricks Jobs UI."
 
 > "So you keep your single pane of glass in Databricks, and you still get the
-> Semantic Layer, Explorer, Mesh, state-aware CI, and Fusion. The two native tasks
+> Semantic Layer, Catalog, Mesh, state-aware CI, and Fusion. The two native tasks
 > are for two different teams: the **dbt task** for a lone project that just needs
 > `dbt build`, and the **dbt platform task** when governance matters and Databricks
 > owns orchestration. This is an AND, not an OR."
 
 **The closing line:**
 > "The bare dbt task saves you the dbt platform license in week 1.
-> It costs you 2-3 weeks of rebuild in week 6 when you need the Semantic Layer.
+> It costs you a rebuild in week 6 when you need the Semantic Layer - scope that
+> with their own backlog rather than quoting a fixed number of weeks.
 > If Databricks must be the orchestrator, use the dbt platform task and get both.
 > The question is when you want to pay - not whether."
 
@@ -941,7 +969,7 @@ one definition your data team owns.
 
 - "Connect dbt Fusion to your Databricks workspace - 15-minute setup, see SETUP.md"
 - "Run `dbt build` on the platform project - 10 models, all tests pass"
-- "Create a Genie Space on the dbt marts - compare it to your current setup"
+- "Create a Genie Agent on the dbt marts - compare it to your current setup"
 
 ---
 
@@ -949,12 +977,12 @@ one definition your data team owns.
 
 **"We already have Lakeflow - why add dbt?"**
 > "Lakeflow solves data movement. dbt solves data governance. They solve different
-> problems. Show me your current Genie Space - do your column descriptions come
+> problems. Show me your current Genie Agent - do your column descriptions come
 > from code or from manual entry?"
 
 **"This looks like more complexity."**
 > "It's more structure, not more complexity. The alternative is manually maintaining
-> Genie instructions, manually writing column descriptions, and hoping the SDP
+> Genie instructions, manually writing column descriptions, and hoping the pipeline
 > notebook stays in sync with the documentation. dbt automates all of that."
 
 **"Our team is Python-native, not SQL."**
@@ -966,7 +994,7 @@ one definition your data team owns.
 
 **"We'll just use the native dbt task in Databricks Jobs."**
 > "There are two native tasks. The bare **dbt task** runs `dbt build` - no Semantic
-> Layer, no Explorer, no managed CI/CD. It works until week 6 when you connect Genie
+> Layer, no Catalog, no managed CI/CD. It works until week 6 when you connect Genie
 > and realise you can't serve governed metrics. But if you want Databricks to stay
 > the orchestrator, the **dbt platform task** triggers a governed dbt platform job
 > from Lakeflow Jobs - you get both. See Act 4g for the full story."
@@ -989,9 +1017,23 @@ one definition your data team owns.
 | Problem | Recovery |
 |---|---|
 | Genie is slow / down | Switch to the Streamlit app - Tab 3 shows the comparison with data |
-| dbt platform job hasn't run | Show the SQL files and YAML in the dbt platform IDE - the code is the demo |
+| dbt platform job hasn't run | Show the SQL files and YAML in the Studio IDE - the code is the demo |
 | Metric Views missing | Show `02_metric_views.sql` and explain what it would create |
 | Wrong query results | Say "even when Genie gets it wrong, we have a ground truth - let me show you the definition" |
 | MCP server won't connect | Show the config JSON and walk through the 3 env vars - explain the architecture even if the live query fails |
 | Agent returns wrong metric | Say "let me show you how we'd debug this" - use `get_model_details` to show the definition, then correct the query |
 | App won't load | Use VS Code to walk through the files - the demo is the architecture |
+
+---
+
+<!-- BEGIN GENERATED SOURCES - edit sources.yml, then run scripts/build_citations.py -->
+
+## Sources
+
+Generated from `sources.yml`. Every claim about a competitor's capabilities cites one of these. Do not edit by hand.
+
+[^dbt-mcp-python]: https://docs.getdbt.com/docs/dbt-ai/setup-local-mcp (retrieved 2026-08-10)
+[^fusion-speed]: https://docs.getdbt.com/docs/fusion/about-fusion (retrieved 2026-08-10)
+[^lakeflow-pipelines-name]: https://docs.databricks.com/aws/en/ldp/concepts/where-is-dlt (retrieved 2026-08-10)
+
+<!-- END GENERATED SOURCES -->

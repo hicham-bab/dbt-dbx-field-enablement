@@ -1,0 +1,50 @@
+name: docs lint
+
+# Enforces the enablement content rules on every PR:
+#   1. no retired product names in prose (NAMING.md)
+#   2. every [^claim-id] footnote resolves to sources.yml, and the generated
+#      Sources blocks are up to date
+#   3. every doc carries front matter with an expires date
+#
+# Stdlib Python only, so there is nothing to install and nothing to break.
+
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "sources.yml"
+      - "facts.yml"
+      - "battlecard.yml"
+      - "scripts/**"
+      - ".github/workflows/docs-lint.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Product naming
+        run: python3 scripts/naming_lint.py
+
+      - name: Citations resolve and Sources blocks are current
+        run: python3 scripts/build_citations.py --check
+
+      - name: Front matter present, nothing expired
+        run: python3 scripts/check_expiry.py --strict
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Demo facts match the repo
+        run: python3 scripts/check_facts.py --check
+
+      - name: Battle card matches battlecard.yml
+        run: python3 scripts/build_battlecard.py --check

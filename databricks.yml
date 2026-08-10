@@ -1,4 +1,5 @@
-# Declarative Asset Bundle configuration for dbt + Databricks
+# Declarative Automation Bundle configuration for dbt + Databricks
+# (formerly Databricks Asset Bundles; manifest format and CLI unchanged)
 # See docs/dabs_cicd_guide.md for the full guide
 #
 # Usage:

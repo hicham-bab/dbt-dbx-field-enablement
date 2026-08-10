@@ -1,3 +1,10 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
 # Fivetran + dbt on Databricks - The Complete Governed Loop
 
 Internal SA enablement. Since the **Fivetran + dbt Labs merger (completed

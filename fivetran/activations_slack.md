@@ -1,3 +1,10 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
 # Activate: governed opportunity alerts → Slack (Fivetran Activations)
 
 The back of the loop / the last mile. **Fivetran Activations** (reverse ETL, from the

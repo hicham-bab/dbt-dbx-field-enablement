@@ -1,3 +1,10 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
 # dbt Fusion - Syntax Rules and Reference
 
 ## What is dbt Fusion?
@@ -9,7 +16,9 @@ Fusion three ways: the free `dbt` CLI, the dbt VS Code extension (real-time comp
 and LSP), or the dbt platform. dbt Core v2.0 is the Apache-2.0 open-source foundation
 that Fusion builds on.
 
-On Databricks, Fusion parses and compiles projects up to **~30x faster** than dbt Core,
+On Databricks, Fusion parses and compiles projects far faster than dbt Core - dbt Labs
+benchmarks this at up to **~30x**, though that number is a dbt Labs benchmark rather
+than a figure published on docs.getdbt.com,[^fusion-speed] so demo it live instead -
 connects over the **ADBC** standard, and supports **native OAuth**. All four dbt projects
 in this repo (`platform`, `marketing`, `finance`, `data_science`) are Fusion-conformant
 by design.
@@ -154,3 +163,15 @@ dbt build --profiles-dir .
 Note: **cross-project refs require dbt platform**. Running `marketing` or `finance`
 locally will fail on `{{ ref('platform', ...) }}` because there is no local metadata
 service to resolve the cross-project dependency.
+
+---
+
+<!-- BEGIN GENERATED SOURCES - edit sources.yml, then run scripts/build_citations.py -->
+
+## Sources
+
+Generated from `sources.yml`. Every claim about a competitor's capabilities cites one of these. Do not edit by hand.
+
+[^fusion-speed]: https://docs.getdbt.com/docs/fusion/about-fusion (retrieved 2026-08-10)
+
+<!-- END GENERATED SOURCES -->

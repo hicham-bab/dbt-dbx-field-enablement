@@ -1,8 +1,15 @@
-# Genie Space: dbt Mart Tables + Semantic Layer (Act 4 - The Solution)
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
+# Genie Agent: dbt Mart Tables + Semantic Layer (Act 4 - The Solution)
 
 ## Purpose
 
-This Genie Space demonstrates the full dbt + Databricks integration: marts with
+This Genie Agent demonstrates the full dbt + Databricks integration: marts with
 tested, documented columns, and a semantic layer with named metrics. Genie's answers
 become accurate, consistent, and auditable.
 
@@ -20,7 +27,7 @@ become accurate, consistent, and auditable.
 
 ## Tables to Add
 
-1. AI/BI → Genie → Create Genie Space
+1. AI/BI → Genie → Create Genie Agent
 2. Name: `E-Commerce Analytics (dbt + Semantic Layer - Act 4)`
 3. Add these tables only:
    - `enablement.ecommerce.dim_customers`
@@ -30,7 +37,7 @@ become accurate, consistent, and auditable.
 
 ---
 
-## Instructions (paste into Genie Space Instructions field)
+## Instructions (paste into Genie Agent Instructions field)
 
 These instructions are derived directly from `_marts.yml` and `_semantic_models.yml`.
 The same source of truth used by dbt docs - no manual copy-paste required after initial setup.
@@ -105,7 +112,7 @@ Ask the same questions as Acts 1 and 3 - highlight the accuracy, consistency, an
 3. **"What was total revenue last month?"**
    - Expected: `SUM(amount_paid) WHERE status = 'completed'` from `fct_orders`
    - Talking point: "Revenue = completed orders only. This is our business definition.
-     Genie read it from the Genie Space instructions which came from our `schema.yml`.
+     Genie read it from the Genie Agent instructions which came from our `schema.yml`.
      The same YAML that's in Git. The same PR that was reviewed."
 
 4. **"Show me revenue by customer segment"**

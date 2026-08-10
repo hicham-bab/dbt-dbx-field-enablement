@@ -1,8 +1,15 @@
-# Genie Space: Raw Tables (Act 1 - The Problem)
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
+# Genie Agent: Raw Tables (Act 1 - The Problem)
 
 ## Purpose
 
-This Genie Space is intentionally set up on raw, undocumented tables to show the
+This Genie Agent is intentionally set up on raw, undocumented tables to show the
 audience what Genie looks like **without** dbt's metadata layer. Use this in Act 1
 of the demo to establish the problem before showing the solution.
 
@@ -10,9 +17,9 @@ of the demo to establish the problem before showing the solution.
 
 ## Tables to Add
 
-When creating this Genie Space in Databricks:
+When creating this Genie Agent in Databricks:
 
-1. AI/BI → Genie → Create Genie Space
+1. AI/BI → Genie → Create Genie Agent
 2. Name: `E-Commerce (Raw - Act 1)`
 3. Add these tables only:
    - `enablement.ecommerce.raw_customers`
@@ -24,7 +31,7 @@ When creating this Genie Space in Databricks:
 
 ---
 
-## Instructions (paste into Genie Space Instructions field)
+## Instructions (paste into Genie Agent Instructions field)
 
 ```
 This is raw e-commerce data. Orders span October 2024 to March 2026.

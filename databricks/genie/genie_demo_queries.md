@@ -1,3 +1,10 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
 # Genie Demo Queries - All 3 Spaces
 
 Use this as your script for running Genie queries across all three spaces.

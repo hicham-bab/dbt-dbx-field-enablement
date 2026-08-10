@@ -1,3 +1,10 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
 # Quickstart - dbt + Databricks Field Enablement
 
 **Goal:** Go from zero to a live 5-act demo in ~55 minutes.
@@ -11,11 +18,11 @@
 |------|-------------|------|
 | A | Gather Databricks credentials (host, warehouse, token) | 10 min |
 | B | Load raw Delta tables via notebook | 5 min |
-| C | Run the Spark Declarative Pipeline (13 tables) | 10 min |
+| C | Run the Lakeflow pipeline (13 tables) | 10 min |
 | D | Connect dbt platform and build the 3 core dbt projects (platform + marketing + finance; `data_science` is set up the same way for the optional Python-models act) | 20 min |
 | E | Schedule the data generator (source freshness demo) | 5 min |
 | F | Create Databricks Metric Views | 3 min |
-| G | Create 3 Genie Spaces and test them | 10 min |
+| G | Create 3 Genie Agents and test them | 10 min |
 | H | Deploy the Streamlit app (optional) | 5 min |
 
 ---
@@ -144,7 +151,7 @@ The notebook will open automatically.
 
 ### B2. Attach a cluster and run
 
-The setup notebook uses `%sql` magic and does not require a Spark Declarative Pipeline -
+The setup notebook uses `%sql` magic and does not require a Lakeflow pipeline -
 you can run it on any cluster or a SQL Warehouse.
 
 1. At the top of the notebook, click **Connect** (or the cluster dropdown)
@@ -188,9 +195,9 @@ ask them to create the `enablement.ecommerce` schema and grant you `CREATE TABLE
 
 ---
 
-## Part C: Run the Spark Declarative Pipeline
+## Part C: Run the Lakeflow pipeline
 
-This step creates the SDP medallion pipeline: 5 bronze + 5 silver + 3 gold tables
+This step creates the Lakeflow medallion pipeline: 5 bronze + 5 silver + 3 gold tables
 in `enablement.ecommerce_lakeflow`. This is the "Act 3" dataset for the demo.
 
 ---
@@ -392,7 +399,7 @@ Same flow - dbt platform supports all major providers under Account settings →
 
 **Option C - dbt platform managed git (quickest for demos):**
 If you don't want to push to GitHub, dbt platform offers a built-in managed git
-repository. You can upload files directly via the dbt platform IDE.
+repository. You can upload files directly via the Studio IDE.
 
 ---
 
@@ -452,7 +459,7 @@ failing model and column name.
 ### D6. Verify column metadata in Unity Catalog
 
 `persist_docs` pushes dbt YAML descriptions into Unity Catalog column metadata.
-This is what makes the Act 4 Genie Space accurate - Genie reads UC comments, not
+This is what makes the Act 4 Genie Agent accurate - Genie reads UC comments, not
 your local YAML files.
 
 Run in the Databricks SQL Editor:
@@ -760,9 +767,9 @@ The last statement is a verification query. Expected output:
 
 ---
 
-## Part G: Create Genie Spaces
+## Part G: Create Genie Agents
 
-You need three Genie Spaces - one for each act of the demo. The contrast between
+You need three Genie Agents - one for each act of the demo. The contrast between
 them is the central demo narrative.
 
 ---
@@ -771,8 +778,8 @@ them is the central demo narrative.
 
 1. Left sidebar → look for **AI/BI** section (may be labeled "Genie" in newer workspaces)
 2. Click **Genie**
-3. You will see a list of existing Genie Spaces (may be empty)
-4. Click **New Genie Space** or **Create** (top right)
+3. You will see a list of existing Genie Agents (may be empty)
+4. Click **New Genie Agent** or **Create** (top right)
 
 ---
 
@@ -780,7 +787,7 @@ them is the central demo narrative.
 
 This space is intentionally minimal. The goal is to show Genie struggling.
 
-1. Click **New Genie Space**
+1. Click **New Genie Agent**
 2. **Name:** `E-Commerce (Raw - Act 1)`
 3. **Description:** `Raw tables - no column descriptions, no business rules` (optional)
 4. In the **Tables** section, click **Add tables**:
@@ -809,30 +816,22 @@ Revenue is in the amount column of raw_orders or the amount column of raw_paymen
 
 ### G3. Create the Lakeflow Gold Space (Act 3 - Better But Not Enough)
 
-1. Click **New Genie Space**
+1. Click **New Genie Agent**
 2. **Name:** `E-Commerce (Lakeflow Gold - Act 3)`
 3. **Tables** - add three gold layer tables:
    - `enablement.ecommerce_lakeflow.gold_dim_customers`
    - `enablement.ecommerce_lakeflow.gold_fct_orders`
    - `enablement.ecommerce_lakeflow.gold_fct_revenue`
-4. **Instructions** - paste (from `databricks/genie/genie_lakeflow_instructions.md`):
+4. **Instructions** - copy the contents of
+   **`databricks/genie/genie_lakeflow_instructions.md`** and paste them in.
 
-```
-E-commerce data from the Lakeflow gold layer.
+   That file is the single source of truth for this Agent's instructions. It used
+   to be duplicated here, which meant editing one copy and demoing the other. If
+   you need to see it without leaving the terminal:
 
-Tables:
-- gold_dim_customers: customers with lifetime value and segment.
-  customer_segment values: high_value, mid_value, low_value.
-  total_lifetime_value: sum of successful payments (USD).
-- gold_fct_orders: orders with items and payment totals.
-  status values: placed, shipped, completed, returned.
-  amount_paid: USD amount paid for this order.
-- gold_fct_revenue: daily revenue aggregates (completed orders only).
-  daily_revenue: total revenue for the day.
-
-Revenue = daily_revenue column in gold_fct_revenue (completed orders only).
-High-value customer = total_lifetime_value >= 500.
-```
+   ```bash
+   cat databricks/genie/genie_lakeflow_instructions.md
+   ```
 
 5. Click **Save**
 6. Test with: *"What was total revenue last month?"* - confirm Genie answers better
@@ -844,7 +843,7 @@ High-value customer = total_lifetime_value >= 500.
 
 This is the most important space. Take care to add the right tables only.
 
-1. Click **New Genie Space**
+1. Click **New Genie Agent**
 2. **Name:** `E-Commerce Analytics (dbt + Semantic Layer - Act 4)`
 3. **Tables** - add three dbt mart tables:
    - `enablement.ecommerce.dim_customers`
@@ -864,7 +863,7 @@ This is the most important space. Take care to add the right tables only.
 
 ---
 
-### G5. Test all three Genie Spaces before the demo
+### G5. Test all three Genie Agents before the demo
 
 Run these two queries on each space and confirm the expected contrast:
 
@@ -983,7 +982,7 @@ Once deployed (1–2 minutes), open the app URL and check:
 | Tab | What to verify |
 |---|---|
 | Executive Dashboard | Revenue metric cards show dollar amounts, not 0 or errors |
-| Semantic Layer Explorer | Selecting "Total Revenue" returns a bar chart by month |
+| Semantic Layer Catalog | Selecting "Total Revenue" returns a bar chart by month |
 | Metric Views vs dbt SL | Both columns show metric values; feature comparison table renders |
 | Governance | "Public Models" count shows 3, contract table has 3 rows |
 
@@ -1003,10 +1002,10 @@ Run through this 10 minutes before going live:
 - [ ] `enablement.ecommerce.dim_customers` - present and has column comments (DESCRIBE TABLE)
 - [ ] `enablement.ecommerce.fct_orders` - present
 - [ ] `enablement.ecommerce_metric_views.total_revenue` - returns a value
-- [ ] Genie Space "Raw" - returns ambiguous answer to "what was total revenue?"
-- [ ] Genie Space "Lakeflow" - returns cleaner answer to same question
-- [ ] Genie Space "dbt" - returns accurate answer with status = 'completed' filter
-- [ ] Browser tabs open: all 3 Genie Spaces, `_semantic_models.yml` in dbt platform IDE, dbt platform lineage graph
+- [ ] Genie Agent "Raw" - returns ambiguous answer to "what was total revenue?"
+- [ ] Genie Agent "Lakeflow" - returns cleaner answer to same question
+- [ ] Genie Agent "dbt" - returns accurate answer with status = 'completed' filter
+- [ ] Browser tabs open: all 3 Genie Agents, `_semantic_models.yml` in Studio IDE, dbt platform lineage graph
 - [ ] dbt platform project dependency graph (platform → marketing + finance) ready to show
 - [ ] `DEMO_SCRIPT.md` open in a second monitor or printed
 
@@ -1065,9 +1064,9 @@ DESCRIBE TABLE EXTENDED enablement.ecommerce.dim_customers;
 
 ---
 
-### Genie Space gives wrong or inconsistent answers
+### Genie Agent gives wrong or inconsistent answers
 
-1. **Check instructions are complete** - the dbt Genie Space instructions should be
+1. **Check instructions are complete** - the dbt Genie Agent instructions should be
    ~40 lines. If you only pasted part of them, Genie won't have the business rules.
 
 2. **Check the right tables are added** - the dbt space should have mart tables only:
@@ -1089,7 +1088,7 @@ Most common causes:
 1. **Raw tables don't exist** - run Part B first. The pipeline reads from `enablement.ecommerce.raw_*`.
 2. **Permission denied on target schema** - your user needs `CREATE TABLE ON SCHEMA enablement.ecommerce_lakeflow`.
    Run: `GRANT CREATE TABLE ON SCHEMA enablement.ecommerce_lakeflow TO \`you@company.com\`;`
-3. **Databricks Runtime too old** - Spark Declarative Pipelines require Runtime 11.3 LTS or later. Use the default cluster policy.
+3. **Databricks Runtime too old** - Lakeflow pipelines require Runtime 11.3 LTS or later. Use the default cluster policy.
 
 Check the pipeline error details in the pipeline UI: click on the red node in the DAG
 to see the specific error message.

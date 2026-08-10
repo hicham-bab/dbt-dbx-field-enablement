@@ -1,6 +1,8 @@
--- Spark Declarative Pipelines - E-Commerce Platform Pipeline (SQL version)
--- Formerly "Delta Live Tables" (DLT) / "Lakeflow Declarative Pipelines".
--- Rebranded to Spark Declarative Pipelines (SDP) in 2025. SQL syntax unchanged.
+-- Lakeflow pipelines - E-Commerce Platform Pipeline (SQL version)
+-- The Databricks product formerly known as Delta Live Tables (DLT) is now
+-- "Lakeflow pipelines". "Spark Declarative Pipelines" is the Apache Spark OSS
+-- framework it extends, not the product name. SQL syntax unchanged.
+-- https://docs.databricks.com/aws/en/ldp/concepts/where-is-dlt
 --
 -- What this shows dbt field teams:
 -- - How Databricks solves the same medallion pattern problem natively, in SQL

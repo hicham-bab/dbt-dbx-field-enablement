@@ -1,0 +1,95 @@
+# Single source of truth for BATTLE_CARD.md.
+#
+# BATTLE_CARD.md is GENERATED from this file by scripts/build_battlecard.py.
+# Do not edit the card directly; edit here and rebuild. When Databricks renames
+# something again, that is one string change and a rebuild.
+#
+# Keep entries SHORT. The card has to be skimmable while a customer is talking.
+# Anything that needs a paragraph belongs in docs/competitive_reference.md.
+
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+reverify: quarterly, and after every Databricks DBR / dbt platform release
+
+positioning: >
+  Databricks is the platform: compute, storage, orchestration, AI. **Fivetran + dbt**
+  (one company since 2026-06-01) is the governed data layer on top:
+  **ingest → transform/govern → activate**. We don't replace Databricks, we make its
+  AI trustworthy. **Win the data layer; love the platform.**
+
+opening_question: >
+  "When Genie gives you a number, can you prove where it came from and who
+  approved it?" If the answer is no, that's your opening.
+
+# Short enough to read at a glance. Longer versions live in the reference.
+fast_facts:
+  - "Fusion's **Databricks adapter is Preview**, not GA.[^fusion-databricks-preview] Fusion itself is free and the default engine."
+  - "The **~30x** parse/compile figure is a dbt Labs benchmark, not a docs number.[^fusion-speed] Time it on their project instead."
+  - "**Semantic Layer API** (MetricFlow JDBC) is a dbt platform service, not self-hostable."
+  - "**UC metric views are GA**[^metric-views-yaml] and dbt authors them (`materialized='metric_view'`, dbt-databricks 1.12.0+).[^dbt-databricks-metric-view]"
+  - "**Two native dbt tasks in Lakeflow Jobs:** the dbt task (dbt Core) and the dbt platform task (governed job)."
+  - "**No first-class native reverse ETL** in Databricks; Fivetran Activations fills it. **[verify w/ PMM]**"
+  - "**dbt Wizard ≠ dbt Copilot.** Two products; Copilot lives until Wizard is GA.[^dbt-wizard-vs-copilot]"
+
+objections:
+  - say: "Databricks does everything."
+    response: "It does compute, storage, orchestration, AI. Natively it does **not** enforce cross-team column contracts, serve a metrics API to non-Databricks tools, or do reverse ETL."
+    value: "Wrong Genie numbers cost more than a YAML file per model."
+  - say: "Adding dbt = more cost/complexity."
+    response: "dbt's cost is a YAML file per model. The cost of *not* having it: hand-maintained Genie context, duplicated definitions, wrong numbers in prod."
+    value: "Faster time-to-trusted-data; fewer 'which number is right?' drills."
+  - say: "We want fewer vendors."
+    response: "Fivetran + dbt is **one company** covering ingest → transform → activate."
+    value: "One relationship for the whole data layer."
+  - say: "Unity Catalog is our governance."
+    response: "UC governs **access** (who reads what). dbt governs **meaning** (what 'revenue' is: tested, versioned, PR-reviewed). You need both."
+    value: "Auditable definitions → trustworthy Genie, clean audits."
+  - say: "Lakeflow handles orchestration."
+    response: "Lakeflow orchestrates **execution**; dbt orchestrates **dependencies with governance**. The dbt platform task lets Lakeflow trigger governed dbt jobs."
+    value: "Rebuild only what changed; single pane of glass if they want it."
+  - say: "Notebooks cover our transforms."
+    response: "Fine for exploration, not production governance. A notebook can't enforce a contract, fail a consumer's CI on a schema change, or serve a named metric."
+    value: "Fewer silent breakages; governed reuse across teams."
+  - say: "We'll just use the native dbt task."
+    response: "That's dbt **Core** on your compute: no Semantic Layer, Catalog, or managed CI. Use the **dbt platform task** to get those and keep Databricks orchestration."
+    value: "Avoids a week-6 rebuild when Genie needs governed metrics."
+  - say: "Metric views replace the Semantic Layer."
+    response: "Metric views are named calculations in the catalog; the Semantic Layer is a governed, multi-tool metric contract. dbt authors **both**."
+    value: "One definition served everywhere, no drift."
+  - say: "Our team doesn't know dbt."
+    response: "dbt Python models run your existing PySpark; the change is `dbt.ref()` instead of `spark.read.table()`."
+    value: "Governance without a rewrite."
+
+# Things we have actually claimed that a Databricks SA can disprove in a minute.
+do_not_say:
+  - dont: "Metric views can't do joins."
+    instead: "They do star, snowflake and one-to-many joins.[^metric-views-joins] The real limit: no direct join to a table at query time, so you wrap it in a CTE."
+  - dont: "Metric views can't be version-controlled."
+    instead: "They can: YAML in git, deployed via bundles.[^metric-views-yaml] The gap is nothing *makes* you, and the UI path leaves no history."
+  - dont: "Metric views are Genie-only."
+    instead: "They're UC objects, reachable over JDBC/ODBC. The gap is no vendor-neutral **metrics** API, so other tools see a table."
+  - dont: "Unity Catalog has no column-level lineage."
+    instead: "It does.[^uc-column-level-lineage] The gap: runtime-observed, breaks on rename, 1-year rolling window in system tables.[^uc-lineage-retention]"
+  - dont: "Fusion is GA on Databricks."
+    instead: "Fusion is free and default; the **Databricks adapter is Preview**.[^fusion-databricks-preview]"
+  - dont: "Contracts guarantee the schema."
+    instead: "On Databricks, names and order are checked but **not types**, and a failed constraint leaves the bad table in place.[^contracts-databricks-caveat] Concede it first."
+  - dont: "dbt Wizard replaced dbt Copilot."
+    instead: "Two products. Copilot is available until Wizard is GA.[^dbt-wizard-vs-copilot]"
+  - dont: "`Genie Spaces` / `Delta Live Tables` / `Databricks Asset Bundles`"
+    instead: "Genie Agents / Lakeflow pipelines / Declarative Automation Bundles. See `NAMING.md`."
+
+discovery_questions:
+  - "When Genie returns a number, can you show who approved that definition and when?"
+  - "If a platform team renames a column, what breaks, and do you find out in CI or in production?"
+  - "Does 'revenue' mean the same thing in Genie, Tableau, and the CFO's board deck?"
+  - "How does a governed metric get into Salesforce or Slack today?"
+  - "Are you Delta-only, or do you want an open Iceberg lakehouse?"
+
+guardrails:
+  - "Separate a **real gap** from 'they didn't configure it'. Most of the Databricks column is the second kind."
+  - "Every capability claim needs a source in `sources.yml`. Can't cite it, don't say it."
+  - "No invented stats. Bring the customer's numbers."
+  - "**AND, not OR**: win the data layer, on the Databricks platform."

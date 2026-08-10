@@ -1,4 +1,11 @@
-# Genie Space: Salesforce CRM (Fivetran → dbt → Genie)
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
+# Genie Agent: Salesforce CRM (Fivetran → dbt → Genie)
 
 ## Purpose
 
@@ -22,7 +29,7 @@ same ones that drive the Slack activation.
 
 ## Tables to Add
 
-1. AI/BI → Genie → Create Genie Space
+1. AI/BI → Genie → Create Genie Agent
 2. Name: `Salesforce CRM (Fivetran + dbt)`
 3. Add these tables only:
    - `enablement.ecommerce.dim_accounts`
@@ -33,7 +40,7 @@ same ones that drive the Slack activation.
 
 ---
 
-## Instructions (paste into the Genie Space Instructions field)
+## Instructions (paste into the Genie Agent Instructions field)
 
 These come directly from `platform/models/marts/crm/_crm.yml` - version-controlled,
 PR-reviewed definitions, not hand-typed context.
@@ -86,5 +93,5 @@ RULES:
 - Genie's pipeline numbers match the Slack alerts and the BI dashboards because all
   three read the *same* governed dbt models - one definition, activated and analyzed
   everywhere.
-- Ask "where does this number come from?" → trace `open_pipeline_amount` in Explorer to
+- Ask "where does this number come from?" → trace `open_pipeline_amount` in Catalog to
   `fct_opportunities`, its contract, tests, and the Fivetran-landed Salesforce source.

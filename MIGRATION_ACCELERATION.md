@@ -1,3 +1,10 @@
+---
+version: 1.0
+last_verified: 2026-08-11
+expires: 2026-11-09
+owner: hicham-bab
+---
+
 # Faster Time to Value: Migrating Legacy → dbt + Databricks
 
 How dbt (dbt Wizard + Fusion + Mesh) on Databricks compresses a legacy migration
@@ -42,7 +49,8 @@ it doesn't fix it, and the tech debt resurfaces the moment someone connects Geni
 2. **Fusion catches dialect differences in real time.** Cross-dialect translation
    (Oracle / Teradata / T-SQL → Databricks SQL) is where migrations stall. Fusion's
    real-time compilation surfaces incompatible syntax and functions *as you type*
-   (~30x faster parse/compile than dbt Core) - a tight feedback loop instead of
+   (dbt Labs benchmarks parse/compile at up to ~30x dbt Core; measure it on the
+   customer's project rather than quoting it) - a tight feedback loop instead of
    discovering failures in an overnight batch run.
 
 3. **Fivetran connectors + MDLS land the source data - fast.** Migrating off
@@ -51,7 +59,7 @@ it doesn't fix it, and the tech debt resurfaces the moment someone connects Geni
    connectors replace hand-built ETL, and the **Managed Data Lake Service** lands the
    sources as governed open **Delta/Iceberg** tables in Unity Catalog with automatic
    schema-drift handling - no ingestion pipeline to hand-build. (Databricks Lakeflow
-   Declarative Pipelines remain the option for streaming/Spark-native sources.) dbt then
+   pipelines remain the option for streaming/Spark-native sources.) dbt then
    takes it from raw → governed marts, orchestrated by the native dbt task or the dbt
    platform task. See `FIVETRAN_DBT_DATABRICKS.md`.
 

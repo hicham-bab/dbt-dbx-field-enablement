@@ -1,9 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Spark Declarative Pipelines - E-Commerce Pipeline
+# MAGIC # Lakeflow pipelines - E-Commerce Pipeline
 # MAGIC
-# MAGIC Formerly "Delta Live Tables" (DLT) / "Lakeflow Declarative Pipelines".
-# MAGIC Databricks rebranded to **Spark Declarative Pipelines (SDP)** in 2025.
+# MAGIC The Databricks product formerly known as Delta Live Tables (DLT).
+# MAGIC Current name: **Lakeflow pipelines**. *Spark* Declarative Pipelines is the
+# MAGIC Apache Spark OSS framework it extends, not the Databricks product name.
+# MAGIC https://docs.databricks.com/aws/en/ldp/concepts/where-is-dlt
 # MAGIC The Python API still uses `import dlt` - the code is unchanged.
 # MAGIC
 # MAGIC ## What this shows dbt field teams:

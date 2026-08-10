@@ -1,0 +1,151 @@
+# Citation registry for dbt + Databricks field enablement
+#
+# Every competitive capability claim in this repo must cite a claim ID from this
+# file. Docs reference them as [^claim-id] footnotes.
+#
+# Rules:
+#   - Vendor docs only. Blogs are allowed but must be marked `source_type: blog`
+#     and the claim must be softened accordingly.
+#   - `retrieved` is the date a human (or CI) last confirmed the URL supports the
+#     claim, not just that the URL returns 200.
+#   - CI (.github/workflows/freshness.yml) HEAD-requests every url weekly and
+#     opens an issue on 404 or cross-path redirect.
+
+version: 1
+last_verified: 2026-08-10
+
+claims:
+
+  # ---------------------------------------------------------------- naming ---
+  lakeflow-pipelines-name:
+    claim: >
+      The Databricks product formerly called Delta Live Tables (DLT) is now named
+      Lakeflow pipelines.
+    quote: "The product formerly known as Delta Live Tables (DLT) has been updated to Lakeflow pipelines."
+    url: https://docs.databricks.com/aws/en/ldp/concepts/where-is-dlt
+    retrieved: 2026-08-10
+
+  spark-declarative-pipelines-oss:
+    claim: >
+      Spark Declarative Pipelines is the Apache Spark open-source framework.
+      Lakeflow pipelines is the Databricks product that extends it and runs on
+      the Databricks Runtime. The two names are not interchangeable.
+    quote: "Lakeflow pipelines extend and are interoperable with Spark Declarative Pipelines, while running on the performance-optimized Databricks Runtime."
+    url: https://docs.databricks.com/aws/en/ldp/
+    retrieved: 2026-08-10
+
+  declarative-automation-bundles-name:
+    claim: >
+      Databricks Asset Bundles (DABs) were renamed Declarative Automation Bundles.
+      The `databricks.yml` bundle syntax and the `databricks bundle` CLI are
+      unchanged, so code identifiers keep the old shape.
+    quote: "Declarative Automation Bundles (formerly known as Databricks Asset Bundles)"
+    url: https://docs.databricks.com/aws/en/dev-tools/bundles/
+    retrieved: 2026-08-10
+
+  genie-agents-name:
+    claim: >
+      Genie is a family of three products: Genie One (business user interface),
+      Genie Agents (the domain environments data teams configure, formerly
+      "Genie spaces"), and Genie Code (developer assistant).
+    quote: "Genie Agents: Domain-specific environments where data teams configure trusted data, metrics, and business rules that power Genie One answers."
+    url: https://docs.databricks.com/aws/en/genie/
+    retrieved: 2026-08-10
+
+  dbt-catalog-name:
+    claim: >
+      dbt Explorer was renamed Catalog (dbt Catalog). It is the default
+      documentation and lineage experience; dbt Docs is now a legacy feature.
+    url: https://docs.getdbt.com/docs/explore/explore-projects
+    retrieved: 2026-08-10
+
+  # ------------------------------------------------------- dbt capabilities ---
+  dbt-wizard-vs-copilot:
+    claim: >
+      dbt Wizard and dbt Copilot are two distinct products. Wizard is the agent
+      (public preview in Studio IDE, public beta in the Wizard home tab and the
+      terminal/CLI). Copilot remains available until Wizard reaches GA.
+    quote: "certain customers may have disabled experimental features, in which case, they can use Wizard CLI via terminal-access and will continue to have access to dbt Copilot until dbt Wizard is released as generally available to all customers."
+    url: https://docs.getdbt.com/docs/platform/wizard-overview
+    retrieved: 2026-08-10
+
+  fusion-databricks-preview:
+    claim: >
+      The Fusion engine's Databricks adapter is in Preview, not GA. Snowflake,
+      BigQuery and Redshift are also Preview; Spark and DuckDB are Beta. Fusion
+      itself is the default engine on install and is free to use.
+    url: https://docs.getdbt.com/docs/fusion/fusion-availability
+    retrieved: 2026-08-10
+
+  fusion-speed:
+    claim: >
+      Fusion is substantially faster than dbt Core at parse/compile. The widely
+      quoted "~30x" figure is a dbt Labs marketing benchmark, NOT a figure
+      published on docs.getdbt.com. Do not present it as a documented number;
+      measure parse time on the customer's own project instead.
+    url: https://docs.getdbt.com/docs/fusion/about-fusion
+    source_type: vendor-doc-does-not-state-multiplier
+    retrieved: 2026-08-10
+
+  dbt-databricks-metric-view:
+    claim: >
+      dbt-databricks supports `materialized='metric_view'`, added in
+      dbt-databricks 1.12.0 (18 May 2026) via PR #1285.
+    quote: "Add support for metric views as a materialization ([#1285])"
+    url: https://github.com/databricks/dbt-databricks/blob/main/CHANGELOG.md
+    retrieved: 2026-08-10
+
+  dbt-mcp-python:
+    claim: >
+      The dbt MCP server is a Python package. The documented local install is
+      `uvx dbt-mcp` (command `uvx`, args `["dbt-mcp"]`), not an npx invocation.
+    quote: "install uv and run uvx dbt-mcp, which fetches and runs dbt-mcp for you"
+    url: https://docs.getdbt.com/docs/dbt-ai/setup-local-mcp
+    retrieved: 2026-08-10
+
+  # ------------------------------------------------ Databricks capabilities ---
+  metric-views-joins:
+    claim: >
+      Metric views DO support joins: star schemas, snowflake schemas and
+      one-to-many relationships, with multi-level joins.
+    quote: "Model relationships using star and snowflake schemas with multi-level joins."
+    url: https://docs.databricks.com/aws/en/uc-semantics/metric-views/basic-modeling
+    retrieved: 2026-08-10
+
+  metric-views-yaml:
+    claim: >
+      Metric views are Unity Catalog objects defined in YAML, creatable via SQL
+      DDL or the Catalog Explorer UI, and therefore deployable as code.
+    quote: "Define metric views using SQL DDL or the Catalog Explorer UI, with built-in YAML validation."
+    url: https://docs.databricks.com/aws/en/uc-semantics/metric-views
+    retrieved: 2026-08-10
+
+  contracts-databricks-caveat:
+    claim: >
+      dbt contract enforcement is weaker on Databricks than on warehouses with
+      transactions. Because Databricks supports neither transactions nor
+      `create or replace table` with a column schema, dbt creates the table
+      without a schema and then issues `alter` statements. Consequence: column
+      names and order are checked but NOT their type, and a failed constraint
+      still leaves the bad table in the warehouse. Concede this before a
+      Databricks SA raises it.
+    quote: "The names and order of columns is checked but not their type / If the constraints and/or constraint_check fails, the table with the failing data will still exist in the Warehouse"
+    url: https://docs.getdbt.com/reference/resource-properties/constraints
+    retrieved: 2026-08-11
+
+  uc-column-level-lineage:
+    claim: >
+      Unity Catalog captures lineage down to the column level. It is
+      runtime-observed: column lineage is only captured when both source and
+      target are referenced by table name, not by path.
+    quote: "column lineage is supported only when both the source and target are referenced by table name"
+    url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage
+    retrieved: 2026-08-10
+
+  uc-lineage-retention:
+    claim: >
+      Lineage system tables retain a rolling 1-year window. Longer history is
+      available via Catalog Explorer or the lineage API for lineage captured
+      after 1 September 2024.
+    url: https://docs.databricks.com/aws/en/admin/system-tables/lineage
+    retrieved: 2026-08-10
