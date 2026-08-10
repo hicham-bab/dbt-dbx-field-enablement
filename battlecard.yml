@@ -28,7 +28,8 @@ fast_facts:
   - "Fusion's **Databricks adapter is Preview**, not GA.[^fusion-databricks-preview] Fusion itself is free and the default engine."
   - "The **~30x** parse/compile figure is a dbt Labs benchmark, not a docs number.[^fusion-speed] Time it on their project instead."
   - "**Semantic Layer API** (MetricFlow JDBC) is a dbt platform service, not self-hostable."
-  - "**UC metric views are GA**[^metric-views-yaml] and dbt authors them (`materialized='metric_view'`, dbt-databricks 1.12.0+).[^dbt-databricks-metric-view]"
+  - "**UC metric views are GA**[^metric-views-yaml] and dbt authors them (`materialized='metric_view'`, dbt-databricks 1.12.2+ as the practical floor, DBR 16.4+).[^dbt-databricks-metric-view] **Not available in Fusion yet**[^fusion-metric-view-unsupported] - check before you demo."
+  - "**Metric view joins are asserted, not validated.** A wrong `at_most_one_match` silently returns incorrect measures, per Databricks' own docs.[^metric-views-rely-unvalidated] Strongest technical point we have on semantics."
   - "**Two native dbt tasks in Lakeflow Jobs:** the dbt task (dbt Core) and the dbt platform task (governed job)."
   - "**No first-class native reverse ETL** in Databricks; Fivetran Activations fills it. **[verify w/ PMM]**"
   - "**dbt Wizard ≠ dbt Copilot.** Two products; Copilot lives until Wizard is GA.[^dbt-wizard-vs-copilot]"
@@ -69,7 +70,15 @@ do_not_say:
   - dont: "Metric views can't be version-controlled."
     instead: "They can: YAML in git, deployed via bundles.[^metric-views-yaml] The gap is nothing *makes* you, and the UI path leaves no history."
   - dont: "Metric views are Genie-only."
-    instead: "They're UC objects, reachable over JDBC/ODBC. The gap is no vendor-neutral **metrics** API, so other tools see a table."
+    instead: "They're UC objects, reachable over JDBC/ODBC. The gap is ergonomics: every measure needs `MEASURE()` and there is no `SELECT *`.[^metric-views-bi-measure]"
+  - dont: "Metric views only do simple measures."
+    instead: "They do ratio, filtered, composable, windowed and semi-additive too. Near parity; conversion metrics are our only unique type."
+  - dont: "Genie queries the dbt Semantic Layer."
+    instead: "It does not. Genie reads Unity Catalog metadata that dbt populates.[^genie-unity-catalog-only] Never draw that arrow."
+  - dont: "The Semantic Layer costs nothing extra."
+    instead: "Metric views are included with UC; ours needs a paid tier. Concede it, then argue change management."
+  - dont: "Databricks has no CI/CD."
+    instead: "Declarative Automation Bundles are real IaC. The gap is PR-isolated schemas and `state:modified+`."
   - dont: "Unity Catalog has no column-level lineage."
     instead: "It does.[^uc-column-level-lineage] The gap: runtime-observed, breaks on rename, 1-year rolling window in system tables.[^uc-lineage-retention]"
   - dont: "Fusion is GA on Databricks."
@@ -87,6 +96,15 @@ discovery_questions:
   - "Does 'revenue' mean the same thing in Genie, Tableau, and the CFO's board deck?"
   - "How does a governed metric get into Salesforce or Slack today?"
   - "Are you Delta-only, or do you want an open Iceberg lakehouse?"
+
+# Concede these early. v1 conceded nothing, which made it read as marketing.
+databricks_wins:
+  - "**No incremental licence.** Metric views ship with Unity Catalog; ours needs a paid tier above Developer."
+  - "**No extra operational surface.** No JDBC endpoint, no external gateway hop."
+  - "**Permissions in one system.** UC governs the metric view like any securable; our caching layer loses security context."
+  - "**Deeper native Genie integration.** Genie Agent context can be exported to a metric view; no round-trip on our side."
+  - "**They do open standards too.** Databricks joined Open Semantic Interchange, as did dbt Labs. 'They're closed, we're open' is not a clean line."
+  - "If a customer is single-engine on Databricks with one analytics engineer and needs five metrics for Genie, **metric views are the right answer - say so.** You will be believed on everything else afterwards."
 
 guardrails:
   - "Separate a **real gap** from 'they didn't configure it'. Most of the Databricks column is the second kind."

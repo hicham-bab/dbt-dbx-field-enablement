@@ -118,6 +118,19 @@ So the governance story below is no longer dbt *versus* metric views - it's dbt
 *governing* the metric views the customer already wants. A working example lives
 in `platform/models/metrics/` in this repo.
 
+> **Before you demo this: the `metric_view` materialization does not work in
+> Fusion.** dbt-core issue #15616 ("Fusion: Databricks metric_view materialization
+> macro not found, dbt9002") is open.[^fusion-metric-view-unsupported] This repo's
+> demo leads with Fusion, so decide which engine you are showing for the metric
+> view portion and say so in the runbook. Discovering it live is a bad session.
+>
+> Two more caveats worth knowing: `doc()` is undefined inside `metric_view` model
+> bodies (dbt-databricks #1501), and although support landed in **1.12.0**, treat
+> **1.12.2** (9 Jul 2026) as the practical floor - 1.12.1 and 1.12.2 fixed `ref()`
+> in `source:`, `tblproperties` at create time, and a redundant `ALTER VIEW` on
+> every run. Requires **DBR 16.4+**.
+
+
 This matters more after Summit 2026: Unity Catalog Metrics went GA and Databricks
 introduced **Genie Ontology**, a *context layer* that *consumes* the semantic layer
 (UC Metrics/Glossary) to ground Genie. The better those definitions are governed, the
@@ -154,21 +167,98 @@ upstream.
 | **PR review process** | None built-in | Yes - YAML + SQL in same PR, reviewed by data team |
 | **Audit trail** | UC audit log (who modified the object) | `git log` (who changed what, when, why, PR link) |
 | **Human-readable description** | `comment` field (optional) | `description` + `label` fields (fed to Genie) |
-| **Metric types** | Measures only (aggregation expressions) | Simple, derived, ratio, cumulative, conversion |
+| **Metric types** | Simple, ratio, filtered, composable, **windowed** (cumulative, trailing, offset) and **semi-additive** | Simple, derived, ratio, cumulative, **conversion** | 
+| **Metric type verdict** | Near parity. Conversion metrics are dbt's only unique type - do not claim "measures only" | |
 | **Derived metrics** | Manual SQL expression | `derived` type - explicit formula referencing other metrics |
 | **Ratio metrics** | Manual SQL division | `ratio` type - numerator/denominator declared separately |
 | **Time grain handling** | Manual DATE_TRUNC in expr | MetricFlow handles `time_granularity` natively |
 | **Dimension slicing** | Dimensions in same YAML | Entities + dimensions across semantic models (joins handled) |
 | **Cross-model joins** | Supported - star and snowflake schemas with multi-level joins, plus one-to-many[^metric-views-joins] | Entity relationships - MetricFlow resolves joins automatically |
+| **Join safety** | `rely.at_most_one_match: true` is **not validated at runtime**. Databricks' own docs: "If the asserted side produces a fan-out, measures return incorrect results"[^metric-views-rely-unvalidated] | Entity graph derives the join path; fan-out and chasm-join avoidance are automatic |
 | **Data quality tests** | None on metric definitions | dbt tests on underlying marts (`not_null`, `accepted_values`, custom) |
 | **Column contracts** | None | `contract: enforced: true` - schema changes fail CI |
-| **Multi-tool compatibility** | Reachable from anything that speaks JDBC/ODBC to Databricks SQL, since a metric view is a UC object. What's missing is a vendor-neutral *metrics* API, so BI tools consume it as a table, not as governed metrics | Any BI tool via Semantic Layer JDBC (Tableau, PowerBI, Looker, Genie) as first-class metrics |
-| **AI agent access** | Any agent that can query Databricks SQL; Genie is the native surface | dbt MCP server - any AI agent can query metrics by name, across platforms |
+| **BI tool access** | Any JDBC/ODBC tool, but every measure must be wrapped in `MEASURE()` and `SELECT *` is unsupported.[^metric-views-bi-measure] Docs give named guidance for Power BI, Tableau and Sigma | JDBC, GraphQL, Python SDK and MCP; metrics arrive as first-class objects | 
+| **BI verdict** | dbt on breadth and ergonomics, **not** on raw possibility | |
+| **AI agent access** | Genie, Databricks managed MCP servers, Genie Conversation API | dbt MCP server (`list_metrics`, `query_metrics`, `get_metrics_compiled_sql`) | 
+| **AI access verdict** | **Parity. Both are good - do not attack this.** | |
 | **Cross-project (Mesh)** | Not supported | Yes - metrics from platform consumed by all downstream projects |
 | **Governance (access control)** | UC permissions on the metric view | `access:` + `groups:` + UC permissions + contracts |
-| **Breaking change detection** | None - metric silently breaks if source changes | `dbt build` fails if contract violated; downstream consumers fail in CI |
+| **When breakage surfaces** | At **runtime**, when someone runs the query (`METRIC_VIEW_INVALID_VIEW_DEFINITION`). No documented pre-deploy validation | At **CI time**, on the pull request, before it merges. Same failure, different day, very different blast radius |
 | **Lineage** | UC captures lineage down to the column level,[^uc-column-level-lineage] but it is runtime-observed: only what actually ran, only when source and target are referenced by table name, and system tables keep a rolling 1-year window[^uc-lineage-retention] | dbt Catalog - column-level lineage derived from the code, so it exists before anything runs |
 | **"Where does this number come from?"** | Read the SQL expression | Catalog → click metric → see full DAG from raw to metric |
+
+---
+
+---
+
+## Where Databricks genuinely wins - concede these first
+
+An earlier version of this document conceded nothing, which made it read as
+marketing. These are real, and saying them buys you credibility for everything
+else:
+
+1. **No incremental licence.** Metric views ship with Unity Catalog. The dbt
+   Semantic Layer needs a paid tier above Developer, with queried-metric volume
+   limits. For a team already paying for Databricks that is a legitimate
+   argument. *Confirm current tiers and limits with your account team - never
+   quote pricing from a battle card.*
+2. **No extra operational surface.** No JDBC endpoint to run, no external
+   gateway hop, no separate availability story.
+3. **Permissions live in one system.** UC governs a metric view like any other
+   securable. Our caching layer loses security context - know that before
+   someone else says it.
+4. **Deeper native Genie integration.** Genie Agent context can be exported to a
+   metric view. That round-trip does not exist on our side.
+5. **They are doing the open-standards work too.** Databricks joined Open
+   Semantic Interchange, and so did dbt Labs. "They're closed, we're open" is
+   not a clean line any more.
+
+**If a customer is single-engine on Databricks, has one analytics engineer, and
+needs five metrics for Genie: metric views are the right answer and you should
+say so.** You will be believed on everything else afterwards.
+
+---
+
+## Where we actually win - lead with these three
+
+Not "they can't do metrics". They can. Lead here instead.
+
+### 1. Join correctness
+
+Databricks' `rely.at_most_one_match: true` is an **unvalidated assertion**. Their
+own docs say that if it is wrong, "measures return incorrect
+results"[^metric-views-rely-unvalidated] - silently. MetricFlow derives join
+paths through the entity graph with fan-out and chasm-join avoidance built in.
+
+> "Both products can join. The difference is what happens when the join
+> assumption is wrong. On one side you get a silently incorrect number on a
+> CFO's dashboard. On the other, the join path is derived, not asserted."
+
+This is the strongest single technical argument in this document: specific,
+sourced, and hard to rebut.
+
+### 2. Change management, not change detection
+
+The gap is not that Databricks cannot detect breakage. It is *when*.
+
+> "A metric view breaks at **runtime**, when someone runs the query. A dbt metric
+> breaks in **CI**, on the pull request, before it merges. Same failure,
+> different day, very different blast radius."
+
+Pair it with `state:modified` and semantic validations in the CI job.
+
+### 3. Who is allowed to change a number
+
+> "Only the metric view's **owner** can edit it, and `ALTER VIEW` replaces the
+> whole definition - there are no partial edits. Group ownership isn't supported
+> for materialized views. At team scale you're choosing between a bottleneck and
+> a shared account.
+>
+> On our side it's a pull request with a reviewer and a git history. When the CFO
+> asks who changed the revenue definition, that's a `git log`, not a support
+> ticket."
+
+This flows straight into the 60-second audit in Act 4c-2.
 
 ---
 
@@ -380,23 +470,55 @@ timestamp on a catalog object."
 
 This is the architectural argument that resonates with engineering leaders.
 
-**Metric Views serve one ecosystem:** Databricks Genie and Databricks SQL.
-If you also use Tableau, PowerBI, Looker, or a Python notebook - each tool
-gets its own metric definition. You now have N definitions of "revenue" that
-can drift independently.
+**Metric views are reachable from any JDBC/ODBC tool**, but every measure has to
+be wrapped in `MEASURE()` and `SELECT *` is not supported,[^metric-views-bi-measure]
+so a BI tool consumes them as hand-written SQL rather than as governed metrics.
+The dbt Semantic Layer serves the same definition to many tools through one API,
+with a Python SDK and MCP alongside JDBC.
 
-**The dbt Semantic Layer serves every tool from one definition:**
+**The architecture, drawn correctly:**
 
 ```
-                                  ┌─── Genie (via JDBC)
-                                  │
-_semantic_models.yml ──► JDBC ────┼─── Tableau
-  (one definition)     endpoint   ├─── PowerBI
-                                  ├─── Looker
-                                  ├─── Python SDK (dbt-sl-sdk)
-                                  ├─── AI agents (dbt MCP server)
-                                  └─── Any tool that speaks JDBC
+                    ┌──────────────────────────────┐
+                    │   dbt project (git)          │
+                    │   models + tests + contracts │
+                    │   + metric definitions       │
+                    └──────────────┬───────────────┘
+                                   │
+                ┌──────────────────┼──────────────────┐
+                │                  │                  │
+       persist_docs        materialized=       Semantic Layer
+                │          'metric_view'              │
+                ▼                  ▼                  ▼
+     ┌────────────────────────────────────┐   ┌───────────────┐
+     │        Unity Catalog               │   │ dbt MCP server│
+     │  table + column comments           │   │ list_metrics  │
+     │  metric views                      │   │ query_metrics │
+     └──────────────┬─────────────────────┘   └───────┬───────┘
+                    │                                 │
+                    ▼                                 ▼
+              ┌───────────┐                    ┌─────────────┐
+              │   Genie   │                    │  AI agents  │
+              └─────┬─────┘                    └─────────────┘
+                    │
+                    ▼
+        Genie Conversation API
+        Databricks managed MCP
+                    │
+                    ▼
+              External agents
 ```
+
+**Two peer consumers, one shared source of truth. Genie never connects to
+dbt.**[^genie-unity-catalog-only] Genie Agents are built on data registered in
+Unity Catalog and answer by generating read-only SQL against their own SQL
+warehouse. There is no native Genie connector to an external semantic layer
+endpoint, so any diagram showing "Genie → dbt Semantic Layer over JDBC" is wrong
+and will be corrected in the room.
+
+Phrase the limit precisely. Not "there is no mechanism" - anyone can land
+Semantic Layer output into a UC table and point Genie at it. The accurate claim
+is that Genie has no *native* connector to an external semantic layer.
 
 One YAML file. One PR review. One definition. Every tool gets the same number.
 
@@ -632,7 +754,11 @@ One table, one place. If you are adding a row, add it there.
 Generated from `sources.yml`. Every claim about a competitor's capabilities cites one of these. Do not edit by hand.
 
 [^dbt-databricks-metric-view]: https://github.com/databricks/dbt-databricks/blob/main/CHANGELOG.md (retrieved 2026-08-10)
+[^fusion-metric-view-unsupported]: https://github.com/dbt-labs/dbt-core/issues/15616 (retrieved 2026-08-11)
+[^genie-unity-catalog-only]: https://docs.databricks.com/aws/en/genie-agents/concepts (retrieved 2026-08-11)
+[^metric-views-bi-measure]: https://docs.databricks.com/aws/en/uc-semantics/metric-views/bi-tools (retrieved 2026-08-11)
 [^metric-views-joins]: https://docs.databricks.com/aws/en/uc-semantics/metric-views/basic-modeling (retrieved 2026-08-10)
+[^metric-views-rely-unvalidated]: https://docs.databricks.com/aws/en/uc-semantics/metric-views/joins (retrieved 2026-08-11)
 [^metric-views-yaml]: https://docs.databricks.com/aws/en/uc-semantics/metric-views (retrieved 2026-08-10)
 [^uc-column-level-lineage]: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage (retrieved 2026-08-10)
 [^uc-lineage-retention]: https://docs.databricks.com/aws/en/admin/system-tables/lineage (retrieved 2026-08-10)

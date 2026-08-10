@@ -48,6 +48,8 @@ Complete at least 30 minutes before the demo:
 - [ ] dbt platform `platform - full build` job is green - all 3 mart tables built, all tests pass
 - [ ] dbt platform `marketing`, `finance`, and `data_science` jobs are green - consumer models built
 - [ ] `02_metric_views.sql` has run - metric views exist in `enablement.ecommerce_metric_views`
+- [ ] **Decided which engine runs the metric view portion.** `materialized='metric_view'`
+      does **not** work in Fusion (dbt-core #15616);[^fusion-metric-view-unsupported] the rest of this demo leads with Fusion
 - [ ] All 3 Genie Agents are created and configured (raw, lakeflow, dbt)
 - [ ] Databricks App is deployed and showing all 4 tabs
 - [ ] Browser tabs open: Genie Agents (all 3), Studio IDE with `_semantic_models.yml`, dbt platform lineage graph
@@ -203,7 +205,7 @@ Lakeflow Pipeline  →  Gold Tables  →  Genie
 
 ---
 
-## Act 4: dbt + Semantic Layer - The Solution (8 min)
+## Act 4: dbt + Semantic Layer - The Solution (10 min)
 
 **Goal:** Show accuracy, consistency, complexity, and governance.
 
@@ -384,26 +386,56 @@ stops. There is no silent breakage path."
 > "Let me show you the architectural difference between Metric Views and the
 > dbt Semantic Layer - it's not just about where the YAML lives."
 
-**Show the single-endpoint architecture:**
+**Show the architecture - two consumers, one definition:**
 
 ```
-                                  ┌─── Genie (via JDBC)
-                                  │
-_semantic_models.yml ──► JDBC ────┼─── Tableau
-  (one definition)     endpoint   ├─── PowerBI
-                                  ├─── Python SDK
-                                  └─── AI agents (MCP server)
+                    ┌──────────────────────────────┐
+                    │   dbt project (git)          │
+                    │   models + tests + contracts │
+                    │   + metric definitions       │
+                    └──────────────┬───────────────┘
+                                   │
+                ┌──────────────────┼──────────────────┐
+                │                  │                  │
+       persist_docs        materialized=       Semantic Layer
+                │          'metric_view'              │
+                ▼                  ▼                  ▼
+     ┌────────────────────────────────────┐   ┌───────────────┐
+     │        Unity Catalog               │   │ dbt MCP server│
+     │  table + column comments           │   │ list_metrics  │
+     │  metric views                      │   │ query_metrics │
+     └──────────────┬─────────────────────┘   └───────┬───────┘
+                    │                                 │
+                    ▼                                 ▼
+              ┌───────────┐                    ┌─────────────┐
+              │   Genie   │                    │  AI agents  │
+              └───────────┘                    └─────────────┘
 ```
 
-**Say:** "One YAML file. One definition. One JDBC endpoint. Every tool - Genie,
-Tableau, PowerBI, Python notebooks, AI agents - gets the same number. Not a copy.
-The same computation, from the same definition, served by the same API."
+> **Do not draw an arrow from Genie to the dbt Semantic Layer.** An earlier
+> version of this script did, and it is false: Genie Agents are built on data
+> registered in Unity Catalog and answer with read-only SQL on their own SQL
+> warehouse. There is no native Genie connector to an external semantic layer
+> endpoint.[^genie-unity-catalog-only] A Databricks SE will catch it on the exact
+> slide where you are claiming superior governance.
 
-**The Metric Views contrast:**
+**Say:** "dbt is the authoring layer, and two things flow out of it into
+Databricks. Descriptions become Unity Catalog table and column comments through
+`persist_docs`. Metric definitions can materialize as Unity Catalog metric views.
+Genie reads that Unity Catalog metadata - it never talks to dbt directly, and it
+doesn't need to.
 
-> "Metric Views serve Databricks tools only. If you also use Tableau or PowerBI -
-> and most enterprises do - each tool defines its own version of 'revenue'.
-> You get three numbers for the same question. The dbt Semantic Layer gives you one."
+Separately, AI agents query the Semantic Layer through the dbt MCP server. Two
+consumers, one definition, both governed by the same pull request."
+
+**Why the corrected version is the stronger pitch:**
+
+> "Notice Genie is reading Unity Catalog, not calling dbt. That's the point.
+> We're not asking you to route Genie through another vendor's endpoint - we're
+> improving the metadata Genie already reads. dbt makes your Databricks
+> investment work better. Nothing gets rerouted."
+
+That is "AND, not OR" landing as architecture instead of a slogan.
 
 **Show the complexity advantage:**
 
@@ -473,11 +505,42 @@ Claude Code `settings.json`, or Cursor MCP settings) and add:
 }
 ```
 
-> **The dbt MCP server is a Python package, not an npm one.**[^dbt-mcp-python] The
-> documented local install is `uvx dbt-mcp`, which requires `uv` on the machine.
-> An earlier version of this script used `npx -y @dbt-labs/dbt-mcp`; that does not
-> work. Run this once on your own laptop before you run it on stage, and consider
-> having `uv` already installed rather than burning stage time on it.
+> **The dbt MCP server is a Python package, not an npm one.**[^dbt-mcp-python]
+> `@dbt-labs/dbt-mcp` does not exist on the npm registry (it 404s); the official
+> server is `dbt-mcp` on PyPI.[^dbt-mcp-not-on-npm] An earlier version of this
+> script used `npx -y @dbt-labs/dbt-mcp`, which fails live at the most impressive
+> moment in the demo.
+>
+> Warm the cache **before** the session, not during it:
+>
+> ```bash
+> curl -LsSf https://astral.sh/uv/install.sh | sh
+> uvx dbt-mcp --help    # so the first live call isn't a download
+> ```
+
+**Environment variables - correct names:**
+
+| Variable | Required? | Notes |
+|---|---|---|
+| `DBT_HOST` | Yes | Hostname only, no scheme |
+| `DBT_TOKEN` | Yes | Service token or PAT |
+| `DBT_PROD_ENV_ID` | Yes | Numeric, not a URL |
+| `DBT_DEV_ENV_ID` | For `execute_sql` | Numeric |
+| `DBT_USER_ID` | For `execute_sql` | Numeric |
+| `DBT_PROJECT_DIR` | For CLI tools | Local path - in this repo, `platform/` |
+| `DBT_PATH` | For CLI tools | Output of `which dbt` |
+
+> **Auth gotcha that will bite you: `execute_sql` does not work with a service
+> token - it needs a PAT.** If your demo asks the agent to run SQL and you
+> configured a service token, it fails. Test the exact question you plan to ask,
+> with the exact token you'll use.
+
+**Alternative: the remote server.** dbt platform hosts an MCP endpoint (Account
+settings → Access URLs → MCP Endpoint URL), which avoids local install entirely.
+Semantic Layer, SQL, Discovery, Admin API and docs work remotely; the dbt CLI and
+Codegen toolsets do not. Claude Code supports `"type": "http"` directly. Claude
+Desktop needs a custom connector or the `npx mcp-remote` proxy - **that proxy is
+the only legitimate `npx` anywhere in this flow, and it is not the server.**
 
 **Say:** "Three environment variables. One `uvx` command. No infrastructure.
 The MCP server gives your AI agent access to the full dbt platform - semantic
@@ -1032,8 +1095,11 @@ one definition your data team owns.
 
 Generated from `sources.yml`. Every claim about a competitor's capabilities cites one of these. Do not edit by hand.
 
+[^dbt-mcp-not-on-npm]: https://pypi.org/project/dbt-mcp/ (retrieved 2026-08-11)
 [^dbt-mcp-python]: https://docs.getdbt.com/docs/dbt-ai/setup-local-mcp (retrieved 2026-08-10)
+[^fusion-metric-view-unsupported]: https://github.com/dbt-labs/dbt-core/issues/15616 (retrieved 2026-08-11)
 [^fusion-speed]: https://docs.getdbt.com/docs/fusion/about-fusion (retrieved 2026-08-10)
+[^genie-unity-catalog-only]: https://docs.databricks.com/aws/en/genie-agents/concepts (retrieved 2026-08-11)
 [^lakeflow-pipelines-name]: https://docs.databricks.com/aws/en/ldp/concepts/where-is-dlt (retrieved 2026-08-10)
 
 <!-- END GENERATED SOURCES -->

@@ -82,6 +82,13 @@ def render(spec: dict) -> str:
         o.append(f"| {dont} | {d['instead']} |")
     o.append("")
 
+    if spec.get("databricks_wins"):
+        o.append("## Where Databricks genuinely wins - concede these")
+        o.append("")
+        for w in spec["databricks_wins"]:
+            o.append(f"- {w}")
+        o.append("")
+
     o.append("## Discovery questions")
     o.append("")
     for q in spec["discovery_questions"]:
