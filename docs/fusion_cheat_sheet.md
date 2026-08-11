@@ -108,7 +108,7 @@ dbt build
 | `dbt build --select dim_customers+` | Rebuild one model and its dependents |
 | `dbt build --select state:modified+` | Slim CI - only rebuild what changed |
 | `dbt test` | Run tests without re-running models |
-| `dbt source freshness` | Check staleness of all 5 raw sources |
+| `dbt source freshness` | Check staleness of all 5 dbt-declared raw sources |
 | `dbt docs generate` | Regenerate the docs site artifact |
 
 ---

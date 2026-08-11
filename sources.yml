@@ -149,3 +149,77 @@ claims:
       after 1 September 2024.
     url: https://docs.databricks.com/aws/en/admin/system-tables/lineage
     retrieved: 2026-08-10
+
+  metric-views-rely-unvalidated:
+    claim: >
+      Metric view join cardinality assertions are NOT validated. If
+      `at_most_one_match: true` is asserted wrongly, measures silently return
+      incorrect results. This is the strongest single technical argument we have
+      on semantics: both products join, but one asserts and one derives.
+    quote: "This property is not validated at runtime. If the asserted side produces a fan-out, measures return incorrect results."
+    url: https://docs.databricks.com/aws/en/uc-semantics/metric-views/joins
+    retrieved: 2026-08-11
+
+  metric-views-one-to-many-dbr:
+    claim: >
+      Metric views support star and snowflake (multi-level) joins; one-to-many
+      joins require Databricks Runtime 18.1+ and YAML spec version 1.1. Default
+      cardinality is many-to-one.
+    url: https://docs.databricks.com/aws/en/uc-semantics/metric-views/joins
+    retrieved: 2026-08-11
+
+  metric-views-bi-measure:
+    claim: >
+      Metric views are queryable from any JDBC/ODBC tool, but every measure must
+      be wrapped in MEASURE() (or AGG in DBR 18.1+) and `SELECT *` is not
+      supported. Docs give specific guidance for Power BI, Tableau and Sigma and
+      say only that "some partners are adding built-in support" - they do NOT
+      name Hex/Omni/Domo as native, so do not claim that list.
+    quote: "You must list each column explicitly because metric views don't support `SELECT *`."
+    url: https://docs.databricks.com/aws/en/uc-semantics/metric-views/bi-tools
+    retrieved: 2026-08-11
+
+  genie-unity-catalog-only:
+    claim: >
+      Genie Agents are built on data registered in Unity Catalog (up to 30 tables
+      or views) and answer by generating read-only SQL that runs on the agent's
+      pro or serverless SQL warehouse. There is no native Genie connector to an
+      external semantic layer endpoint, so "Genie queries the dbt Semantic Layer
+      over JDBC" is false. Genie reads UC metadata that dbt populates.
+    url: https://docs.databricks.com/aws/en/genie-agents/concepts
+    retrieved: 2026-08-11
+
+  fusion-metric-view-unsupported:
+    claim: >
+      The `metric_view` materialization is NOT available in the Fusion engine.
+      dbt-core issue #15616 ("Fusion: Databricks metric_view materialization macro
+      not found (dbt9002)") is OPEN. This repo's demo leads with Fusion, so decide
+      which engine you are showing before demoing metric views.
+    url: https://github.com/dbt-labs/dbt-core/issues/15616
+    retrieved: 2026-08-11
+
+  dbt-mcp-not-on-npm:
+    claim: >
+      There is no `@dbt-labs/dbt-mcp` npm package (registry returns 404). The
+      official server is Python, published as `dbt-mcp` on PyPI. The only
+      legitimate npx in an MCP flow is `mcp-remote`, which is a proxy, not the
+      server.
+    url: https://pypi.org/project/dbt-mcp/
+    retrieved: 2026-08-11
+
+  lakeflow-connect-overview:
+    claim: >
+      Lakeflow Connect provides managed connectors. Coverage is real but narrower
+      than Fivetran's and GA status is uneven; several database CDC connectors are
+      Preview and require account-team enrollment. Never claim Databricks "can't
+      do ingestion" - check which of the customer's specific sources are GA.
+    url: https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/
+    retrieved: 2026-08-11
+
+  databricks-community-connectors-no-sla:
+    claim: >
+      For sources without a managed connector, Databricks documents community
+      connectors that are open source and not backed by Databricks SLAs, plus
+      custom connectors the customer builds and maintains.
+    url: https://docs.databricks.com/aws/en/ingestion/community-connectors
+    retrieved: 2026-08-11

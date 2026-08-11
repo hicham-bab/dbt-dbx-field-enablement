@@ -24,7 +24,8 @@ Databricks is the platform: compute, storage, orchestration, AI. **Fivetran + db
 - Fusion's **Databricks adapter is Preview**, not GA.[^fusion-databricks-preview] Fusion itself is free and the default engine.
 - The **~30x** parse/compile figure is a dbt Labs benchmark, not a docs number.[^fusion-speed] Time it on their project instead.
 - **Semantic Layer API** (MetricFlow JDBC) is a dbt platform service, not self-hostable.
-- **UC metric views are GA**[^metric-views-yaml] and dbt authors them (`materialized='metric_view'`, dbt-databricks 1.12.0+).[^dbt-databricks-metric-view]
+- **UC metric views are GA**[^metric-views-yaml] and dbt authors them (`materialized='metric_view'`, dbt-databricks 1.12.2+ as the practical floor, DBR 16.4+).[^dbt-databricks-metric-view] **Not available in Fusion yet**[^fusion-metric-view-unsupported] - check before you demo.
+- **Metric view joins are asserted, not validated.** A wrong `at_most_one_match` silently returns incorrect measures, per Databricks' own docs.[^metric-views-rely-unvalidated] Strongest technical point we have on semantics.
 - **Two native dbt tasks in Lakeflow Jobs:** the dbt task (dbt Core) and the dbt platform task (governed job).
 - **No first-class native reverse ETL** in Databricks; Fivetran Activations fills it. **[verify w/ PMM]**
 - **dbt Wizard ≠ dbt Copilot.** Two products; Copilot lives until Wizard is GA.[^dbt-wizard-vs-copilot]
@@ -49,12 +50,25 @@ Databricks is the platform: compute, storage, orchestration, AI. **Fivetran + db
 |---|---|
 | "Metric views can't do joins." | They do star, snowflake and one-to-many joins.[^metric-views-joins] The real limit: no direct join to a table at query time, so you wrap it in a CTE. |
 | "Metric views can't be version-controlled." | They can: YAML in git, deployed via bundles.[^metric-views-yaml] The gap is nothing *makes* you, and the UI path leaves no history. |
-| "Metric views are Genie-only." | They're UC objects, reachable over JDBC/ODBC. The gap is no vendor-neutral **metrics** API, so other tools see a table. |
+| "Metric views are Genie-only." | They're UC objects, reachable over JDBC/ODBC. The gap is ergonomics: every measure needs `MEASURE()` and there is no `SELECT *`.[^metric-views-bi-measure] |
+| "Metric views only do simple measures." | They do ratio, filtered, composable, windowed and semi-additive too. Near parity; conversion metrics are our only unique type. |
+| "Genie queries the dbt Semantic Layer." | It does not. Genie reads Unity Catalog metadata that dbt populates.[^genie-unity-catalog-only] Never draw that arrow. |
+| "The Semantic Layer costs nothing extra." | Metric views are included with UC; ours needs a paid tier. Concede it, then argue change management. |
+| "Databricks has no CI/CD." | Declarative Automation Bundles are real IaC. The gap is PR-isolated schemas and `state:modified+`. |
 | "Unity Catalog has no column-level lineage." | It does.[^uc-column-level-lineage] The gap: runtime-observed, breaks on rename, 1-year rolling window in system tables.[^uc-lineage-retention] |
 | "Fusion is GA on Databricks." | Fusion is free and default; the **Databricks adapter is Preview**.[^fusion-databricks-preview] |
 | "Contracts guarantee the schema." | On Databricks, names and order are checked but **not types**, and a failed constraint leaves the bad table in place.[^contracts-databricks-caveat] Concede it first. |
 | "dbt Wizard replaced dbt Copilot." | Two products. Copilot is available until Wizard is GA.[^dbt-wizard-vs-copilot] |
 | `Genie Spaces` / `Delta Live Tables` / `Databricks Asset Bundles` | Genie Agents / Lakeflow pipelines / Declarative Automation Bundles. See `NAMING.md`. |
+
+## Where Databricks genuinely wins - concede these
+
+- **No incremental licence.** Metric views ship with Unity Catalog; ours needs a paid tier above Developer.
+- **No extra operational surface.** No JDBC endpoint, no external gateway hop.
+- **Permissions in one system.** UC governs the metric view like any securable; our caching layer loses security context.
+- **Deeper native Genie integration.** Genie Agent context can be exported to a metric view; no round-trip on our side.
+- **They do open standards too.** Databricks joined Open Semantic Interchange, as did dbt Labs. 'They're closed, we're open' is not a clean line.
+- If a customer is single-engine on Databricks with one analytics engineer and needs five metrics for Genie, **metric views are the right answer - say so.** You will be believed on everything else afterwards.
 
 ## Discovery questions
 
@@ -83,8 +97,12 @@ Generated from `sources.yml`. Every claim about a competitor's capabilities cite
 [^dbt-databricks-metric-view]: https://github.com/databricks/dbt-databricks/blob/main/CHANGELOG.md (retrieved 2026-08-10)
 [^dbt-wizard-vs-copilot]: https://docs.getdbt.com/docs/platform/wizard-overview (retrieved 2026-08-10)
 [^fusion-databricks-preview]: https://docs.getdbt.com/docs/fusion/fusion-availability (retrieved 2026-08-10)
+[^fusion-metric-view-unsupported]: https://github.com/dbt-labs/dbt-core/issues/15616 (retrieved 2026-08-11)
 [^fusion-speed]: https://docs.getdbt.com/docs/fusion/about-fusion (retrieved 2026-08-10)
+[^genie-unity-catalog-only]: https://docs.databricks.com/aws/en/genie-agents/concepts (retrieved 2026-08-11)
+[^metric-views-bi-measure]: https://docs.databricks.com/aws/en/uc-semantics/metric-views/bi-tools (retrieved 2026-08-11)
 [^metric-views-joins]: https://docs.databricks.com/aws/en/uc-semantics/metric-views/basic-modeling (retrieved 2026-08-10)
+[^metric-views-rely-unvalidated]: https://docs.databricks.com/aws/en/uc-semantics/metric-views/joins (retrieved 2026-08-11)
 [^metric-views-yaml]: https://docs.databricks.com/aws/en/uc-semantics/metric-views (retrieved 2026-08-10)
 [^uc-column-level-lineage]: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage (retrieved 2026-08-10)
 [^uc-lineage-retention]: https://docs.databricks.com/aws/en/admin/system-tables/lineage (retrieved 2026-08-10)

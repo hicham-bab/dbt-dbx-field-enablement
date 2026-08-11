@@ -30,6 +30,8 @@ dbt Mesh governance, and an honest Databricks metric views comparison.
 | `DEMO_SCRIPT.md` | 5-act, 20–25 min demo script with timing, talking points, Q&A anchors |
 | `BATTLE_CARD.md` | **The call artifact.** One page, generated from `battlecard.yml` - do not edit directly |
 | `docs/competitive_reference.md` | **The prep doc.** Long-form deep dives behind the card |
+| `docs/ingestion_battle_card.md` | Lakeflow Connect vs Fivetran - the front half of the story, before raw tables exist |
+| `docs/enablement_arc.md` | Build-native-first internal enablement: build twice, measure the delta |
 | `METRIC_VIEWS_COMPARISON.md` | dbt Semantic Layer + Databricks metric views - complementary, and how dbt authors/governs them |
 | `MIGRATION_ACCELERATION.md` | Legacy → dbt + Databricks migration: how dbt Wizard + Fusion create faster time to value |
 | `FIVETRAN_DBT_DATABRICKS.md` | Fivetran + dbt on Databricks - the complete governed loop (ingest → govern → activate); competitive SA enablement |

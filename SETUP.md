@@ -66,7 +66,7 @@ dbt platform connects to a Databricks SQL Warehouse to execute models. You need 
 2. Click **Create SQL Warehouse** (top right)
 3. Fill in:
    - **Name:** `enablement-demo` (or any name you'll recognize)
-   - **Cluster size:** 2X-Small is sufficient for this demo dataset (10 customers, 15 orders)
+   - **Cluster size:** 2X-Small is sufficient for this demo dataset (20 customers, 71 orders)
    - **Type:** Select **Serverless** - this avoids cluster startup time during the demo
      - If Serverless is not available in your workspace, choose **Pro**
 4. Click **Create** and wait for it to start (green dot = running)
@@ -581,7 +581,7 @@ Lakeflow pipelines fundamentally cannot replicate without significant manual eff
 | **Dependency graph across teams** | dbt platform shows the full lineage: `platform.fct_orders → marketing.mart_customer_segments`. Lineage is automatic, always up to date | Lakeflow shows lineage within a single pipeline. Cross-pipeline lineage requires Unity Catalog lineage (partial, table-level only) or manual documentation |
 | **Shared test suite** | `dbt build` in `marketing` runs the marketing tests against the platform's public API. If platform breaks its contract, tests catch it | No equivalent. Each Lakeflow pipeline has its own `@dlt.expect` rules, defined manually, with no shared or inherited test logic |
 | **Column metadata to Genie (automatic)** | `persist_docs: columns: true` pushes every column description from YAML into UC automatically on every run | Requires `COMMENT ON COLUMN` SQL statements for each column, maintained manually, with no link to the pipeline code |
-| **Source freshness monitoring** | `dbt source freshness` checks all 5 raw sources in one command, with thresholds defined in code | No equivalent in Lakeflow. You would need to write a custom notebook or query to check `MAX(_loaded_at)` per table and alert manually |
+| **Source freshness monitoring** | `dbt source freshness` checks all 5 dbt-declared raw sources in one command (the 6th raw table, `raw_reviews`, feeds the Lakeflow/Genie path only and is not a dbt source), with thresholds defined in code | No equivalent in Lakeflow. You would need to write a custom notebook or query to check `MAX(_loaded_at)` per table and alert manually |
 | **Metric definitions (Semantic Layer)** | 12+ named metrics in `_semantic_models.yml` - `return_rate`, `revenue_per_customer`, etc. Consumed directly by Genie, BI tools, and dbt platform's Semantic Layer API | No equivalent. Metric logic lives inside SQL views or gold table transformations, duplicated across every consumer team that needs the same metric |
 
 **The Lakeflow replication cost (rough estimate for this demo schema):**
@@ -674,7 +674,7 @@ Before relying on the schedule, trigger a manual run:
 After the generator has run at least once, test the freshness check:
 
 ```bash
-cd /Users/hichambabahmed/dbt-dbx-field-enablement/platform
+cd "$REPO_ROOT/platform"   # set REPO_ROOT to wherever you cloned this repo
 dbt source freshness --profiles-dir .
 ```
 
@@ -756,11 +756,16 @@ The last statement is a verification query. Expected output:
 
 | metric | value |
 |---|---|
-| total_revenue | 2157.99 (approximate) |
-| avg_order_value | 239.78 (approximate) |
-| total_orders | 15 |
-| customer_count | 10 |
+| total_revenue | 14364.45 |
+| total_orders | 71 |
+| return_rate_pct | 14.08 |
+| customer_count | 20 |
 | avg_ltv | some positive number |
+
+These are computed from the seeded `INSERT`s in `00_setup_raw_data.py`, not
+approximations. `scripts/check_facts.py` recomputes them, so if the seed data
+changes and this table doesn't, CI will say so. If your numbers differ, the seed
+step didn't complete - don't proceed to the demo.
 
 > If you get a permission error creating the schema, run:
 > `GRANT CREATE SCHEMA ON CATALOG enablement TO \`your.email@company.com\`;`
@@ -954,7 +959,7 @@ databricks configure
 ### H3. Deploy the app
 
 ```bash
-cd /Users/hichambabahmed/dbt-dbx-field-enablement
+cd "$REPO_ROOT"            # set REPO_ROOT to wherever you cloned this repo
 
 databricks apps deploy dbt-dbx-enablement \
   --source-code-path ./databricks/app
